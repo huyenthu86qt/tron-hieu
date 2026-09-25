@@ -104,7 +104,7 @@ const EXP = (x: Partial<ExpenseForm> = {}): ExpenseForm => ({ name: 'Thuê rạp
 describe('Tài chính', () => {
   it('người đại diện ghi thì duyệt ngay; người khác gửi đề nghị chờ duyệt', () => {
     const c = mk();
-    const m = inviteMember(c, { name: 'Lê Thu Hà', rel: 'Con dâu', access: 'limited', areas: ['Tài chính'] });
+    const m = inviteMember(c, { name: 'Lê Thu Hà', rel: 'Con dâu', access: 'limited', areas: ['Tài chính'], phone: '0912345673' });
     const a = requestExpense(c, EXP(), U1_ID);
     const b = requestExpense(c, EXP({ name: 'Hoa', amount: '3200000' }), m.id);
     expect(a.status).toBe('approved');
@@ -143,8 +143,8 @@ describe('Tài chính', () => {
   });
   it('khách “bạn của” từng người con', () => {
     const c = mk();
-    inviteMember(c, { name: 'Nguyễn Thị Lan', rel: 'Con gái', access: 'limited', areas: ['Hậu cần'] });
-    inviteMember(c, { name: 'Trần Văn Hùng', rel: 'Con rể', access: 'limited', areas: ['Xe cộ'] });
+    inviteMember(c, { name: 'Nguyễn Thị Lan', rel: 'Con gái', access: 'limited', areas: ['Hậu cần'], phone: '0912345674' });
+    inviteMember(c, { name: 'Trần Văn Hùng', rel: 'Con rể', access: 'limited', areas: ['Xe cộ'], phone: '0912345675' });
     expect(children(c.members).map(k => k.short)).toEqual(['anh Tuấn', 'chị Lan', 'anh Hùng']);
     expect(() => addGuest(c, { name: 'X', group: 'Bạn bè', of: null, amount: 0, method: 'cash', gifts: [], note: '' }, 'a')).toThrow('bạn của ai');
   });

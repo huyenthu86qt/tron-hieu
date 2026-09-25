@@ -142,7 +142,7 @@ function Detail({ t }: { t: TaskView }) {
 }
 
 function Actions({ t }: { t: TaskView }) {
-  const { c, base, update, openSheet } = useCase();
+  const { c, base, update, openSheet, me } = useCase();
   const { toast } = useApp();
   const nav = useNavigate();
   const [issueOpen, setIssueOpen] = useState(false);
@@ -162,7 +162,7 @@ function Actions({ t }: { t: TaskView }) {
   </>;
   else acts = <>
     {!t.owner
-      ? <button className="btn block" onClick={() => { update(dr => takeTask(dr, t.id)); toast('Đã nhận: ' + t.title); }}>Tôi nhận việc</button>
+      ? <button className="btn block" onClick={() => { update(dr => takeTask(dr, t.id, me.id)); toast('Đã nhận: ' + t.title); }}>Tôi nhận việc</button>
       : t.status === 'todo' && <button className="btn block" onClick={() => { update(dr => startTask(dr, t.id)); toast('Đã chuyển sang Đang làm'); }}>Bắt đầu làm</button>}
     <button className="btn primary block" disabled={blocked} onClick={() => {
       if (t.lock) { openSheet({ type: 'lock', taskId: t.id }); return; }

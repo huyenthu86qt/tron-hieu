@@ -38,14 +38,14 @@
 - ✓ Ý tưởng · ✓ Nghiên cứu · ✓ Cấu trúc (v2) · ✓ Trải nghiệm · ✓ Hoàn thiện vận hành (đặc tả)
 - ✓ **Gói xây app** — `docs/Goi-xay-app-App-Dam-Hieu.md` (4 phase, cả 4 bằng Claude Code)
 - ✓ **Xây app — Phase 1: Nền giao diện & phần lõi** — APPROVE 25/09/2026 (mốc caae070)
-- ● **Xây app — Phase 2: Giao diện phần còn lại** — đang xây
+- ● **Xây app — Phase 2: Giao diện phần còn lại** — đã xây xong, **chờ Chủ dự án duyệt (APPROVE / NEEDS_FIX)**
 - ○ Phase 3 · ○ Phase 4 · ○ Working App · ○ Sales Page · ○ Kiểm chứng thị trường
 
 ## Mốc các phase
 | Phase | Trạng thái | Mốc (commit / snapshot) |
 |---|---|---|
 | 1 Nền giao diện & phần lõi | APPROVE 25/09/2026 | caae070 |
-| 2 Giao diện phần còn lại | Đang xây | — |
+| 2 Giao diện phần còn lại | Xong — chờ duyệt | commit “Phase 2 (8/8)” (xem git log) |
 | 3 Máy chủ & dữ liệu thật | Chưa bắt đầu | — |
 | 4 Thanh toán, vận hành & Working App | Chưa bắt đầu | — |
 
@@ -56,3 +56,8 @@
 - Dữ liệu Phase 1 lưu trên máy (trình duyệt); link mời người hỗ trợ chỉ mở được trên cùng thiết bị cho tới Phase 3
 - Mục Nhà cung cấp / Tài chính / Khách viếng / Hậu tang hiện trang “mở ở giai đoạn 2”
 
+## Phase 2 — ghi chú bàn giao
+- Đã xây: Nhà cung cấp (gợi ý gần nhất theo tọa độ, trọn gói, NCC gia đình, báo giá / cam kết / phát sinh / nghiệm thu, quyết định khi bên đã cam kết ở xa) · Tài chính (đề nghị chi, duyệt, nguồn tiền 4 số cuối, tài khoản bên nhận chỉ quyền Tài chính, sổ phúng viếng, công nợ, đối soát & khóa) · Khách viếng (ghi nhanh, danh sách, bàn giao ca, trang thông tin công khai tự cập nhật khi đổi quyết định) · Hậu tang (thủ tục, mốc tưởng niệm âm lịch, cảm ơn theo từng người con, khép vòng) · Chuẩn bị trước + kích hoạt + tiếp nhận · Đăng ký / đăng nhập / quên mật khẩu / hết phiên · Tài khoản · Checkout (giả lập) · Admin (tổng quan, người dùng, đơn hàng, quyền, gói & giá, SePay, giao dịch chưa khớp, danh bạ NCC, nhật ký) · Trang pháp lý khung · Việc của tôi, Tài liệu, Lịch sử, Cài đặt, Tìm kiếm, Thông báo
+- Giả lập đến Phase 3–4: mã OTP hiện trên màn (chưa có bên gửi tin nhắn); thanh toán giả lập, ghi rõ “chưa thanh toán thật”; dữ liệu vẫn lưu trên trình duyệt; tệp chỉ ghi tên; vị trí nhập bằng tọa độ hoặc “Dùng vị trí hiện tại” (chưa có dịch vụ bản đồ)
+- Giá đang là giá thử nghiệm (299.000 đ / 199.000 đ) — chị chốt giá (U1) trước khi mở bán
+- Kiểm thử: `npm test` 64 bài xanh · `npm run build` sạch

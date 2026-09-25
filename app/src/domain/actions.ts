@@ -2,6 +2,7 @@
 // Lớp lưu trữ (repository) chịu trách nhiệm sao chép / lưu; ở đây chỉ có luật nghiệp vụ.
 import type { Access, CaseData, Member, Person, TaskInst } from './types';
 import { findTask, lockBlocked, newId, systemMembers, U1_ID } from './model';
+import { normalizePhone } from './platform';
 
 const stamp = (now?: Date) => (now ?? new Date()).toISOString();
 const inst = (c: CaseData, id: string) => c.tasks.find(t => t.id === id);
@@ -20,12 +21,12 @@ export function assignTask(c: CaseData, id: string, memberId: string, note?: str
   log(c, `Giao cho ${memberName(c, memberId)}${note?.trim() ? ' · Lời nhắn: ' + note.trim() : ''}`, id, now);
 }
 
-export function takeTask(c: CaseData, id: string, now?: Date) {
+export function takeTask(c: CaseData, id: string, memberId: string = U1_ID, now?: Date) {
   const t = inst(c, id);
   if (!t) return;
-  t.owner = U1_ID;
+  t.owner = memberId;
   if (t.status === 'todo') t.status = 'doing';
-  log(c, `${memberName(c, U1_ID)} nhận việc`, id, now);
+  log(c, `${memberName(c, memberId)} nhận việc`, id, now);
 }
 
 export function startTask(c: CaseData, id: string, now?: Date) {
@@ -175,15 +176,24 @@ export const initials = (name: string) => {
 
 const token = () => Array.from({ length: 12 }, () => 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[Math.floor(Math.random() * 32)]).join('');
 
-export interface MemberForm { name: string; rel: string; access: Access; areas: string[] }
+export interface MemberForm { name: string; rel: string; access: Access; areas: string[]; phone?: string }
+
+/** Thành viên Đầy đủ / Giới hạn đăng nhập bằng số điện thoại được mời */
+function memberPhone(f: MemberForm): string | undefined {
+  if (f.access === 'link') return f.phone?.trim() ? normalizePhone(f.phone) ?? undefined : undefined;
+  const p = normalizePhone(f.phone ?? '');
+  if (!p) throw new RuleError('Cần số điện thoại đúng để người này đăng nhập và thấy đám hiếu.');
+  return p;
+}
 
 export function inviteMember(c: CaseData, f: MemberForm, now?: Date): Member {
   if (!f.name.trim()) throw new RuleError('Cần nhập tên người hỗ trợ.');
   if (!f.areas.length) throw new RuleError('Chọn ít nhất một vùng trách nhiệm.');
   const m: Member = {
     id: newId('m'), name: f.name.trim(), rel: f.rel.trim() || 'Người hỗ trợ', role: f.access === 'link' ? 'Người hỗ trợ' : 'Thành viên',
-    access: f.access, areas: [...f.areas], linkToken: f.access === 'link' ? token() : undefined,
+    access: f.access, areas: [...f.areas], linkToken: f.access === 'link' ? token() : undefined, phone: memberPhone(f),
   };
+  if (m.phone && c.members.some(x => x.phone === m.phone)) throw new RuleError('Số điện thoại này đã có trong đội.');
   c.members.push(m);
   log(c, `Mời ${m.name} tham gia (${f.access === 'link' ? 'qua link' : f.access === 'full' ? 'đầy đủ' : 'giới hạn'})`, undefined, now);
   return m;
@@ -198,6 +208,7 @@ export function saveMember(c: CaseData, id: string, f: MemberForm) {
   if (!m.system) m.rel = f.rel.trim() || m.rel;
   m.access = id === U1_ID ? 'full' : f.access;
   m.areas = [...f.areas];
+  if (id !== U1_ID && !m.system) m.phone = memberPhone({ ...f, access: m.access });
   if (m.access === 'link' && !m.linkToken) m.linkToken = token();
   if (m.access !== 'link') m.linkToken = undefined;
 }

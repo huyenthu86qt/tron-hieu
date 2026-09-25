@@ -1,19 +1,26 @@
 // S-MAP-02 · Bản đồ đám hiếu (15 chặng)
 import { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { venueLabel } from '../../domain/vendors';
 import {
-  currentPhase, FORM_LABEL, hasBLT, MODEL_LABEL, ORGT, PLACE_LABEL, RITE_LABEL, SCALE_LABEL, VENUE_LABEL, visibleTasks, type TaskView,
+  currentPhase, FORM_LABEL, hasBLT, MODEL_LABEL, ORGT, PLACE_LABEL, RITE_LABEL, SCALE_LABEL, visibleTasks, type TaskView,
 } from '../../domain/model';
 import { PHASES } from '../../domain/templates';
 import { Icon } from '../../ui/Icon';
 import { KindPill, useApp } from '../../ui/common';
-import { useCase } from '../CaseContext';
+import { inScope, useCase } from '../CaseContext';
+import { MapView } from './MiscPages';
 import { TaskRow } from '../rows';
 
 type Filter = 'all' | 'open' | 'free';
 
 export function MapPage() {
-  const { c, openSheet } = useCase();
+  const [q] = useSearchParams();
+  return q.get('xem') ? <MapView /> : <FullMap />;
+}
+
+function FullMap() {
+  const { c, openSheet, me } = useCase();
   const { mobile } = useApp();
   const [params, setParams] = useSearchParams();
   const cur = currentPhase(c);
@@ -21,7 +28,7 @@ export function MapPage() {
   const setSel = (n: number) => setParams(p => { p.set('chang', String(n)); return p; }, { replace: true });
   const [F, setF] = useState<Filter>('all');
   const [openFold, setOpenFold] = useState<number>(sel);
-  const all = visibleTasks(c);
+  const all = visibleTasks(c).filter(t => inScope(me, t));
   const s = c.situation;
 
   const flt = (t: TaskView) => F === 'open' ? t.status !== 'done' && t.status !== 'skip' : F === 'free' ? !t.owner && t.status !== 'done' && t.status !== 'skip' : true;
@@ -43,7 +50,7 @@ export function MapPage() {
     if (rl && st && (st.offsetLeft < rl.scrollLeft || st.offsetLeft + st.offsetWidth > rl.scrollLeft + rl.clientWidth)) rl.scrollLeft = Math.max(0, st.offsetLeft - 60);
   }, [sel, mobile]);
 
-  const chips = [PLACE_LABEL[s.place], s.venue === 'home' ? 'Làm lễ tại nhà riêng' : 'Làm lễ tại ' + VENUE_LABEL[s.venue].toLowerCase(), FORM_LABEL[s.form], RITE_LABEL[s.rite], MODEL_LABEL[s.org],
+  const chips = [PLACE_LABEL[s.place], s.venue === 'home' ? 'Làm lễ tại nhà riêng' : 'Làm lễ tại ' + venueLabel(c), FORM_LABEL[s.form], RITE_LABEL[s.rite], MODEL_LABEL[s.org],
     ...(hasBLT(s) ? [ORGT[s.orgType].chip] : []), SCALE_LABEL[s.scale], ...(s.hasPre ? ['Có hồ sơ chuẩn bị'] : [])];
   const context = (
     <section className="card card-pad stack" style={{ gap: 8 }}>

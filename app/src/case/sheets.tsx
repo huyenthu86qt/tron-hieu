@@ -23,6 +23,7 @@ export function CaseSheets() {
     case 'invite': return <InviteSheet />;
     case 'member': return <MemberSheet key={sheet.id} id={sheet.id} />;
     case 'areas': return <AreasSheet />;
+    case 'search': return <SearchSheet />;
   }
 }
 
@@ -41,13 +42,14 @@ function MoreSheet() {
   return (
     <Sheet title="Thêm" onClose={close}>
       <div className="list card">
-        {NAV.slice(4).map(n => n.to === undefined
-          ? <button key={n.k} className="row" onClick={() => toast(`${n.label} sẽ mở ở giai đoạn sau`)}><Icon n={n.icon} /><div className="grow"><div className="title">{n.label}</div></div><span className="pill soft">Giai đoạn sau</span></button>
-          : <button key={n.k} className="row" onClick={() => { close(); nav(`${base}/${n.to}`); }}><Icon n={n.icon} /><div className="grow"><div className="title">{n.label}</div></div><Icon n="chev" c="chev" /></button>)}
+        {[...NAV.slice(4), { k: 'mine', label: 'Việc của tôi', icon: 'user' as const, to: 'viec-cua-toi' }, { k: 'hist', label: 'Lịch sử', icon: 'refresh' as const, to: 'lich-su' }, { k: 'set', label: 'Cài đặt đám hiếu', icon: 'settings' as const, to: 'cai-dat' }].map(n =>
+          <button key={n.k} className="row" onClick={() => { close(); nav(`${base}/${n.to}`); }}><Icon n={n.icon} /><div className="grow"><div className="title">{n.label}</div></div><Icon n="chev" c="chev" /></button>)}
+        <button className="row" onClick={() => openSheet({ type: 'search' })}><Icon n="search" /><div className="grow"><div className="title">Tìm kiếm</div></div></button>
         <button className="row" onClick={() => { update(d => { d.mourning = !d.mourning; }); close(); toast(c.mourning ? 'Đã tắt Chế độ tang gia' : 'Đã bật Chế độ tang gia'); }}>
           <Icon n="settings" /><div className="grow"><div className="title">Chế độ tang gia</div><div className="meta">{c.mourning ? 'Đang bật — chỉ báo điều cần quyết' : 'Đang tắt'}</div></div>
         </button>
         <button className="row" onClick={() => { close(); nav('/app'); }}><Icon n="swap" /><div className="grow"><div className="title">Đổi hồ sơ</div></div></button>
+        <button className="row" onClick={() => { close(); nav('/tai-khoan'); }}><Icon n="user" /><div className="grow"><div className="title">Tài khoản</div></div></button>
       </div>
     </Sheet>
   );
@@ -218,8 +220,10 @@ const ACCESS_OPTS: { k: Access; title: string; note: string }[] = [
 const RELS = ['Con trai trưởng', 'Con trai', 'Con gái', 'Con dâu', 'Con rể', 'Cháu', 'Họ hàng', 'Hàng xóm', 'Bạn của gia đình'];
 
 function InviteSheet() {
-  const { c, update, openSheet } = useCase();
+  const { c, update, openSheet, full, base } = useCase();
   const { toast } = useApp();
+  const nav = useNavigate();
+  const [phone, setPhone] = useState('');
   const [name, setName] = useState('');
   const [rel, setRel] = useState('');
   const [access, setAccess] = useState<Access>('link');
@@ -229,10 +233,15 @@ function InviteSheet() {
   const close = () => openSheet(null);
   const make = () => {
     let m: Member | null = null;
-    const e = update(d => { m = inviteMember(d, { name, rel, access, areas }); });
+    const e = update(d => { m = inviteMember(d, { name, rel, access, areas, phone }); });
     if (e) { setErr(e); return; }
     setMade(m);
   };
+  if (!full) return (
+    <Sheet title="Mời người hỗ trợ" onClose={close} foot={<><button className="btn" onClick={close}>Để sau</button><button className="btn primary" onClick={() => { close(); nav(`${base}/doi/mo-day-du`); }}>Xem gói Mở đầy đủ</button></>}>
+      <Banner kind="info" icon="team">Mời người cùng lo và nhờ việc qua link thuộc gói <b>Mở đầy đủ</b> của đám hiếu này. Các việc trên Bản đồ gia đình vẫn tự nhận và làm được bình thường.</Banner>
+    </Sheet>
+  );
   if (made) {
     const url = made.linkToken ? linkUrl(made.linkToken) : '';
     return (
@@ -242,7 +251,7 @@ function InviteSheet() {
           <div className="link-box"><span>{url}</span><button className="btn sm" onClick={async () => toast(await copyText(url) ? 'Đã sao chép link' : 'Không sao chép được — chọn và sao chép thủ công')}><Icon n="copy" c="sm" />Sao chép</button></div>
           <p className="note">Link chỉ mở được trên thiết bị này cho tới khi có máy chủ (giai đoạn 3).</p>
           <a className="btn" href={url} target="_blank" rel="noreferrer"><Icon n="user" />Xem như người nhận</a>
-        </> : <Banner kind="info" icon="check">Đã thêm <b>{made.name}</b> vào đội. Lời mời đăng nhập sẽ gửi qua số điện thoại khi có tài khoản (giai đoạn 3).</Banner>}
+        </> : <Banner kind="info" icon="check">Đã thêm <b>{made.name}</b> vào đội. Khi người này đăng nhập bằng số <b className="num">{made.phone}</b>, đám hiếu hiện ở trang chủ của họ.</Banner>}
         {c.tasks.length > 0 && <p className="muted">Giao việc cho {made.name} ở nút “Nhờ người khác” của từng việc.</p>}
       </Sheet>
     );
@@ -253,7 +262,9 @@ function InviteSheet() {
       <div className="field"><label htmlFor="invRel">Quan hệ với gia đình</label><input className="input" id="invRel" value={rel} onChange={e => setRel(e.target.value)} />
         <Chips items={RELS} isOn={x => rel === x} onToggle={setRel} /></div>
       <div className="field"><label>Cách tham gia</label><Opts value={access} onChange={setAccess} items={ACCESS_OPTS} /></div>
-      <div className="field"><label>Vùng trách nhiệm</label><Chips items={c.areas} isOn={a => areas.includes(a)} onToggle={a => setAreas(toggleIn(areas, a))} /></div>
+      <div className="field"><label htmlFor="invPhone">Số điện thoại{access === 'link' ? ' (tùy chọn)' : ''}</label><input className="input num" id="invPhone" inputMode="tel" value={phone} onChange={e => setPhone(e.target.value)} placeholder="0912 345 678" />
+        {access !== 'link' && <p className="muted">Người này đăng nhập bằng số này sẽ thấy đám hiếu theo quyền đã chọn.</p>}</div>
+      <div className="field"><label>Vùng trách nhiệm</label><Chips items={c.areas} isOn={a => areas.includes(a)} onToggle={a => setAreas(x => toggleIn(x, a))} /></div>
       <ErrorBanner err={err} />
     </Sheet>
   );
@@ -264,7 +275,7 @@ function MemberSheet({ id }: { id: string }) {
   const { c, update, openSheet } = useCase();
   const { toast } = useApp();
   const m = memberOf(c, id);
-  const [f, setF] = useState(() => ({ name: m?.name ?? '', rel: m?.rel ?? '', access: m?.access ?? 'limited' as Access, areas: m?.areas ?? [] }));
+  const [f, setF] = useState(() => ({ name: m?.name ?? '', rel: m?.rel ?? '', access: m?.access ?? 'limited' as Access, areas: m?.areas ?? [], phone: m?.phone ?? '' }));
   const [err, setErr] = useState<string | null>(null);
   const [confirmDel, setConfirmDel] = useState(false);
   if (!m) return null;
@@ -284,6 +295,7 @@ function MemberSheet({ id }: { id: string }) {
       <div className="field"><label htmlFor="mRel">Quan hệ với người đã khuất / gia đình</label>
         <input className="input" id="mRel" value={f.rel} disabled={isOrg} onChange={e => setF({ ...f, rel: e.target.value })} />
         {!isOrg && <Chips items={RELS} isOn={x => f.rel === x} onToggle={x => setF({ ...f, rel: x })} />}</div>
+      {!isU1 && !isOrg && <div className="field"><label htmlFor="mPhone">Số điện thoại</label><input className="input num" id="mPhone" inputMode="tel" value={f.phone} onChange={e => setF({ ...f, phone: e.target.value })} /></div>}
       <div className="field"><label>Cách tham gia</label>
         <Opts value={f.access} onChange={a => setF({ ...f, access: a })} items={ACCESS_OPTS} disabled={isU1} />
         {isU1 && <p className="muted">Người đại diện gia đình luôn có quyền đầy đủ.</p>}
@@ -293,7 +305,7 @@ function MemberSheet({ id }: { id: string }) {
             <button className="btn sm ghost" onClick={() => { update(d => renewLink(d, id)); toast('Đã thu hồi link cũ và tạo link mới'); }}><Icon n="refresh" c="sm" />Cấp link mới</button></div>
         )}</div>
       <div className="field"><label>Vùng trách nhiệm</label>
-        <Chips items={areaItems} isOn={a => f.areas.includes(a)} onToggle={a => setF({ ...f, areas: toggleIn(f.areas, a) })} />
+        <Chips items={areaItems} isOn={a => f.areas.includes(a)} onToggle={a => setF(x => ({ ...x, areas: toggleIn(x.areas, a) }))} />
         <button className="btn sm ghost" style={{ alignSelf: 'flex-start' }} onClick={() => openSheet({ type: 'areas', back: { type: 'member', id } })}><Icon n="settings" c="sm" />Sửa danh sách vùng</button></div>
       <ErrorBanner err={err} />
       {!isU1 && (confirmDel
@@ -339,6 +351,32 @@ function AreasSheet() {
         <button className="btn" onClick={addOne}><Icon n="plus" c="sm" />Thêm</button></div>
       <ErrorBanner err={err} />
       <p className="note">Xóa một vùng đang dùng thì vùng đó được gỡ khỏi những người đang giữ; các việc thuộc vùng đó chuyển về “Toàn bộ”.</p>
+    </Sheet>
+  );
+}
+
+/* ---------- S-X-05 · Tìm kiếm ---------- */
+function SearchSheet() {
+  const { c, base, openSheet } = useCase();
+  const nav = useNavigate();
+  const [q, setQ] = useState('');
+  const k = q.trim().toLowerCase();
+  const go = (to: string) => { openSheet(null); nav(`${base}/${to}`); };
+  const tasks = k ? visibleTasks(c).filter(t => t.title.toLowerCase().includes(k)).slice(0, 8) : [];
+  const people = k ? c.members.filter(m => m.name.toLowerCase().includes(k)).slice(0, 5) : [];
+  const guests = k ? (c.ledger ?? []).filter(g => g.name.toLowerCase().includes(k)).slice(0, 5) : [];
+  const none = k && !tasks.length && !people.length && !guests.length;
+  return (
+    <Sheet title="Tìm kiếm" onClose={() => openSheet(null)}>
+      <input className="input" autoFocus value={q} onChange={e => setQ(e.target.value)} placeholder="Tìm việc, người trong đội, khách viếng…" aria-label="Từ khóa" />
+      {tasks.length > 0 && <section className="card"><div className="eyebrow card-pad" style={{ paddingBottom: 0 }}>Việc</div><div className="list">{tasks.map(t =>
+        <button key={t.id} className="row" onClick={() => go(`viec/${t.id}`)}><div className="grow"><div className="title">{t.title}</div><div className="meta"><span>Chặng {t.phase}</span></div></div><Icon n="chev" c="chev" /></button>)}</div></section>}
+      {people.length > 0 && <section className="card"><div className="eyebrow card-pad" style={{ paddingBottom: 0 }}>Đội</div><div className="list">{people.map(m =>
+        <button key={m.id} className="row" onClick={() => openSheet({ type: 'member', id: m.id })}><div className="grow"><div className="title">{m.name}</div><div className="meta"><span>{m.rel}</span></div></div></button>)}</div></section>}
+      {guests.length > 0 && <section className="card"><div className="eyebrow card-pad" style={{ paddingBottom: 0 }}>Khách viếng</div><div className="list">{guests.map(g =>
+        <button key={g.id} className="row" onClick={() => go('khach-vieng/danh-sach')}><div className="grow"><div className="title">{g.name}</div><div className="meta"><span>{g.group ?? 'Khác'}</span></div></div></button>)}</div></section>}
+      {none && <div className="empty"><span>Không thấy kết quả cho “{q}”.</span></div>}
+      {!k && <p className="muted">Mẹo: trên máy tính bấm Ctrl + K (⌘ + K trên Mac) để mở nhanh.</p>}
     </Sheet>
   );
 }

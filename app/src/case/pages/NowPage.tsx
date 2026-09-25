@@ -1,15 +1,16 @@
 // S-MAP-01 · Bây giờ
 import { useNavigate } from 'react-router-dom';
-import { currentPhase, FORM_LABEL, issueTasks, nowTasks, pendingDecisions, portraitIcon, soonTasks, U1_ID, VENUE_LABEL } from '../../domain/model';
+import { currentPhase, FORM_LABEL, issueTasks, nowTasks, pendingDecisions, portraitIcon, soonTasks } from '../../domain/model';
+import { venueLabel } from '../../domain/vendors';
 import { lifeSpan } from '../../domain/person';
 import { PHASES } from '../../domain/templates';
 import { Icon } from '../../ui/Icon';
 import { Banner, useApp } from '../../ui/common';
-import { DN, useCase } from '../CaseContext';
+import { DN, inScope, useCase } from '../CaseContext';
 import { DecRow, TaskRow } from '../rows';
 
 export function Memorial() {
-  const { c, base } = useCase();
+  const { c, base, isU1 } = useCase();
   const nav = useNavigate();
   const cur = currentPhase(c);
   return (
@@ -19,9 +20,9 @@ export function Memorial() {
         : <div className="portrait"><Icon n={portraitIcon(c.situation.rite)} c="lg" /></div>}
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}><div className="eyebrow" style={{ flex: 1 }}>Thành kính tưởng nhớ</div>
-          <button className="btn sm ghost" onClick={() => nav(`${base}/ho-so`)}>{c.person.name ? 'Sửa hồ sơ' : 'Nhập hồ sơ'}</button></div>
+          {isU1 && <button className="btn sm ghost" onClick={() => nav(`${base}/ho-so`)}>{c.person.name ? 'Sửa hồ sơ' : 'Nhập hồ sơ'}</button>}</div>
         <h2>{DN(c)}</h2>
-        <div className="sub num">{lifeSpan(c.person)} · {VENUE_LABEL[c.situation.venue]} · {FORM_LABEL[c.situation.form]}</div>
+        <div className="sub num">{lifeSpan(c.person)} · {venueLabel(c)} · {FORM_LABEL[c.situation.form]}</div>
         <div className="phase-bar" aria-label="Tiến độ chặng">{PHASES.map((_, i) => <i key={i} className={i + 1 < cur ? 'done' : i + 1 === cur ? 'cur' : ''} />)}</div>
         <div className="muted" style={{ marginTop: 4 }}>Chặng {cur}/15 · {PHASES[cur - 1]}</div>
       </div>
@@ -30,14 +31,16 @@ export function Memorial() {
 }
 
 export function NowPage() {
-  const { c } = useCase();
+  const { c, me, base, isU1 } = useCase();
   const { mobile } = useApp();
+  const nav = useNavigate();
   const pd = pendingDecisions(c);
-  const nt = c.mourning ? nowTasks(c).filter(t => t.owner === U1_ID || !t.owner) : nowTasks(c);
-  const it = issueTasks(c), st = soonTasks(c);
+  const scope = nowTasks(c).filter(t => inScope(me, t));
+  const nt = c.mourning ? scope.filter(t => t.owner === me.id || !t.owner) : scope;
+  const it = issueTasks(c).filter(t => inScope(me, t)), st = soonTasks(c).filter(t => inScope(me, t));
 
   const decBlock = (
-    <section className="card"><div className="sec-h card-pad" style={{ margin: 0, paddingBottom: 6 }}><h3>Cần anh quyết</h3><span className="muted">{pd.length} mục</span></div>
+    <section className="card"><div className="sec-h card-pad" style={{ margin: 0, paddingBottom: 6 }}><h3>{isU1 ? 'Cần anh quyết' : 'Đang chờ người đại diện quyết'}</h3><span className="muted">{pd.length} mục</span></div>
       {pd.length ? <div className="list">{pd.map(d => <DecRow key={d.id} d={d} />)}</div> : <div className="empty"><Icon n="check" c="lg" /><span>Không có gì đang chờ anh quyết.</span></div>}</section>
   );
   const nowBlock = (
@@ -51,7 +54,8 @@ export function NowPage() {
   const soon = c.mourning
     ? <Banner kind="info" icon="bell"><b>Chế độ tang gia đang bật.</b> App chỉ báo anh điều cần quyết; việc sắp tới do mọi người tự theo dõi.</Banner>
     : <section className="card"><details className="fold" style={{ borderTop: 0 }}><summary><Icon n="chev" c="chev" />Sắp tới <span className="muted" style={{ marginLeft: 'auto' }}>{st.length} việc</span></summary>
-        <div className="list">{st.map(t => <TaskRow key={t.id} t={t} acts={false} from="" />)}</div></details></section>;
+        <div className="list">{st.map(t => <TaskRow key={t.id} t={t} acts={false} from="" />)}</div>
+        <div className="card-pad" style={{ paddingTop: 6 }}><button className="btn sm ghost" onClick={() => nav(`${base}/ban-do?xem=sap-toi`)}>Xem theo góc nhìn: Sắp tới · Có vấn đề · Đã xong</button></div></details></section>;
 
   if (mobile) return <div className="page"><Memorial />{pd.length > 0 && decBlock}{nowBlock}{issBlock}{soon}</div>;
   return (

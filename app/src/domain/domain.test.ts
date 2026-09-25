@@ -205,7 +205,7 @@ describe('Quyết định và tác động', () => {
   });
   it('đổi nơi tổ chức: tác động liệt kê việc thêm / bỏ và người nhận thông báo', () => {
     const c = mk({ venue: 'home' });
-    inviteMember(c, { name: 'Trần Văn Hùng', rel: 'Con rể', access: 'limited', areas: ['Nhà cung cấp'] });
+    inviteMember(c, { name: 'Trần Văn Hùng', rel: 'Con rể', access: 'limited', areas: ['Nhà cung cấp'], phone: '0912345671' });
     const L = impactOfVenue(c, 'hall');
     expect(L.viec!.join(' ')).toContain('Đặt phòng lễ');
     expect(L.viec!.join(' ')).toContain('Thuê rạp');
@@ -256,10 +256,11 @@ describe('Việc riêng, không áp dụng, đội và vùng', () => {
     const c = mk();
     const m = inviteMember(c, { name: 'Chú Bảy', rel: 'Hàng xóm', access: 'link', areas: ['Liên lạc'] });
     expect(m.linkToken).toMatch(/^[A-Z0-9]{12}$/);
+    expect(() => inviteMember(c, { name: 'Hà', rel: 'Con dâu', access: 'full', areas: ['Tài chính'] })).toThrow('số điện thoại');
     assignTask(c, 't3', m.id);
     removeMember(c, m.id);
     expect(findTask(c, 't3')!.owner).toBeNull();
-    inviteMember(c, { name: 'Lan', rel: 'Con gái', access: 'limited', areas: ['Liên lạc'] });
+    inviteMember(c, { name: 'Lan', rel: 'Con gái', access: 'limited', areas: ['Liên lạc'], phone: '0912345672' });
     saveAreas(c, c.areas.map(a => ({ name: a === 'Liên lạc' ? 'Báo tin' : a, orig: a })));
     expect(c.members.find(x => x.name === 'Lan')!.areas).toEqual(['Báo tin']);
     expect(findTask(c, 't3')!.area).toBe('Báo tin');

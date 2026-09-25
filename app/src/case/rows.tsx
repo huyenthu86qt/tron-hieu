@@ -13,7 +13,7 @@ export function useOpenTask() {
 }
 
 export function TaskRow({ t, why, acts = true, from }: { t: TaskView; why?: boolean; acts?: boolean; from: string }) {
-  const { c, base, update, openSheet } = useCase();
+  const { c, base, update, openSheet, me } = useCase();
   const { toast } = useApp();
   const nav = useNavigate();
   const open = useOpenTask();
@@ -38,7 +38,7 @@ export function TaskRow({ t, why, acts = true, from }: { t: TaskView; why?: bool
         {t.status === 'skip' && t.skipReason && <div className="meta"><span>Không áp dụng: {t.skipReason}</span></div>}
         {acts && !finished && (
           <div className="acts">
-            {!t.owner && <button className="btn sm" onClick={() => { update(d => takeTask(d, t.id)); toast('Đã nhận: ' + t.title); }}>Tôi làm</button>}
+            {!t.owner && <button className="btn sm" onClick={() => { update(d => takeTask(d, t.id, me.id)); toast('Đã nhận: ' + t.title); }}>Tôi làm</button>}
             <button className="btn sm" onClick={() => openSheet({ type: 'assign', taskId: t.id })}>{t.owner ? 'Giao lại' : 'Nhờ người khác'}</button>
             <button className="btn sm ghost" onClick={() => open(t.id, from)}>Chi tiết</button>
             {t.go && <button className="btn sm ghost" onClick={() => nav(`${base}/${t.go}`)}>Mở màn liên quan</button>}
@@ -54,7 +54,7 @@ export function DecRow({ d, current }: { d: DecisionView; current?: boolean }) {
   const { base } = useCase();
   return (
     <button className="row" onClick={() => nav(`${base}/quyet-dinh/${d.id}`)} style={current ? { background: 'var(--primary-soft)' } : undefined}>
-      <span className="num-badge"><Icon n={d.kind === 'org' ? 'team' : 'decide'} c="sm" /></span>
+      <span className="num-badge"><Icon n={d.kind === 'org' ? 'team' : d.kind === 'vendor' ? 'vendor' : 'decide'} c="sm" /></span>
       <div className="grow">
         <div className="title">{d.title}</div>
         <div className="meta">

@@ -1,11 +1,15 @@
 // Lớp lưu trữ có kiểu. Phase 1: lưu trên máy (localStorage).
 // Phase 3 thay bằng SupabaseRepo cùng giao diện này — các màn không phải sửa.
 import type { Answers, CaseData, Member } from '../domain/types';
+import { normalizeCase } from '../domain/normalize';
 
-export interface CaseSummary { id: string; name: string; createdAt: string }
+export interface CaseSummary { id: string; name: string; createdAt: string; ownerId?: string; full: boolean; closed: boolean }
 
 export interface CaseRepo {
   list(): Promise<CaseSummary[]>;
+  listAll(): Promise<CaseData[]>;
+  /** Trang thông tin công khai theo đường dẫn */
+  findBySlug(slug: string): Promise<CaseData | null>;
   get(id: string): Promise<CaseData | null>;
   save(c: CaseData): Promise<void>;
   remove(id: string): Promise<void>;
@@ -31,11 +35,22 @@ function writeAll(all: Record<string, CaseData>) {
 export class LocalRepo implements CaseRepo {
   async list() {
     return Object.values(readAll())
-      .map(c => ({ id: c.id, name: c.person.name ? `${c.person.title} ${c.person.name}` : 'Người đã khuất (chưa nhập tên)', createdAt: c.createdAt }))
+      .map(c => ({
+        id: c.id, name: c.person.name ? `${c.person.title} ${c.person.name}` : 'Người đã khuất (chưa nhập tên)', createdAt: c.createdAt,
+        ownerId: c.ownerId, full: c.access?.plan === 'full', closed: !!c.after?.closed,
+      }))
       .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   }
+  async listAll() {
+    return Object.values(readAll()).map(normalizeCase);
+  }
   async get(id: string) {
-    return readAll()[id] ?? null;
+    const c = readAll()[id];
+    return c ? normalizeCase(c) : null;
+  }
+  async findBySlug(slug: string) {
+    const c = Object.values(readAll()).find(x => x.publicPage?.slug === slug);
+    return c ? normalizeCase(c) : null;
   }
   async save(c: CaseData) {
     const all = readAll();
@@ -50,7 +65,7 @@ export class LocalRepo implements CaseRepo {
   async findByLinkToken(token: string) {
     for (const c of Object.values(readAll())) {
       const member = c.members.find(m => m.access === 'link' && m.linkToken === token);
-      if (member) return { c, member };
+      if (member) return { c: normalizeCase(c), member };
     }
     return null;
   }

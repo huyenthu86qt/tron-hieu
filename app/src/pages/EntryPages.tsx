@@ -3,10 +3,11 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import type { Answers } from '../domain/types';
 import { answerLabel, DEFAULT_ANSWERS, earlyDecisions, entryItems, visibleQuestions } from '../domain/entry';
-import { createCase } from '../domain/model';
-import { clearDraft, loadDraft, repo, saveDraft, type EntryDraft } from '../repo/repo';
+import { clearDraft, loadDraft, saveDraft, type EntryDraft } from '../repo/repo';
+import { currentUser, useUser } from '../repo/platformStore';
+import { createCaseFromDraft } from './AuthPages';
 import { Icon } from '../ui/Icon';
-import { LockPill, useApp } from '../ui/common';
+import { LockPill } from '../ui/common';
 
 function useDraft() {
   const [d, setD] = useState<EntryDraft>(() => loadDraft() ?? { answers: { ...DEFAULT_ANSWERS }, step: 0, mine: [], notified: [] });
@@ -16,9 +17,7 @@ function useDraft() {
 
 export function Ent01() {
   const nav = useNavigate();
-  const { toast } = useApp();
-  const [hasCases, setHasCases] = useState(false);
-  useEffect(() => { repo.list().then(l => setHasCases(l.length > 0)); }, []);
+  const user = useUser();
   const start = () => {
     clearDraft();
     nav('/bat-dau/hoan-canh');
@@ -31,11 +30,9 @@ export function Ent01() {
       </div>
       <button className="entry-card main" onClick={start}><span className="eyebrow">Đã xảy ra</span><h3>Người thân vừa mất — cần tổ chức ngay</h3>
         <span className="muted">Trả lời vài câu, app đưa ngay những việc cần làm đầu tiên. Không cần đăng ký.</span></button>
-      <button className="entry-card" onClick={() => toast('Luồng Chuẩn bị trước sẽ mở ở giai đoạn 2')}><span className="eyebrow">Chưa xảy ra</span><h3>Muốn chuẩn bị trước</h3>
+      <button className="entry-card" onClick={() => nav('/chuan-bi/moi')}><span className="eyebrow">Chưa xảy ra</span><h3>Muốn chuẩn bị trước</h3>
         <span className="muted">Cho bản thân hoặc người thân: nguyện vọng, giấy tờ, người liên hệ, ngân sách.</span></button>
-      <p className="muted" style={{ textAlign: 'center' }}>Đã có hồ sơ? {hasCases
-        ? <Link className="btn ghost sm" to="/app">Mở đám hiếu đã tạo</Link>
-        : <button className="btn ghost sm" onClick={() => toast('Đăng nhập sẽ mở ở giai đoạn 3')}>Đăng nhập</button>}</p>
+      <p className="muted" style={{ textAlign: 'center' }}>Đã có hồ sơ? {user ? <Link className="btn ghost sm" to="/app">Mở trang của tôi</Link> : <Link className="btn ghost sm" to="/dang-nhap">Đăng nhập</Link>}</p>
     </div></div>
   );
 }
@@ -74,14 +71,13 @@ export function Ent03() {
   const items = entryItems(a);
   const decs = earlyDecisions(a);
   const mineKey = (key: string) => d.mine.includes(key);
+  // Lưu cần tài khoản: chưa đăng nhập thì tạo tài khoản, câu trả lời được giữ trong bản nháp
   const create = async (to: 'ho-so?moi=1' | 'ban-do') => {
     if (busy) return;
+    if (!currentUser()) { nav('/dang-ky?tiep=tao-dam-hieu'); return; }
     setBusy(true);
-    const mine = items.filter(x => mineKey(x.key)).flatMap(x => x.taskIds);
-    const c = createCase({ answers: a, mine, notified: d.notified });
-    await repo.save(c);
-    clearDraft();
-    nav(`/dh/${c.id}/${to}`, { replace: true });
+    const id = await createCaseFromDraft();
+    nav(id ? `/dh/${id}/${to}` : '/app', { replace: true });
   };
   return (
     <div className="bare"><div className="bare-inner">
@@ -111,7 +107,7 @@ export function Ent03() {
           <div key={x.label} className="row"><div className="grow"><div className="title">{x.label}</div>
             {x.lock && <div className="meta"><LockPill /><span>Sau khi nhập quan không thể làm lại</span></div>}</div></div>
         ))}</div></section>
-      <p className="note">Đám hiếu lưu trên thiết bị này. Tạo tài khoản để cả nhà cùng dùng sẽ mở ở giai đoạn 3.</p>
+      <p className="note">Bấm “Lưu và vào đám hiếu” để tạo tài khoản bằng số điện thoại — những gì anh/chị vừa nhập được giữ nguyên.</p>
     </div>
     <div className="bare-foot"><button className="btn" onClick={() => create('ban-do')} disabled={busy}>Xem toàn bộ các chặng</button>
       <button className="btn primary" style={{ flex: 1 }} onClick={() => create('ho-so?moi=1')} disabled={busy}>Lưu và vào đám hiếu</button></div></div>

@@ -1,33 +1,13 @@
-// Danh sách đám hiếu trên thiết bị (/app) · S-TEAM-06 Link User (/l/:token) · trang chờ giai đoạn sau
+// S-TEAM-06 Link User (/l/:token) · trang không tìm thấy
 import { useEffect, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import type { CaseData, Member } from '../domain/types';
 import { completeTask, reportIssue, startTask } from '../domain/actions';
 import { U1_ID, visibleTasks, VENUE_LABEL } from '../domain/model';
-import { repo, type CaseSummary } from '../repo/repo';
+import { repo } from '../repo/repo';
 import { DN } from '../case/CaseContext';
 import { Icon } from '../ui/Icon';
 import { Banner, StatusPill, useApp } from '../ui/common';
-
-export function HomePage() {
-  const [list, setList] = useState<CaseSummary[] | null>(null);
-  const nav = useNavigate();
-  useEffect(() => { repo.list().then(setList); }, []);
-  return (
-    <div className="bare"><div className="bare-inner">
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, color: 'var(--primary)' }}><Icon n="lotus" /><h1 style={{ fontSize: 24, color: 'var(--text)' }}>Đám hiếu của tôi</h1></div>
-      {list === null ? <p className="muted">Đang tải…</p> : list.length ? (
-        <section className="card"><div className="list">{list.map(x => (
-          <button key={x.id} className="row" onClick={() => nav(`/dh/${x.id}`)}><Icon n="lotus" />
-            <div className="grow"><div className="title">Đám hiếu {x.name}</div><div className="meta"><span>Tạo lúc {new Date(x.createdAt).toLocaleString('vi-VN')}</span></div></div>
-            <Icon n="chev" c="chev" /></button>
-        ))}</div></section>
-      ) : <div className="empty"><span>Chưa có đám hiếu nào trên thiết bị này.</span></div>}
-      <p className="note">Hồ sơ chuẩn bị trước và đăng nhập nhiều thiết bị mở ở các giai đoạn sau.</p>
-    </div>
-    <div className="bare-foot"><Link className="btn primary block" to="/">Bắt đầu đám hiếu mới</Link></div></div>
-  );
-}
 
 export function LinkPage() {
   const { token = '' } = useParams();
@@ -82,14 +62,6 @@ export function LinkPage() {
       ))}
       <p className="muted">Không cần cài ứng dụng. Chỉ thấy việc được nhờ.</p>
     </div></div>
-  );
-}
-
-export function LaterPage({ title, phase }: { title: string; phase: number }) {
-  return (
-    <div className="page"><div className="page-title"><div><h1>{title}</h1><p>Phần này mở ở giai đoạn {phase}</p></div></div>
-      <section className="card card-pad"><div className="empty"><Icon n="settings" c="lg" /><span>Đang xây ở giai đoạn {phase}. Bản mẫu đã duyệt của màn này nằm trong tệp bản mẫu.</span></div></section>
-    </div>
   );
 }
 
