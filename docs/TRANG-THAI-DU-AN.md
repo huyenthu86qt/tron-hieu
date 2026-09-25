@@ -49,7 +49,7 @@
 - ✓ **Xây app — Phase 2: Giao diện phần còn lại** — APPROVE 25/09/2026 (mốc f13fb1f, gồm thanh bên tone nâu, tên Trọn Hiếu, trang /mau)
 - ✓ **Bản xem thử online** — https://tron-hieu.vercel.app (xem như khách trả phí: /mau) · code: https://github.com/huyenthu86qt/tron-hieu (riêng tư) · mỗi lần đẩy code lên GitHub, Vercel tự cập nhật
 - ✓ **Xây app — Phase 3a: Tài khoản thật + dữ liệu trên máy chủ** — APPROVE 25/09/2026 (mốc dbc7b3f). Supabase (Singapore) đã cài, bản online dùng máy chủ; đăng nhập bằng số điện thoại; Admin: 0784869988. Kèm sửa theo góp ý: lọc Việc của tôi, việc của mình nổi màu, xong việc tự về danh sách, trả lại việc kèm lý do, nhãn Chưa có người nhận màu cam đất
-- ● **Phase 3b** — tiếp theo: lưu tệp, link nhờ việc dùng trên máy khác, bản đồ tìm vị trí từ địa chỉ, gửi OTP thật (quên mật khẩu, đổi số)
+- ● **Phase 3b** — phần 1 xong và đã lên bản online (cc2d422, 26/09/2026): lưu tệp thật (kho riêng tư), link nhờ việc dùng trên máy khác, tìm vị trí từ địa chỉ (Photon/OpenStreetMap). Còn: gửi OTP thật (quên mật khẩu, đổi số) — cần Chủ dự án chọn và đăng ký bên gửi tin
 - ○ 3b · ○ 3c · ○ Phase 4 · ○ Working App · ○ Sales Page · ○ Kiểm chứng thị trường
 
 ## Mốc các phase
@@ -59,7 +59,7 @@
 | 2 Giao diện phần còn lại | APPROVE 25/09/2026 | f13fb1f |
 | Bản xem thử online (GitHub + Vercel) | Đã chạy 25/09/2026 — https://tron-hieu.vercel.app | — |
 | 3a Tài khoản thật + dữ liệu trên máy chủ | APPROVE 25/09/2026 | dbc7b3f |
-| 3b Tệp, link mời, bản đồ, OTP thật | Chưa bắt đầu | — |
+| 3b Tệp, link mời, bản đồ, OTP thật | Đang làm — tệp, link, bản đồ xong; còn OTP thật | cc2d422 |
 | 3c Kích hoạt, nhật ký, xuất / xóa dữ liệu | Chưa bắt đầu | — |
 | 4 Thanh toán, vận hành & Working App | Chưa bắt đầu | — |
 
