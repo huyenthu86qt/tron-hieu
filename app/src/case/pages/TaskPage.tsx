@@ -175,6 +175,7 @@ function Actions({ t }: { t: TaskView }) {
       ? <p className="muted" style={{ color: 'var(--danger)' }}><Icon n="lock" c="sm" /> Việc không thể quay lại: cần xong {openDeps.length} việc phía trước mới được đánh dấu xong.</p>
       : openDeps.length > 0 && <p className="muted"><Icon n="alert" c="sm" /> Còn {openDeps.length} việc phía trước chưa xong.</p>}
     <button className="btn block" onClick={() => openSheet({ type: 'assign', taskId: t.id })}><Icon n="team" c="sm" />{t.owner ? 'Giao lại' : 'Giao việc'}</button>
+    {t.owner === me.id && <button className="btn block ghost" onClick={() => openSheet({ type: 'return', taskId: t.id })}><Icon n="back" c="sm" />Trả lại việc — tôi không làm được</button>}
     {t.status !== 'issue' && (issueOpen
       ? <div className="stack" style={{ gap: 8 }}>
           <div className="field"><label htmlFor="issueTxt">Gặp vấn đề gì?</label><textarea className="input" id="issueTxt" value={issue} onChange={e => setIssue(e.target.value)} placeholder="Ví dụ: Rạp chưa xác nhận giờ dựng" /></div>

@@ -55,6 +55,7 @@ export function TaskRow({ t, why, acts = true, from }: { t: TaskView; why?: bool
           <div className="acts">
             {!t.owner && <button className="btn sm" onClick={() => { update(d => takeTask(d, t.id, me.id)); toast('Đã nhận: ' + t.title); }}>Tôi làm</button>}
             <button className="btn sm" onClick={() => openSheet({ type: 'assign', taskId: t.id })}>{t.owner ? 'Giao lại' : 'Nhờ người khác'}</button>
+            {mine && <button className="btn sm ghost" onClick={() => openSheet({ type: 'return', taskId: t.id })}>Trả lại việc</button>}
             <button className="btn sm ghost" onClick={() => open(t.id, from)}>Chi tiết</button>
             {t.go && <button className="btn sm ghost" onClick={() => nav(`${base}/${t.go}`)}>Mở màn liên quan</button>}
           </div>

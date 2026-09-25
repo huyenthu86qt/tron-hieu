@@ -29,6 +29,17 @@ export function takeTask(c: CaseData, id: string, memberId: string = U1_ID, now?
   log(c, `${memberName(c, memberId)} nhận việc`, id, now);
 }
 
+/** Người được giao trả lại việc: việc về trạng thái chưa có người nhận, ghi lý do vào lịch sử để người đại diện giao cho người khác */
+export function returnTask(c: CaseData, id: string, reason: string, now?: Date) {
+  const t = inst(c, id);
+  if (!t || !t.owner || t.status === 'done') return;
+  const who = memberName(c, t.owner) || 'Người phụ trách';
+  t.owner = null;
+  t.assignNote = undefined;
+  if (t.status !== 'issue') t.status = 'todo';
+  log(c, `${who} trả lại việc${reason.trim() ? ' · Lý do: ' + reason.trim() : ''} — cần giao người khác`, id, now);
+}
+
 export function startTask(c: CaseData, id: string, now?: Date) {
   const t = inst(c, id);
   if (!t || t.status === 'done') return;

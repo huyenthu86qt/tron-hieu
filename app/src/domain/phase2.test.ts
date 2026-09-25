@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Answers, CaseData, DirVendor, GeoPoint } from './types';
 import { createCase, decide, findDecision, U1_ID } from './model';
-import { savePerson, inviteMember } from './actions';
+import { savePerson, inviteMember, assignTask, returnTask } from './actions';
 import { DEFAULT_ANSWERS } from './entry';
 import { normalizeCase, activatePreNeed } from './normalize';
 import {
@@ -264,5 +264,20 @@ describe('Chuẩn bị trước → kích hoạt', () => {
     expect(c.tasks.find(t => t.id === 'm4c')!.note).toContain('Tràng hạt');
     expect(c.milestones!.sel.gio).toBe(true);
     expect(() => activatePreNeed({ ...p, caseId: c.id }, { death: '2026-09-24', place: 'hospital', org: 'family' }, 'u', 'u')).toThrow('đã được kích hoạt');
+  });
+});
+
+describe('Trả lại việc', () => {
+  it('người được giao trả lại: việc về chưa có người nhận, lịch sử ghi lý do', () => {
+    const c = normalizeCase(createCase({ answers: DEFAULT_ANSWERS }));
+    const m = inviteMember(c, { name: 'Lan', rel: 'Con gái', access: 'full', areas: [c.areas[0]], phone: '0912000111' });
+    const t = c.tasks.find(x => x.status === 'todo')!;
+    assignTask(c, t.id, m.id, 'Nhờ em');
+    t.status = 'doing';
+    returnTask(c, t.id, 'Ở xa, không về kịp');
+    expect(t.owner).toBeNull();
+    expect(t.status).toBe('todo');
+    expect(t.assignNote).toBeUndefined();
+    expect(c.history.at(-1)!.text).toContain('Lan trả lại việc · Lý do: Ở xa, không về kịp');
   });
 });

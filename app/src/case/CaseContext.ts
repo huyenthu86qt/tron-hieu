@@ -10,6 +10,7 @@ import { canFinance } from '../domain/finance';
 export type SheetState =
   | { type: 'assign'; taskId: string }
   | { type: 'lock'; taskId: string }
+  | { type: 'return'; taskId: string }
   | { type: 'taskform'; mode: 'new'; phase: number }
   | { type: 'taskform'; mode: 'edit'; id: string }
   | { type: 'invite' }

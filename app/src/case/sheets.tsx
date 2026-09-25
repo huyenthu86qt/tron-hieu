@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { Access, Member } from '../domain/types';
 import {
-  addCustomTask, areaUse, initials, assignTask, completeTask, deleteCustomTask, editTask, inviteMember, removeMember, renewLink,
+  addCustomTask, areaUse, initials, assignTask, completeTask, returnTask, deleteCustomTask, editTask, inviteMember, removeMember, renewLink,
   restoreTask, saveAreas, saveMember, skipTask, type AreaEdit, type TaskForm,
 } from '../domain/actions';
 import { dependencies, findTask, U1_ID, visibleTasks } from '../domain/model';
@@ -19,6 +19,7 @@ export function CaseSheets() {
   switch (sheet.type) {
     case 'more': return <MoreSheet />;
     case 'lock': return <LockSheet taskId={sheet.taskId} />;
+    case 'return': return <ReturnSheet taskId={sheet.taskId} />;
     case 'assign': return <AssignSheet taskId={sheet.taskId} />;
     case 'taskform': return <TaskFormSheet key={sheet.mode === 'edit' ? sheet.id : 'new'} />;
     case 'invite': return <InviteSheet />;
@@ -380,6 +381,40 @@ function SearchSheet() {
         <button key={g.id} className="row" onClick={() => go('khach-vieng/danh-sach')}><div className="grow"><div className="title">{g.name}</div><div className="meta"><span>{g.group ?? 'Khác'}</span></div></div></button>)}</div></section>}
       {none && <div className="empty"><span>Không thấy kết quả cho “{q}”.</span></div>}
       {!k && <p className="muted">Mẹo: trên máy tính bấm Ctrl + K (⌘ + K trên Mac) để mở nhanh.</p>}
+    </Sheet>
+  );
+}
+
+/* ---------- Trả lại việc (người được giao không làm được) ---------- */
+const RETURN_REASONS = ['Bận việc khác', 'Ở xa, không về kịp', 'Không rành việc này', 'Sức khỏe không cho phép'];
+
+function ReturnSheet({ taskId }: { taskId: string }) {
+  const { c, update, openSheet } = useCase();
+  const { toast } = useApp();
+  const back = useBackToList();
+  const t = findTask(c, taskId);
+  const [reason, setReason] = useState('');
+  const [err, setErr] = useState<string | null>(null);
+  if (!t) return null;
+  const close = () => openSheet(null);
+  const done = () => {
+    const e = update(d => returnTask(d, t.id, reason));
+    if (e) { setErr(e); return; }
+    close();
+    toast('Đã trả lại việc. Người đại diện gia đình sẽ giao cho người khác.');
+    back();
+  };
+  return (
+    <Sheet title="Trả lại việc" onClose={close} foot={<>
+      <button className="btn" onClick={close}>Hủy</button>
+      <button className="btn primary" onClick={done}>Trả lại việc</button>
+    </>}>
+      <Banner kind="info" icon="alert"><b>{t.title}</b></Banner>
+      <p className="muted">Việc sẽ về trạng thái “Chưa có người nhận” để người đại diện gia đình giao cho người khác. Không sao cả — cứ báo sớm để cả nhà kịp xoay xở.</p>
+      <div className="field"><label htmlFor="retReason">Lý do (không bắt buộc)</label>
+        <Chips items={RETURN_REASONS} isOn={x => reason === x} onToggle={x => setReason(reason === x ? '' : x)} />
+        <textarea className="input" id="retReason" value={reason} onChange={e => setReason(e.target.value)} placeholder="Ví dụ: Chiều nay con phải trực ở bệnh viện" /></div>
+      <ErrorBanner err={err} />
     </Sheet>
   );
 }
