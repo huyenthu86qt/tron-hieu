@@ -1,7 +1,7 @@
 // /mau — CHỈ KHI CHẠY THỬ: dựng hoặc xóa khách hàng trả phí mẫu trên trình duyệt đang mở.
 import { useState } from 'react';
-import { Icon } from '../ui/Icon';
 import { Banner } from '../ui/common';
+import { BrandLine } from '../ui/brand';
 
 export default function DemoPage() {
   const [busy, setBusy] = useState(false);
@@ -14,7 +14,7 @@ export default function DemoPage() {
   const clear = () => { localStorage.clear(); window.location.href = '/'; };
   return (
     <div className="bare"><div className="bare-inner" style={{ maxWidth: 560, justifyContent: 'center' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--primary)' }}><Icon n="lotus" /><b style={{ fontFamily: 'var(--serif)' }}>Đám Hiếu · Bản chạy thử</b></div>
+      <BrandLine extra="Bản chạy thử" />
       <h1 style={{ fontSize: 24 }}>Xem như khách hàng trả phí</h1>
       <p className="muted">Dựng sẵn một đám hiếu mẫu đã <b>Mở đầy đủ</b> (có đội, nhà cung cấp, tài chính, khách viếng, trang cáo phó) và một hồ sơ Chuẩn bị trước đã trả phí. Mọi tên có chữ “(mẫu)”.</p>
       <Banner kind="warn">Dữ liệu đang có trên trình duyệt này sẽ được thay bằng dữ liệu mẫu.</Banner>

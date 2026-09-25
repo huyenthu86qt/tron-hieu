@@ -14,6 +14,8 @@ import {
 } from '../repo/platformStore';
 import { Icon, type IconName } from '../ui/Icon';
 import { Banner, Chips, ErrorBanner, Opts, Sheet, toggleIn, useApp } from '../ui/common';
+import { BRAND } from '../ui/brand';
+import { SideLogo } from '../ui/brand';
 
 const fmtAt = (iso?: string) => (iso ? new Date(iso).toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' }) : '—');
 const COND: Record<VendorCond, string> = { both: 'Cả mai táng và hỏa táng', burial: 'Chỉ mai táng', cremation: 'Chỉ hỏa táng' };
@@ -40,15 +42,15 @@ export function AdminShell({ title, back, children }: { title: string; back?: st
   const cur = (to: string) => (to === '/admin' ? loc.pathname === to : loc.pathname.startsWith(to)) ? 'page' : undefined;
   if (mobile) return (
     <div className="shell-m"><header className="top-m">{back && <button className="icon-btn" onClick={() => nav(back)} aria-label="Quay lại"><Icon n="back" /></button>}
-      <div className="t"><h2>{title}</h2><p>Quản trị · Đám Hiếu</p></div>
+      <div className="t"><h2>{title}</h2><p>Quản trị · {BRAND}</p></div>
       <select className="input" style={{ width: 'auto', minHeight: 36 }} value={NAVS.find(n => cur(n[2]))?.[2] ?? '/admin'} onChange={e => nav(e.target.value)} aria-label="Mục quản trị">{NAVS.map(([l, , to]) => <option key={to} value={to}>{l}</option>)}</select></header>
       <main className="content" style={{ paddingBottom: 24 }}>{children}</main></div>
   );
   return (
-    <div className="shell-d"><nav className="side" aria-label="Điều hướng quản trị"><div className="logo"><Icon n="lotus" c="lg" />Quản trị</div>
+    <div className="shell-d"><nav className="side" aria-label="Điều hướng quản trị"><SideLogo label="Quản trị" />
       {NAVS.map(([l, i, to]) => <button key={to} className="nav-item" onClick={() => nav(to)} aria-current={cur(to)}><Icon n={i} />{l}{to === '/admin/chua-khop' && unmatched > 0 && <span className="count">{unmatched}</span>}</button>)}
       <div className="sep" /><button className="nav-item" onClick={() => { logout(); nav('/admin/dang-nhap'); }}><Icon n="back" />Đăng xuất</button></nav>
-      <div className="main-d"><header className="head-d"><div className="case"><h2>Quản trị hệ thống</h2><p>Chỉ đội vận hành Đám Hiếu · {user.name}</p></div><div className="tools"><div className="avatar">A</div></div></header>
+      <div className="main-d"><header className="head-d"><div className="case"><h2>Quản trị hệ thống</h2><p>Chỉ đội vận hành {BRAND} · {user.name}</p></div><div className="tools"><div className="avatar">A</div></div></header>
         <main className="content">{children}</main></div></div>
   );
 }
@@ -68,7 +70,7 @@ export function AdminLoginPage() {
   };
   return (
     <div className="bare"><div className="bare-inner" style={{ maxWidth: 440 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--primary)' }}><Icon n="lotus" /><b style={{ fontFamily: 'var(--serif)' }}>Quản trị Đám Hiếu</b></div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--primary)' }}><Icon n="lotus" /><b style={{ fontFamily: 'var(--serif)' }}>Quản trị {BRAND}</b></div>
       <h1 style={{ fontSize: 24 }}>{hasAdmin ? 'Đăng nhập quản trị' : 'Tạo tài khoản Admin (bản chạy thử)'}</h1>
       {user && !user.isAdmin && <Banner kind="warn">Tài khoản đang đăng nhập không phải Admin.</Banner>}
       {!hasAdmin && <Banner kind="upd">Giai đoạn 3 tài khoản Admin do chủ hệ thống tạo trên máy chủ, không tự đăng ký. Ở bản chạy thử trên máy, tạo một tài khoản Admin để thử các màn quản trị.</Banner>}

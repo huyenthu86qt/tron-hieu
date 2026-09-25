@@ -1,4 +1,4 @@
-# TRẠNG THÁI DỰ ÁN — APP ĐÁM HIẾU
+# TRẠNG THÁI DỰ ÁN — APP TRỌN HIẾU (trước đây: App Đám Hiếu)
 
 **Cập nhật:** 2026-09-25 · Snapshot v7
 
@@ -19,6 +19,7 @@
 | `prototype/ban-mau-dam-hieu.html` | Bản mẫu HTML đã duyệt (bản online: https://claude.ai/artifact/EEVYDuFwx3ndNYtTeNUgkp) |
 
 ## Quyết định vận hành đã chốt
+- **Tên thương hiệu: Trọn Hiếu** · câu định vị **“Chu toàn việc hiếu – Trọn vẹn nghĩa tình”** (Chủ dự án chốt 2026-09-25). Danh từ “đám hiếu” trong câu chữ (Đám hiếu Cụ ông…, Đội đám hiếu) giữ nguyên. Nguồn trong code: `app/src/ui/brand.tsx`.
 - Thu tiền: trả một lần **mỗi đám hiếu** (dùng đến hết giỗ đầu) + **gói Chuẩn bị trước** (miễn phí tạo hồ sơ; trả phí để lưu giấy tờ, chia sẻ, kích hoạt; kích hoạt thì đám hiếu mở đầy đủ, không thu lần hai).
 - Miễn phí tới Bản đồ; trả phí khi mời người hỗ trợ và dùng Nhà cung cấp, Tài chính, Khách viếng, Hậu tang.
 - Đăng nhập: số điện thoại + mật khẩu; OTP khi đăng ký và khi quên mật khẩu.

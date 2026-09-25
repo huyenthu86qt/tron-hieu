@@ -14,6 +14,7 @@ import { Icon } from '../../ui/Icon';
 import { Banner, Chips, ErrorBanner, Sheet, toggleIn, useApp } from '../../ui/common';
 import { useCase } from '../CaseContext';
 import { PaidGate } from '../Paywall';
+import { BRAND } from '../../ui/brand';
 
 const fmtAt = (iso?: string) => (iso ? new Date(iso).toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' }) : '');
 export const pageUrl = (slug: string) => `${window.location.origin}/t/${slug}`;
@@ -122,7 +123,7 @@ export function ObitBody({ c, preview }: { c: CaseData; preview?: boolean }) {
       <section className="card card-pad sched"><dl className="kv">{schedule(c).map(([a, b]) => <Fragment key={a}><dt>{a}</dt><dd>{b}</dd></Fragment>)}
         <dt>Địa điểm</dt><dd><b>{venueLabel(c)}</b>{site.address && <><br />{site.address}</>}{site.geo && <><br /><a href={`https://www.google.com/maps/search/?api=1&query=${site.geo.lat},${site.geo.lng}`} target="_blank" rel="noreferrer">Chỉ đường</a></>}</dd></dl></section>
       <p className="muted">Tang chủ: {u1.name} ({u1.rel.toLowerCase()}){p.showPhone && p.phone ? <> · <span className="num">{fmtPhone(p.phone)}</span></> : null}</p>
-      <p className="muted" style={{ fontSize: 12 }}>Trang do gia đình đăng qua Đám Hiếu</p>
+      <p className="muted" style={{ fontSize: 12 }}>Trang do gia đình đăng qua {BRAND}</p>
     </div>
   );
 }

@@ -8,6 +8,7 @@ import { useUser } from '../repo/platformStore';
 import { DN_TEXT } from '../domain/text';
 import { Icon, type IconName } from '../ui/Icon';
 import { useApp } from '../ui/common';
+import { SideLogo } from '../ui/brand';
 
 const ITEMS: [string, IconName, string][] = [['Trang chủ', 'now', '/app'], ['Chuẩn bị trước', 'doc', '/chuan-bi'], ['Thông báo', 'bell', '/thong-bao'], ['Tài khoản', 'user', '/tai-khoan']];
 
@@ -50,7 +51,7 @@ export function AccountShell({ title, back, children }: { title: string; back?: 
   return (
     <div className="shell-d">
       <nav className="side" aria-label="Điều hướng chính">
-        <div className="logo"><Icon n="lotus" c="lg" />Đám Hiếu</div>
+        <SideLogo />
         {ITEMS.map(([l, i, to]) => <button key={to} className="nav-item" onClick={() => nav(to)} aria-current={cur(to)}><Icon n={i} />{l}</button>)}
         {cases && cases.length > 0 && <>
           <div className="sep" /><div className="eyebrow" style={{ padding: '4px 12px' }}>Đám hiếu đang lo</div>

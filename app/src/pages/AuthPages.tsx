@@ -12,6 +12,7 @@ import { entryItems } from '../domain/entry';
 import { U1_ID } from '../domain/model';
 import { Icon } from '../ui/Icon';
 import { Banner, ErrorBanner, useApp } from '../ui/common';
+import { BrandLine } from '../ui/brand';
 
 /** Tạo đám hiếu từ câu trả lời đã nhập (giữ nguyên sau khi đăng ký / đăng nhập) */
 export async function createCaseFromDraft(): Promise<string | null> {
@@ -49,7 +50,7 @@ function ContinueAfterAuth({ tiep }: { tiep: string }) {
 function AuthFrame({ title, sub, children, foot }: { title: string; sub?: ReactNode; children: ReactNode; foot?: ReactNode }) {
   return (
     <div className="bare"><div className="bare-inner" style={{ maxWidth: 440 }}>
-      <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--primary)', textDecoration: 'none' }}><Icon n="lotus" /><b style={{ fontFamily: 'var(--serif)' }}>Đám Hiếu</b></Link>
+      <Link to="/" style={{ textDecoration: 'none' }}><BrandLine /></Link>
       <div><h1 style={{ fontSize: 26 }}>{title}</h1>{sub && <p className="muted" style={{ marginTop: 6 }}>{sub}</p>}</div>
       {children}
       {foot}

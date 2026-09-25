@@ -1,13 +1,13 @@
 // Trang pháp lý khung — CHƯA phải bản chính thức. Cần rà soát theo quy định bảo vệ dữ liệu cá nhân hiện hành của Việt Nam trước khi mở bán.
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import { Icon } from '../ui/Icon';
 import { Banner } from '../ui/common';
+import { BrandLine } from '../ui/brand';
 
 function Legal({ title, children }: { title: string; children: ReactNode }) {
   return (
     <div className="bare"><div className="bare-inner" style={{ maxWidth: 760 }}>
-      <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--primary)', textDecoration: 'none' }}><Icon n="lotus" /><b style={{ fontFamily: 'var(--serif)' }}>Đám Hiếu</b></Link>
+      <Link to="/" style={{ textDecoration: 'none' }}><BrandLine /></Link>
       <h1 style={{ fontSize: 26 }}>{title}</h1>
       <Banner kind="upd">Bản khung. Nội dung chính thức cần được rà soát pháp lý trước khi mở bán.</Banner>
       <div className="stack" style={{ gap: 14, lineHeight: 1.7 }}>{children}</div>
@@ -20,7 +20,7 @@ const S = ({ h, children }: { h: string; children: ReactNode }) => <section clas
 export function TermsPage() {
   return (
     <Legal title="Điều khoản sử dụng">
-      <S h="1. Dịch vụ">Đám Hiếu là công cụ giúp gia đình tổ chức việc tang: bản đồ việc, phân công, quyết định, nhà cung cấp, tài chính, khách viếng, hậu tang. App không thay thế tư vấn pháp lý, y tế hay nghi lễ của người có thẩm quyền.</S>
+      <S h="1. Dịch vụ">Trọn Hiếu là công cụ giúp gia đình tổ chức việc tang: bản đồ việc, phân công, quyết định, nhà cung cấp, tài chính, khách viếng, hậu tang. App không thay thế tư vấn pháp lý, y tế hay nghi lễ của người có thẩm quyền.</S>
       <S h="2. Tài khoản">Đăng ký bằng số điện thoại và mật khẩu; xác minh bằng mã OTP. Người dùng giữ bí mật mật khẩu và chịu trách nhiệm với hoạt động trên tài khoản của mình.</S>
       <S h="3. Gói trả phí">Phần miễn phí: hồ sơ người mất, Bây giờ, Bản đồ, Chi tiết việc, Cần quyết. Gói “Mở đầy đủ” áp dụng cho một đám hiếu, trả một lần, dùng đến hết giỗ đầu. Gói “Chuẩn bị trước” áp dụng cho một hồ sơ chuẩn bị; khi kích hoạt, đám hiếu được mở đầy đủ, không thu lần hai. Giá hiển thị tại thời điểm tạo đơn.</S>
       <S h="4. Thanh toán và hoàn tiền">Thanh toán bằng chuyển khoản ngân hàng hoặc mã QR, xác nhận tự động qua đối tác thanh toán. Yêu cầu hoàn tiền được xử lý thủ công, có ghi lý do và lưu vết. [Chính sách hoàn tiền chi tiết — cần bổ sung]</S>

@@ -10,11 +10,12 @@ import { repo } from '../repo/repo';
 import { expireOrders, placeOrder, simulateBankTx, usePlatform, useUser } from '../repo/platformStore';
 import { Icon } from '../ui/Icon';
 import { Banner, ErrorBanner, useApp } from '../ui/common';
+import { BrandLine } from '../ui/brand';
 
 function Frame({ children, foot }: { children: ReactNode; foot?: ReactNode }) {
   return (
     <div className="bare"><div className="bare-inner" style={{ maxWidth: 560 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--primary)' }}><Icon n="lotus" /><b style={{ fontFamily: 'var(--serif)' }}>Đám Hiếu</b><span className="muted" style={{ marginLeft: 'auto' }}>Thanh toán</span></div>
+      <BrandLine extra="Thanh toán" />
       <Banner kind="upd" icon="alert"><b>Bản chạy thử — chưa thanh toán thật.</b> Đơn và trạng thái thanh toán đang giả lập; không chuyển tiền thật ở giai đoạn này.</Banner>
       {children}
     </div>{foot && <div className="bare-foot">{foot}</div>}</div>

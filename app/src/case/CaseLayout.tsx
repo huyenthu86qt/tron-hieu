@@ -12,6 +12,7 @@ import { useApp } from '../ui/common';
 import { CaseContext, caseLine, DN, permsOf, useCase, type SheetState } from './CaseContext';
 import { metaOf, NAV } from './nav';
 import { CaseSheets } from './sheets';
+import { SideLogo } from '../ui/brand';
 
 export function CaseLayout() {
   const { id = '' } = useParams();
@@ -125,7 +126,7 @@ function Shell() {
   return (
     <div className="shell-d">
       <nav className="side" aria-label="Điều hướng chính">
-        <div className="logo"><Icon n="lotus" c="lg" />Đám Hiếu</div>
+        <SideLogo />
         {NAV.map(it => (
           <button key={it.k} className="nav-item" onClick={() => go(it.to)} aria-current={m.nav === it.k ? 'page' : undefined}>
             <Icon n={it.icon} />{it.label}{it.k === 'dec' && n > 0 && <span className="count">{n}</span>}

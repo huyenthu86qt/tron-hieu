@@ -8,6 +8,7 @@ import { currentUser, useUser } from '../repo/platformStore';
 import { createCaseFromDraft } from './AuthPages';
 import { Icon } from '../ui/Icon';
 import { LockPill } from '../ui/common';
+import { BRAND, TAGLINE } from '../ui/brand';
 
 function useDraft() {
   const [d, setD] = useState<EntryDraft>(() => loadDraft() ?? { answers: { ...DEFAULT_ANSWERS }, step: 0, mine: [], notified: [] });
@@ -25,7 +26,8 @@ export function Ent01() {
   return (
     <div className="bare"><div className="bare-inner" style={{ justifyContent: 'center' }}>
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, textAlign: 'center', color: 'var(--primary)' }}>
-        <Icon n="lotus" c="lg" /><h1 style={{ fontSize: 30, color: 'var(--text)' }}>Đám Hiếu</h1>
+        <Icon n="lotus" c="lg" /><h1 style={{ fontSize: 30, color: 'var(--text)' }}>{BRAND}</h1>
+        <p style={{ fontFamily: 'var(--serif)', fontSize: 17, color: 'var(--primary)' }}>{TAGLINE}</p>
         <p className="muted" style={{ fontSize: 15, maxWidth: '34ch' }}>Cùng gia đình lo trọn việc hiếu — biết việc gì trước, ai lo phần nào, không bỏ sót.</p>
       </div>
       <button className="entry-card main" onClick={start}><span className="eyebrow">Đã xảy ra</span><h3>Người thân vừa mất — cần tổ chức ngay</h3>
