@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { lazy, Suspense, type ReactNode } from 'react';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import { AppFrame } from './ui/common';
 import { Ent01, Ent02, Ent03 } from './pages/EntryPages';
@@ -28,6 +28,9 @@ import { ComposePage, GuestListPage, GuestsPage, PublicPage, ShiftPage } from '.
 import { AfterPage, ClosePage, MilestonePage, MilestonesPage, ProceduresPage, ThanksPage } from './case/pages/AfterPages';
 import { DocsPage, HistoryPage, IntakePage, MyTasksPage, SettingsPage } from './case/pages/MiscPages';
 
+// Chỉ khi chạy thử: trang dựng dữ liệu mẫu (không vào bản build thật)
+const DemoPage = import.meta.env.DEV ? lazy(() => import('./dev/DemoPage')) : null;
+
 const A = (el: ReactNode) => <RequireAuth>{el}</RequireAuth>;
 const AD = (el: ReactNode) => <RequireAuth admin>{el}</RequireAuth>;
 
@@ -47,6 +50,7 @@ export default function App() {
           <Route path="/bao-mat" element={<PrivacyPage />} />
           <Route path="/l/:token" element={<LinkPage />} />
           <Route path="/t/:slug" element={<PublicPage />} />
+          {DemoPage && <Route path="/mau" element={<Suspense fallback={null}><DemoPage /></Suspense>} />}
 
           {/* Không gian của tôi */}
           <Route path="/app" element={A(<HomePage />)} />
