@@ -48,7 +48,7 @@
 - ✓ **Xây app — Phase 1: Nền giao diện & phần lõi** — APPROVE 25/09/2026 (mốc caae070)
 - ✓ **Xây app — Phase 2: Giao diện phần còn lại** — APPROVE 25/09/2026 (mốc f13fb1f, gồm thanh bên tone nâu, tên Trọn Hiếu, trang /mau)
 - ✓ **Bản xem thử online** — https://tron-hieu.vercel.app (xem như khách trả phí: /mau) · code: https://github.com/huyenthu86qt/tron-hieu (riêng tư) · mỗi lần đẩy code lên GitHub, Vercel tự cập nhật
-- ● **Phase 3a** — code xong (c0fdb23 máy chủ, 486c18d app); chờ Chủ dự án dán 2 biến môi trường vào Vercel và đăng ký tài khoản để bật Admin
+- ● **Phase 3a** — code xong (c0fdb23 máy chủ, 486c18d app); bản online đã nối máy chủ Supabase (25/09/2026). Chờ Chủ dự án đăng ký tài khoản để bật Admin, rồi thử cả nhà dùng chung
 - ○ Phase 3a · ○ 3b · ○ 3c · ○ Phase 4 · ○ Working App · ○ Sales Page · ○ Kiểm chứng thị trường
 
 ## Mốc các phase
