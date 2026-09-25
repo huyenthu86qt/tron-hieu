@@ -25,11 +25,10 @@ export function useBackToList() {
 }
 
 export function TaskRow({ t, why, acts = true, from }: { t: TaskView; why?: boolean; acts?: boolean; from: string }) {
-  const { c, base, update, openSheet, me } = useCase();
+  const { base, update, openSheet, me } = useCase();
   const { toast } = useApp();
   const nav = useNavigate();
   const open = useOpenTask();
-  const o = memberOf(c, t.owner);
   const finished = t.status === 'done' || t.status === 'skip';
   const mine = !!t.owner && t.owner === me.id;
   return (
@@ -39,9 +38,7 @@ export function TaskRow({ t, why, acts = true, from }: { t: TaskView; why?: bool
         <div className="meta">
           <StatusPill s={t.status} />{t.lock && <LockPill />}
           <span><Icon n="now" c="sm" /> {t.due}</span>
-          {mine ? <span className="pill mine"><Icon n="user" c="sm" />Việc của tôi</span>
-            : o ? <span className="pill owner"><Icon n="user" c="sm" />{o.name}</span>
-            : <span className="pill nobody">Chưa có người nhận</span>}
+          <OwnerPill owner={t.owner} />
         </div>
         {why && (
           <div className="meta">
@@ -83,4 +80,13 @@ export function DecRow({ d, current }: { d: DecisionView; current?: boolean }) {
       <Icon n="chev" c="chev" />
     </button>
   );
+}
+
+/** Nhãn người phụ trách: Việc của tôi (nâu đậm) · tên người khác (be) · Chưa có người nhận (cam đất, cần chú ý) */
+export function OwnerPill({ owner }: { owner: string | null | undefined }) {
+  const { c, me } = useCase();
+  if (owner && owner === me.id) return <span className="pill mine"><Icon n="user" c="sm" />Việc của tôi</span>;
+  const o = owner ? memberOf(c, owner) : null;
+  if (o) return <span className="pill owner"><Icon n="user" c="sm" />{o.name}</span>;
+  return <span className="pill nobody"><Icon n="alert" c="sm" />Chưa có người nhận</span>;
 }

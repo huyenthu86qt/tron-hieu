@@ -32,8 +32,14 @@
 .row.mine{background:var(--accent-soft);box-shadow:inset 4px 0 0 var(--accent)}
 .pill.mine{background:var(--primary);color:var(--primary-ink);font-weight:600}
 .pill.owner{background:var(--primary-soft);color:var(--primary)}
-.pill.nobody{border:1px dashed var(--muted);color:var(--muted)}
+.pill.nobody{background:var(--open-soft);color:var(--open);border:1.5px solid var(--open);font-weight:600}
 
 /* Thanh nhắc đang xem dữ liệu mẫu: ghim đáy màn hình, không chen vào bố cục */
 .demo-bar{position:fixed;left:12px;bottom:12px;z-index:60;max-width:min(300px,calc(100vw - 32px));background:var(--accent-soft);color:var(--text);border:1px solid var(--accent);border-radius:999px;padding:6px 14px;font-size:13px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.12)}
 @media (max-width:767px){.demo-bar{bottom:84px}}
+
+/* Màu “Chưa có người nhận”: cam đất — nổi bật để cả nhà thấy việc còn trống, vẫn cùng tông nâu–vàng của app,
+   khác màu Có vấn đề (đỏ gạch), Đang làm (vàng) và Việc của tôi (nâu đậm) */
+:root{--open:#A9531A;--open-soft:#FCE9DA}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--open:#E8A064;--open-soft:#3D2A1C}}
+:root[data-theme="dark"]{--open:#E8A064;--open-soft:#3D2A1C}

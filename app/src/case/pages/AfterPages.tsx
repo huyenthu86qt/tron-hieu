@@ -13,6 +13,7 @@ import { DN_TEXT } from '../../domain/text';
 import { Icon } from '../../ui/Icon';
 import { Banner, ErrorBanner, useApp } from '../../ui/common';
 import { useCase } from '../CaseContext';
+import { OwnerPill } from '../rows';
 import { PaidGate } from '../Paywall';
 
 const fmtAt = (iso?: string) => (iso ? new Date(iso).toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' }) : '');
@@ -141,7 +142,7 @@ function Milestone() {
       <section className="card"><div className="sec-h card-pad" style={{ margin: 0, paddingBottom: 4 }}><h3>Việc cho mốc này</h3>
         <button className="btn sm" style={{ marginLeft: 'auto' }} onClick={() => openSheet({ type: 'taskform', mode: 'new', phase: 15 })}><Icon n="plus" c="sm" />Thêm việc</button></div>
         {related.length ? <div className="list">{related.map(t => <button key={t.id} className="row" onClick={() => nav(`${base}/viec/${t.id}`, { state: { from: `hau-tang/moc/${mid}` } })}><div className="grow"><div className="title">{t.title}</div>
-          <div className="meta"><span>{c.members.find(x => x.id === t.owner)?.name ?? 'Chưa có người nhận'}</span><span>{t.due}</span></div></div><Icon n="chev" c="chev" /></button>)}</div>
+          <div className="meta"><OwnerPill owner={t.owner} /><span>{t.due}</span></div></div><Icon n="chev" c="chev" /></button>)}</div>
           : <p className="muted" style={{ padding: '0 16px 14px' }}>Thêm việc như mời thầy, đặt cỗ, báo họ hàng — đặt tên có chữ “{m.name}” để việc hiện ở đây.</p>}</section>
       <p className="note">App nhắc trong mục Thông báo trước mỗi mốc. Nhắc qua tin nhắn mở ở giai đoạn sau.</p>
     </div>

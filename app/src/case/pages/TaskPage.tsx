@@ -11,7 +11,7 @@ import { PHASES } from '../../domain/templates';
 import { Icon } from '../../ui/Icon';
 import { Banner, KindPill, LockPill, StatusPill, useApp } from '../../ui/common';
 import { memberOf, useCase } from '../CaseContext';
-import { useBackToList, useOpenTask } from '../rows';
+import { OwnerPill, useBackToList, useOpenTask } from '../rows';
 
 const fmtAt = (iso: string) => {
   const d = new Date(iso), p = (n: number) => String(n).padStart(2, '0');
@@ -55,12 +55,12 @@ export function TaskPage() {
       </div>
       <div className="list" style={{ overflowY: 'auto' }}>
         {list.length ? list.map(x => {
-          const on = x.id === t.id, mine = !!x.owner && x.owner === me.id, ow = memberOf(c, x.owner)?.name;
+          const on = x.id === t.id, mine = !!x.owner && x.owner === me.id;
           return (
             <button key={x.id} className={mine && !on ? 'row mine' : 'row'} onClick={() => open(x.id, ctxNow ? '' : `ban-do?chang=${x.phase}`)} aria-current={on ? 'true' : undefined}
               style={on ? { background: 'var(--primary-soft)', boxShadow: 'inset 3px 0 0 var(--accent)' } : undefined}>
               <div className="grow"><div className="title" style={on ? { color: 'var(--primary)', fontWeight: 600 } : undefined}>{x.title}</div>
-                <div className="meta"><StatusPill s={x.status} />{x.lock && <Icon n="lock" c="sm" />}{mine ? <span className="pill mine">Việc của tôi</span> : ow ? <span className="pill owner">{ow}</span> : <span className="pill nobody">Chưa có người nhận</span>}</div></div>
+                <div className="meta"><StatusPill s={x.status} />{x.lock && <Icon n="lock" c="sm" />}<OwnerPill owner={x.owner} /></div></div>
             </button>
           );
         }) : <div className="empty">Không có việc.</div>}
@@ -94,7 +94,7 @@ function Detail({ t }: { t: TaskView }) {
   const miniRow = (x: TaskView) => (
     <button key={x.id} className="row" onClick={() => open(x.id, `ban-do?chang=${x.phase}`)} style={{ padding: '10px 0' }}>
       <div className="grow"><div className="title">{x.title}</div>
-        <div className="meta"><StatusPill s={x.status} /><span>Chặng {x.phase}</span><span>{memberOf(c, x.owner)?.name ?? 'Chưa có người nhận'}</span></div></div>
+        <div className="meta"><StatusPill s={x.status} /><span>Chặng {x.phase}</span><OwnerPill owner={x.owner} /></div></div>
       <Icon n="chev" c="chev" />
     </button>
   );
@@ -107,7 +107,7 @@ function Detail({ t }: { t: TaskView }) {
     </section>
     <section className="card card-pad"><dl className="kv">
       <dt>Hạn</dt><dd>{t.due}</dd>
-      <dt>Người phụ trách</dt><dd>{o ? `${o.name} · ${o.rel}${o.access === 'link' ? ' · nhận qua link' : ''}` : <i>Chưa có người nhận</i>}</dd>
+      <dt>Người phụ trách</dt><dd>{o ? `${o.name} · ${o.rel}${o.access === 'link' ? ' · nhận qua link' : ''}` : <OwnerPill owner={null} />}</dd>
       {t.assignNote && <><dt>Lời nhắn khi giao</dt><dd>{t.assignNote}</dd></>}
       {t.area && <><dt>Vùng trách nhiệm</dt><dd>{t.area}</dd></>}
       {t.cat && <><dt>Nhà cung cấp</dt><dd>{VENDOR_CAT_LABEL[t.cat]} · <span className="muted">gợi ý bên gần nhất mở ở giai đoạn 2</span></dd></>}
