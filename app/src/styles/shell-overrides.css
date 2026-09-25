@@ -1,0 +1,25 @@
+/* Thanh điều hướng bên trái tone nâu — Chủ dự án yêu cầu sau Phase 2 (bổ sung vào trải nghiệm đã khóa).
+   Áp cho mọi khung máy tính: đám hiếu, không gian của tôi, quản trị. */
+:root{
+  --side-bg:#6B4E32; --side-ink:#F5EBDD; --side-muted:#D6C2A6; --side-line:rgba(245,235,221,.18);
+  --side-hover:rgba(245,235,221,.10); --side-active:rgba(245,235,221,.18);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --side-bg:#2A1F16; --side-ink:#EFE3D2; --side-muted:#B9A48A; --side-line:rgba(239,227,210,.14);
+  --side-hover:rgba(239,227,210,.08); --side-active:rgba(239,227,210,.14);
+}}
+:root[data-theme="dark"]{
+  --side-bg:#2A1F16; --side-ink:#EFE3D2; --side-muted:#B9A48A; --side-line:rgba(239,227,210,.14);
+  --side-hover:rgba(239,227,210,.08); --side-active:rgba(239,227,210,.14);
+}
+
+.side{background:var(--side-bg);border-right-color:var(--side-bg);color:var(--side-ink)}
+.side .logo{color:var(--side-ink)}
+.side .nav-item{color:var(--side-ink)}
+.side .nav-item:hover{background:var(--side-hover)}
+.side .nav-item[aria-current="page"]{background:var(--side-active);color:#fff}
+.side .nav-item.later{color:var(--side-muted)}
+.side .nav-item .tag{color:var(--side-muted);border-color:var(--side-line)}
+.side .sep{background:var(--side-line)}
+.side .eyebrow{color:var(--side-muted)}
+.side .nav-item:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
