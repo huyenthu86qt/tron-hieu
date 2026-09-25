@@ -15,6 +15,7 @@ import {
 } from '../repo/platformStore';
 import { Icon, type IconName } from '../ui/Icon';
 import { Banner, Chips, ErrorBanner, Opts, Sheet, toggleIn, useApp } from '../ui/common';
+import { AddressFinder } from '../ui/geo';
 import { BRAND } from '../ui/brand';
 import { SideLogo } from '../ui/brand';
 
@@ -376,9 +377,10 @@ export function AdminVendorEditPage() {
       <div className="field"><label htmlFor="vP">Số điện thoại</label><input className="input num" id="vP" value={f.phone} onChange={e => setF({ ...f, phone: e.target.value })} /></div>
       <div className="field"><label>Loại dịch vụ (chọn nhiều nếu nhận trọn gói)</label><Chips items={CATS.map(k => k.name)} isOn={n => f.cats.includes(CATS.find(k => k.name === n)!.k)} onToggle={n => setF(x => ({ ...x, cats: toggleIn(x.cats, CATS.find(k => k.name === n)!.k) as VendorCat[] }))} />
         {f.cats.length > 1 && <span className="pill prio" style={{ alignSelf: 'flex-start' }}>Dịch vụ trọn gói · {f.cats.length} hạng mục</span>}</div>
-      <div className="field"><label htmlFor="vA">Địa chỉ</label><input className="input" id="vA" value={f.address} onChange={e => setF({ ...f, address: e.target.value })} placeholder="Số nhà, đường, phường/xã, quận/huyện" /></div>
+      <div className="field"><label htmlFor="vA">Địa chỉ</label><input className="input" id="vA" value={f.address} onChange={e => setF({ ...f, address: e.target.value })} placeholder="Số nhà, đường, phường/xã, quận/huyện" />
+        <AddressFinder address={f.address} onPick={pt => setF(x => ({ ...x, geo: fmtGeo(pt) }))} /></div>
       <div className="field"><label htmlFor="vG">Vị trí (vĩ độ, kinh độ)</label><input className="input num" id="vG" value={f.geo} onChange={e => setF({ ...f, geo: e.target.value })} placeholder="21.0285, 105.8542" />
-        <p className="muted">{f.geo && !g ? 'Chưa đúng dạng — ví dụ 21.0285, 105.8542.' : 'Mở bản đồ, nhấn giữ đúng vị trí, sao chép tọa độ rồi dán vào đây. Giai đoạn 3 app tự tìm từ địa chỉ.'}</p></div>
+        <p className="muted">{f.geo && !g ? 'Chưa đúng dạng — ví dụ 21.0285, 105.8542.' : 'Bấm “Tìm vị trí từ địa chỉ” ở trên, hoặc dán tọa độ từ bản đồ.'}</p></div>
       <div className="field"><label htmlFor="vR">Khu vực phục vụ: bán kính <b className="num">{f.radiusKm} km</b> quanh địa chỉ</label><input type="range" id="vR" min={2} max={40} value={f.radiusKm} onChange={e => setF({ ...f, radiusKm: Number(e.target.value) })} /></div>
       <div className="field"><label>Áp dụng cho</label><Opts value={f.cond} onChange={v => setF({ ...f, cond: v })} items={(Object.keys(COND) as VendorCond[]).map(k => ({ k, title: COND[k] }))} /></div>
       <label className="check"><input type="checkbox" checked={f.active} onChange={e => setF({ ...f, active: e.target.checked })} /><span>Đang hoạt động (được đưa vào gợi ý)</span></label>
@@ -391,7 +393,7 @@ export function AdminVendorEditPage() {
       <div className="page-title"><div><div className="eyebrow">Danh bạ nhà cung cấp</div><h1 style={{ marginTop: 4 }}>{isNew ? 'Thêm nhà cung cấp' : orig!.name}</h1></div></div>
       <div className="split">{form}<section className="card card-pad stack" style={{ gap: 8 }}><h3>Vị trí</h3>
         {g ? <><p className="num">{g.lat.toFixed(5)}, {g.lng.toFixed(5)} · bán kính {f.radiusKm} km</p><a className="btn sm" href={`https://www.google.com/maps/search/?api=1&query=${g.lat},${g.lng}`} target="_blank" rel="noreferrer" style={{ alignSelf: 'flex-start' }}><Icon n="pin" c="sm" />Xem trên bản đồ</a></> : <p className="muted">Chưa có vị trí.</p>}
-        <p className="note">Bản đồ đặt ghim trực tiếp mở ở giai đoạn 3 khi chốt dịch vụ bản đồ.</p></section></div>
+        </section></div>
     </div></AdminShell>
   );
 }

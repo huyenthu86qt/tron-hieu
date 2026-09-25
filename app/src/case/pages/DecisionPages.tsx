@@ -11,6 +11,7 @@ import { afterVenueChange, catName, resolveVendorDecision, suggestionSnapshot, v
 import { decideExpense, expenseMember, METHOD_LABEL, money } from '../../domain/finance';
 import { Icon } from '../../ui/Icon';
 import { Banner, ErrorBanner, LockPill, Sheet, useApp } from '../../ui/common';
+import { FileName } from '../../ui/files';
 import { useCase } from '../CaseContext';
 import { DecRow } from '../rows';
 
@@ -47,7 +48,7 @@ export function ApprovalSheet({ e, onClose }: { e: Expense; onClose: () => void 
         <dt>Người chi</dt><dd>{expenseMember(c.members, e.payer)} · {e.method ? METHOD_LABEL[e.method] : '—'}</dd>
         {e.method === 'bank' && e.payee && canFin && <><dt>Bên nhận</dt><dd>{e.payee.holder} · {e.payee.bank} · <span className="num">{e.payee.acct}</span></dd></>}
         {e.reason && <><dt>Lý do</dt><dd>{e.reason}</dd></>}
-        <dt>Chứng từ</dt><dd>{e.evidence ? <span className="pill done">{e.evidence}</span> : <span className="muted">Chưa có</span>}</dd>
+        <dt>Chứng từ</dt><dd>{e.evidence ? <span className="pill done"><FileName name={e.evidence} path={canFin ? e.evidencePath : undefined} /></span> : <span className="muted">Chưa có</span>}</dd>
       </dl></section>
       {no && <div className="field"><label htmlFor="rjReason">Vì sao không duyệt?</label><textarea className="input" id="rjReason" value={reason} onChange={x => setReason(x.target.value)} placeholder="Ví dụ: cơ quan đã gửi hoa, không cần đặt thêm" /></div>}
       <ErrorBanner err={err} />

@@ -3,7 +3,7 @@
 // - Sổ phúng viếng: bảng condolences (số tiền chỉ người giữ Tài chính đọc được — máy chủ tự ẩn).
 // - Tài khoản bên nhận: bảng expense_payees (chỉ người giữ Tài chính đọc được).
 // - Trang cáo phó công khai: bảng public_pages (bản rút gọn, không chứa tài chính hay sổ phúng viếng).
-import type { CaseData, Condolence, Member, Payee } from '../domain/types';
+import type { CaseData, Condolence, Member, Payee, TaskInst } from '../domain/types';
 import { normalizeCase } from '../domain/normalize';
 import { U1_ID } from '../domain/model';
 import { friendlyError, sb } from './backend';
@@ -155,9 +155,20 @@ export class SupabaseRepo implements CaseRepo {
     return normalizeCase((data as { content: CaseData }).content);
   }
 
-  /** Link nhờ việc dùng trên máy khác: mở ở Phase 3b */
-  async findByLinkToken(): Promise<{ c: CaseData; member: Member } | null> {
-    return null;
+  /** Link nhờ việc (Phase 3b): máy chủ trả bản rút gọn — chỉ việc được nhờ, không số điện thoại, không tài chính */
+  async findByLinkToken(token: string): Promise<{ c: CaseData; member: Member } | null> {
+    const { data, error } = await sb!.rpc('link_view', { p_token: token });
+    if (error) throw new Error(friendlyError(error));
+    if (!data) return null;
+    const r = data as { memberId: string; case: CaseData };
+    const c = normalizeCase(r.case);
+    const member = c.members.find(m => m.id === r.memberId);
+    return member ? { c, member } : null;
+  }
+
+  async linkAct(token: string, task: TaskInst, log: string): Promise<void> {
+    const { error } = await sb!.rpc('link_act', { p_token: token, p_task: task, p_log: log });
+    if (error) throw new Error(friendlyError(error));
   }
 
   /** Báo khi có người khác cập nhật đám hiếu (thời gian thực) */

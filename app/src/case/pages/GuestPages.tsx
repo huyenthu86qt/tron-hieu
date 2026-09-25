@@ -12,6 +12,7 @@ import { fmtPhone } from '../../domain/platform';
 import { repo } from '../../repo/repo';
 import { Icon } from '../../ui/Icon';
 import { Banner, Chips, ErrorBanner, Sheet, toggleIn, useApp } from '../../ui/common';
+import { REMOTE } from '../../repo/backend';
 import { useCase } from '../CaseContext';
 import { PaidGate } from '../Paywall';
 import { BRAND } from '../../ui/brand';
@@ -68,7 +69,7 @@ function ShareSheet({ slug, onClose }: { slug: string; onClose: () => void }) {
     <Sheet title="Chia sẻ trang thông tin" onClose={onClose} foot={<button className="btn primary" onClick={onClose}>Xong</button>}>
       <div className="link-box"><span>{url}</span><button className="btn sm" onClick={copy}><Icon n="copy" c="sm" />Sao chép</button></div>
       {'share' in navigator && <button className="btn" onClick={share}><Icon n="link" c="sm" />Gửi qua ứng dụng khác (Zalo, Messenger…)</button>}
-      <p className="note">Trang chỉ mở được trên thiết bị này cho tới khi có máy chủ (giai đoạn 3).</p>
+      {!REMOTE && <p className="note">Bản chạy thử: trang chỉ mở được trên thiết bị này. Bản thật mở được trên mọi máy.</p>}
     </Sheet>
   );
 }

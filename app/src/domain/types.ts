@@ -116,6 +116,8 @@ export interface TaskInst {
   issue?: string;
   stepsDone?: Record<number, boolean>;
   evidence?: string;
+  /** Nơi lưu tệp trên máy chủ (Phase 3b); thiếu = chỉ ghi tên tệp */
+  evidencePath?: string;
 }
 
 export type Access = 'full' | 'limited' | 'link';
@@ -228,6 +230,7 @@ export interface Payee { holder: string; bank: string; acct: string }
 export type ExpenseStatus = 'estimate' | 'request' | 'approved' | 'paid' | 'rejected';
 export interface Expense {
   id: string; name: string; cat: VendorCat | 'khac'; vendorId?: string; amount: number; paid: number; status: ExpenseStatus;
+  evidencePath?: string;
   evidence?: string; payer: string | null; method: Method | null; fund: string | null; payee?: Payee;
   extra?: boolean; reason?: string; requestedBy: string; createdAt: string; decidedAt?: string; rejectReason?: string;
 }
@@ -257,7 +260,7 @@ export interface Milestones {
   customName: string; customDate: string; base: 'death' | 'burial'; count: 'incl' | 'excl'; gioCal: 'lunar' | 'solar'; saved: boolean;
 }
 export interface AfterCare { closed: boolean; closedAt?: string; thanked: Record<string, boolean>; thankText: string; thankAuto: boolean }
-export interface CaseDoc { id: string; name: string; at: string; source: 'after' | 'task' | 'pre' | 'other' }
+export interface CaseDoc { id: string; name: string; at: string; source: 'after' | 'task' | 'pre' | 'other'; path?: string }
 
 /* ---------- Quyền dùng ---------- */
 export interface CaseAccess { plan: 'free' | 'full'; activeUntil?: string; source?: 'payment' | 'manual' | 'activation'; orderId?: string; revokedReason?: string }

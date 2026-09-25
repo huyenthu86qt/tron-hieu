@@ -54,7 +54,7 @@ export function activatePreNeed(p: PreNeed, x: ActivateInput, byUserId: string, 
   c.pendingContacts = p.contacts.map(k => ({ ...k }));
   c.finance!.budget = p.budget.amount; c.finance!.budgetFromPre = p.budget.amount > 0;
   c.familyPick = { ...p.budget.vendors };
-  c.docs = p.docs.map(d => ({ id: d.id, name: d.name, at: d.at, source: 'pre' as const }));
+  c.docs = p.docs.map(d => ({ id: d.id, name: d.name, at: d.at, source: 'pre' as const, path: d.path }));
   const ms = c.milestones!;
   ms.sel = { d49: p.wish.milestones.includes('d49'), d100: p.wish.milestones.includes('d100'), gio: p.wish.milestones.includes('gio'), custom: false, none: false };
   const note = c.tasks.find(t => t.id === 'm4c');

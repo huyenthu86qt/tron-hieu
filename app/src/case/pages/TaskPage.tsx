@@ -12,6 +12,9 @@ import { Icon } from '../../ui/Icon';
 import { Banner, KindPill, LockPill, StatusPill, useApp } from '../../ui/common';
 import { memberOf, useCase } from '../CaseContext';
 import { OwnerPill, useBackToList, useOpenTask } from '../rows';
+import { FileName, useUploader } from '../../ui/files';
+import { uploadCaseFile } from '../../repo/files';
+import { REMOTE } from '../../repo/backend';
 
 const fmtAt = (iso: string) => {
   const d = new Date(iso), p = (n: number) => String(n).padStart(2, '0');
@@ -83,6 +86,7 @@ export function TaskPage() {
 function Detail({ t }: { t: TaskView }) {
   const { c, base, update } = useCase();
   const { toast } = useApp();
+  const up = useUploader();
   const nav = useNavigate();
   const open = useOpenTask();
   const o = memberOf(c, t.owner);
@@ -129,12 +133,12 @@ function Detail({ t }: { t: TaskView }) {
         ))}</section>
     )}
     <section className="card card-pad stack" style={{ gap: 8 }}><h3>Bằng chứng</h3>
-      {t.evidence ? <span className="pill done" style={{ alignSelf: 'flex-start' }}><Icon n="doc" c="sm" />{t.evidence}</span> : <p className="muted">Ảnh, giấy tờ hoặc ghi chú để cả nhà biết việc đã làm thế nào.</p>}
+      {t.evidence ? <span className="pill done" style={{ alignSelf: 'flex-start' }}><Icon n="doc" c="sm" /><FileName name={t.evidence} path={t.evidencePath} /></span> : <p className="muted">Ảnh, giấy tờ hoặc ghi chú để cả nhà biết việc đã làm thế nào.</p>}
       {(t.status !== 'done' || !t.evidence) && (
-        <label className="btn sm file-btn" style={{ alignSelf: 'flex-start' }}><Icon n="plus" c="sm" />{t.evidence ? 'Đổi tệp' : 'Đính ảnh, giấy tờ'}
-          <input type="file" onChange={e => { const f = e.target.files?.[0]; if (f) { update(dr => attachEvidence(dr, t.id, f.name)); toast('Đã ghi tên tệp: ' + f.name); } }} /></label>
+        <label className="btn sm file-btn" style={{ alignSelf: 'flex-start' }} aria-disabled={up.busy}><Icon n="plus" c="sm" />{up.busy ? 'Đang tải lên…' : t.evidence ? 'Đổi tệp' : 'Đính ảnh, giấy tờ'}
+          <input type="file" disabled={up.busy} onChange={async e => { const f = e.target.files?.[0]; e.target.value = ''; if (!f) return; const s = await up.run(() => uploadCaseFile(c.id, 'task', f)); if (s) { update(dr => attachEvidence(dr, t.id, s.name, undefined, s.path)); toast('Đã đính kèm: ' + s.name); } }} /></label>
       )}
-      <p className="note">Giai đoạn này app ghi lại tên tệp; lưu tệp lên máy chủ mở ở giai đoạn 3.</p>
+      {!REMOTE && <p className="note">Bản chạy thử trên máy chỉ ghi lại tên tệp; bản thật lưu tệp trên máy chủ.</p>}
     </section>
     {t.status === 'skip' && <Banner kind="info"><b>Không áp dụng cho gia đình</b>{t.skipReason ? ': ' + t.skipReason : ''}.</Banner>}
     {t.status === 'issue' && t.issue && <Banner kind="warn"><b>Có vấn đề:</b> {t.issue} <button className="btn sm" style={{ marginLeft: 8 }} onClick={() => { update(dr => resolveIssue(dr, t.id)); toast('Đã ghi nhận vấn đề đã xử lý'); }}>Đã xử lý</button></Banner>}

@@ -11,6 +11,9 @@ import { activatePre, createPreNeed, myPreNeeds, savePreNeed, usePlatform, useUs
 import { Icon } from '../ui/Icon';
 import { Banner, Chips, ErrorBanner, Opts, useApp } from '../ui/common';
 import { AccountShell } from './AccountShell';
+import { FileName, useUploader } from '../ui/files';
+import { removeStored, uploadPreFile } from '../repo/files';
+import { REMOTE } from '../repo/backend';
 
 const STP = { done: ['done', 'Đã xong'], partial: ['doing', 'Còn thiếu'], todo: ['todo', 'Chưa bắt đầu'] } as const;
 const subjectName = (p: PreNeed) => (p.subject.name ? `${p.subject.title} ${p.subject.name}` : 'Hồ sơ chưa đặt tên');
@@ -210,17 +213,18 @@ export function PreContactsPage() {
 export function PreDocsPage() {
   const { p, canEdit, locked } = usePre();
   const { toast } = useApp();
+  const up = useUploader();
   if (!p) return <NotFoundPre />;
   const ro = !canEdit || locked;
   return (
     <PreFrame title="Giấy tờ" back={`/chuan-bi/${p.id}`}>
       <div><div className="eyebrow">Hồ sơ chuẩn bị</div><h1 style={{ fontSize: 24, marginTop: 4 }}>Giấy tờ</h1><p className="muted" style={{ marginTop: 6 }}>Bản chụp CCCD, sổ hộ khẩu, giấy tờ đất mộ, di chúc… Khi kích hoạt, chuyển vào Tài liệu của đám hiếu.</p></div>
       <PaidPre p={p} what="Lưu giấy tờ">
-        <section className="card">{p.docs.length ? <div className="list">{p.docs.map(d => <div key={d.id} className="row"><Icon n="doc" /><div className="grow"><div className="title">{d.name}</div><div className="meta"><span>{new Date(d.at).toLocaleString('vi-VN')}</span></div></div>
-          {!ro && <button className="icon-btn" aria-label="Xóa tệp" onClick={() => savePreNeed({ ...p, docs: p.docs.filter(x => x.id !== d.id) })}><Icon n="x" c="sm" /></button>}</div>)}</div>
+        <section className="card">{p.docs.length ? <div className="list">{p.docs.map(d => <div key={d.id} className="row"><Icon n="doc" /><div className="grow"><div className="title"><FileName name={d.name} path={d.path} bucket="pre-files" /></div><div className="meta"><span>{new Date(d.at).toLocaleString('vi-VN')}</span></div></div>
+          {!ro && <button className="icon-btn" aria-label="Xóa tệp" onClick={async () => { const e = await savePreNeed({ ...p, docs: p.docs.filter(x => x.id !== d.id) }); if (e) toast(e); else void removeStored('pre-files', d.path); }}><Icon n="x" c="sm" /></button>}</div>)}</div>
           : <div className="empty"><span>Chưa có giấy tờ.</span></div>}</section>
-        {!ro && <label className="btn file-btn" style={{ alignSelf: 'flex-start' }}><Icon n="plus" c="sm" />Tải giấy tờ lên<input type="file" onChange={e => { const f = e.target.files?.[0]; if (f) { savePreNeed({ ...p, docs: [...p.docs, { id: 'd' + Date.now(), name: f.name, at: new Date().toISOString() }] }); toast('Đã ghi tệp ' + f.name); } }} /></label>}
-        <p className="note">Giai đoạn này app ghi lại tên tệp; lưu tệp mã hóa trên máy chủ mở ở giai đoạn 3.</p>
+        {!ro && <label className="btn file-btn" style={{ alignSelf: 'flex-start' }}><Icon n="plus" c="sm" />{up.busy ? 'Đang tải lên…' : 'Tải giấy tờ lên'}<input type="file" disabled={up.busy} onChange={async e => { const f = e.target.files?.[0]; e.target.value = ''; if (!f) return; const s = await up.run(() => uploadPreFile(p.id, f)); if (!s) return; const err = await savePreNeed({ ...p, docs: [...p.docs, { id: 'd' + Date.now(), name: s.name, path: s.path, at: new Date().toISOString() }] }); toast(err ?? 'Đã lưu giấy tờ ' + s.name); }} /></label>}
+        <p className="note">{REMOTE ? 'Giấy tờ lưu riêng tư trên máy chủ — chỉ người được chia sẻ hồ sơ mở được. Bấm vào tên để mở.' : 'Bản chạy thử trên máy chỉ ghi lại tên tệp; bản thật lưu tệp trên máy chủ.'}</p>
       </PaidPre>
     </PreFrame>
   );

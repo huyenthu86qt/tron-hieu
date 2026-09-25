@@ -13,6 +13,8 @@ import { Banner, ErrorBanner, Sheet, useApp } from '../../ui/common';
 import { useCase } from '../CaseContext';
 import { PaidGate } from '../Paywall';
 import { ApprovalSheet } from './DecisionPages';
+import { FileName, useUploader } from '../../ui/files';
+import { uploadCaseFile } from '../../repo/files';
 
 const fmtAt = (iso?: string) => (iso ? new Date(iso).toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' }) : '');
 const ExpPill = ({ e }: { e: Expense }) => <span className={'pill ' + EXP_STATUS[e.status][0]}>{e.status === 'approved' && e.paid ? 'Đã duyệt · đã trả một phần' : EXP_STATUS[e.status][1]}</span>;
@@ -21,6 +23,7 @@ const ExpPill = ({ e }: { e: Expense }) => <span className={'pill ' + EXP_STATUS
 export function ExpenseSheet({ onClose, preset }: { onClose: () => void; preset?: Partial<ExpenseForm> }) {
   const { c, update, me, isU1, dir } = useCase();
   const { toast } = useApp();
+  const up = useUploader();
   const funds = c.finance!.funds;
   const [f, setF] = useState<ExpenseForm>({ name: '', amount: '', cat: 'khac', payer: me.id, method: 'cash', fund: funds.find(x => x.type === 'cash')?.id ?? '', holder: '', bank: '', acct: '', reason: '', evidence: '', extra: false, ...preset });
   const [err, setErr] = useState<string | null>(null);
@@ -54,7 +57,7 @@ export function ExpenseSheet({ onClose, preset }: { onClose: () => void; preset?
         <p className="muted">Người chi kiểm tra lại tên chủ tài khoản hiện trên app ngân hàng trước khi chuyển.</p></div>}
       <div className="field"><label htmlFor="frReason">Lý do</label><textarea className="input" id="frReason" value={f.reason} onChange={e => set('reason', e.target.value)} placeholder="Vì sao cần chi, đã hỏi giá mấy nơi…" /></div>
       <label className="check"><input type="checkbox" checked={f.extra} onChange={e => set('extra', e.target.checked)} /><span>Khoản phát sinh ngoài dự toán</span></label>
-      <div className="field"><label>Chứng từ, báo giá (ảnh hoặc tệp)</label><label className="btn file-btn" style={{ justifyContent: 'flex-start' }}><Icon n="doc" c="sm" />{f.evidence || 'Chọn tệp'}<input type="file" onChange={e => set('evidence', e.target.files?.[0]?.name ?? '')} /></label></div>
+      <div className="field"><label>Chứng từ, báo giá (ảnh hoặc tệp)</label><label className="btn file-btn" style={{ justifyContent: 'flex-start' }}><Icon n="doc" c="sm" />{up.busy ? 'Đang tải lên…' : f.evidence || 'Chọn tệp'}<input type="file" disabled={up.busy} onChange={async e => { const file = e.target.files?.[0]; e.target.value = ''; if (!file) return; const s = await up.run(() => uploadCaseFile(c.id, 'fin', file)); if (s) setF(x => ({ ...x, evidence: s.name, evidencePath: s.path })); }} /></label></div>
       <ErrorBanner err={err} />
       {!isU1 && <p className="muted">Đề nghị sẽ vào mục <b>Cần duyệt</b> của người đại diện gia đình.</p>}
       {fundOpen && <FundSheet onClose={() => setFundOpen(false)} onAdded={(id, type) => setF(x => ({ ...x, method: type, fund: id }))} />}
@@ -87,6 +90,7 @@ function FundSheet({ onClose, onAdded }: { onClose: () => void; onAdded?: (id: s
 function ExpenseDetailSheet({ id, onClose }: { id: string; onClose: () => void }) {
   const { c, update, isU1, canFin, dir } = useCase();
   const { toast } = useApp();
+  const up = useUploader();
   const e = c.finance!.expenses.find(x => x.id === id);
   const [pay, setPay] = useState('');
   const [err, setErr] = useState<string | null>(null);
@@ -111,8 +115,8 @@ function ExpenseDetailSheet({ id, onClose }: { id: string; onClose: () => void }
         <div className="card card-pad stack" style={{ gap: 8 }}><div className="field"><label htmlFor="payAmt">Ghi đã trả (đồng)</label><input className="input num" id="payAmt" inputMode="numeric" value={pay} onChange={x => setPay(fmtMoneyInput(x.target.value))} placeholder={(e.amount - e.paid).toLocaleString('vi-VN')} /></div>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}><button className="btn sm" onClick={() => { const x = update(d => recordPayment(d, e.id, parseMoney(pay) || e.amount - e.paid)); if (x) setErr(x); else { setPay(''); toast('Đã ghi thanh toán'); } }}>Ghi đã trả</button>
             <button className="btn sm ghost" onClick={() => { const x = update(d => recordPayment(d, e.id, e.amount - e.paid)); if (x) setErr(x); else toast('Đã ghi thanh toán đủ ' + money(e.amount)); }}>Đã trả đủ</button></div></div>)}
-      <div className="field"><label>Chứng từ</label>{e.evidence ? <span className="pill done" style={{ alignSelf: 'flex-start' }}><Icon n="doc" c="sm" />{e.evidence}</span> : <span className="muted">Chưa có</span>}
-        {!L && <label className="btn sm file-btn" style={{ alignSelf: 'flex-start' }}><Icon n="plus" c="sm" />{e.evidence ? 'Đổi tệp' : 'Đính chứng từ'}<input type="file" onChange={x => { const n = x.target.files?.[0]?.name; if (n) { update(d => attachExpenseEvidence(d, e.id, n)); toast('Đã đính chứng từ: ' + n); } }} /></label>}</div>
+      <div className="field"><label>Chứng từ</label>{e.evidence ? <span className="pill done" style={{ alignSelf: 'flex-start' }}><Icon n="doc" c="sm" /><FileName name={e.evidence} path={canFin ? e.evidencePath : undefined} /></span> : <span className="muted">Chưa có</span>}
+        {!L && <label className="btn sm file-btn" style={{ alignSelf: 'flex-start' }}><Icon n="plus" c="sm" />{up.busy ? 'Đang tải lên…' : e.evidence ? 'Đổi tệp' : 'Đính chứng từ'}<input type="file" disabled={up.busy} onChange={async x => { const file = x.target.files?.[0]; x.target.value = ''; if (!file) return; const s = await up.run(() => uploadCaseFile(c.id, 'fin', file)); if (s) { update(d => attachExpenseEvidence(d, e.id, s.name, s.path)); toast('Đã đính chứng từ: ' + s.name); } }} /></label>}</div>
       <ErrorBanner err={err} />
       {L && <Banner kind="info" icon="lock">Tài chính đã khóa — không sửa được nữa.</Banner>}
       {ap && <ApprovalSheet e={e} onClose={() => setAp(false)} />}
@@ -314,13 +318,14 @@ export function ReconcilePage() { return <PaidGate module="Tài chính"><Reconci
 function Reconcile() {
   const { c, base, update, isU1, me } = useCase();
   const { toast } = useApp();
+  const up = useUploader();
   const nav = useNavigate();
   const [confirm, setConfirm] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const f = c.finance!, r = reconcile(c), L = f.locked;
   const detail: Record<string, ReactNode> = {
     evidence: r.missing.map(e => <div key={e.id} style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', marginTop: 8 }}><span style={{ flex: 1 }}>{e.name} · <span className="num">{money(e.paid)}</span></span>
-      <label className="btn sm file-btn"><Icon n="doc" c="sm" />Đính chứng từ<input type="file" disabled={L} onChange={x => { const n = x.target.files?.[0]?.name; if (n) update(d => attachExpenseEvidence(d, e.id, n)); }} /></label></div>),
+      <label className="btn sm file-btn"><Icon n="doc" c="sm" />{up.busy ? 'Đang tải lên…' : 'Đính chứng từ'}<input type="file" disabled={L || up.busy} onChange={async x => { const file = x.target.files?.[0]; x.target.value = ''; if (!file) return; const s = await up.run(() => uploadCaseFile(c.id, 'fin', file)); if (s) { update(d => attachExpenseEvidence(d, e.id, s.name, s.path)); toast('Đã đính chứng từ: ' + s.name); } }} /></label></div>),
     pending: r.pending.length > 0 && <button className="btn sm" style={{ marginTop: 8 }} onClick={() => nav(`${base}/can-quyet`)}>Mở {r.pending.length} đề nghị</button>,
     cash: <><div className="field" style={{ maxWidth: 340, marginTop: 8 }}><label htmlFor="counted">Tiền mặt đã kiểm đếm (sổ ghi tiền mặt <span className="num">{money(r.cash)}</span>)</label>
       <input className="input num" id="counted" inputMode="numeric" value={f.counted} disabled={L} onChange={e => update(d => { d.finance!.counted = fmtMoneyInput(e.target.value); })} placeholder="Nhập số tiền" /></div>

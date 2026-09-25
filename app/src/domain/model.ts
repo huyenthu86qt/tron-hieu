@@ -75,6 +75,7 @@ export interface TaskView {
   issue?: string;
   stepsDone: Record<number, boolean>;
   evidence?: string;
+  evidencePath?: string;
 }
 
 const byRite = <T,>(s: Situation, base?: T, c?: T, n?: T): T | undefined =>
@@ -87,7 +88,7 @@ export function taskView(c: CaseData, i: TaskInst): TaskView | null {
     return {
       id: i.id, title: i.titleOverride ?? i.custom.title, phase: i.custom.phase, due: i.dueOverride ?? i.custom.due, kind: 'own',
       area: i.area ?? 'Toàn bộ', status: i.status, owner: i.owner, lock: false, deps: [], urgent: false, byOrg: false, unverified: false,
-      custom: true, note: i.note, skipReason: i.skipReason, issue: i.issue, stepsDone: i.stepsDone ?? {}, evidence: i.evidence, assignNote: i.assignNote,
+      custom: true, note: i.note, skipReason: i.skipReason, issue: i.issue, stepsDone: i.stepsDone ?? {}, evidence: i.evidence, evidencePath: i.evidencePath, assignNote: i.assignNote,
     };
   }
   const t: TaskTemplate | undefined = TEMPLATE_BY_ID[i.templateId];
@@ -99,7 +100,7 @@ export function taskView(c: CaseData, i: TaskInst): TaskView | null {
     area: i.area ?? t.area, status: i.status, owner: i.owner, lock: !!t.lock, lockText: t.lockText && r(t.lockText),
     deps: t.deps ?? [], decision: t.decision, steps: steps?.map(r), checks: checks?.map(r),
     note: i.note ?? (tplNote && r(tplNote)), urgent: !!t.urgent, byOrg: !!t.byOrg, unverified: !!t.unverified, go: t.go, cat: t.cat,
-    custom: false, skipReason: i.skipReason, issue: i.issue, stepsDone: i.stepsDone ?? {}, evidence: i.evidence, assignNote: i.assignNote,
+    custom: false, skipReason: i.skipReason, issue: i.issue, stepsDone: i.stepsDone ?? {}, evidence: i.evidence, evidencePath: i.evidencePath, assignNote: i.assignNote,
   };
 }
 

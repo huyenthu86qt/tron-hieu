@@ -179,7 +179,7 @@ export interface PreNeed {
   subject: { title: string; name: string; birthYear: string; hometown: string; idNote: string };
   rep: { name: string; phone: string; rel: string };
   contacts: { name: string; phone: string; rel: string }[];
-  docs: { id: string; name: string; at: string }[];
+  docs: { id: string; name: string; at: string; path?: string }[];
   wish: { form: 'cremation' | 'burial' | 'family'; venue: 'home' | 'hall' | 'family'; rite: string; items: string; scale: 'small' | 'medium' | 'large'; msg: string; milestones: string[] };
   budget: { amount: number; vendors: Partial<Record<VendorCat, string>> };
   special: string;

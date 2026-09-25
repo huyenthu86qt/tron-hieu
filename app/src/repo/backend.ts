@@ -31,6 +31,8 @@ export function friendlyError(e: unknown): string {
   if (/Email not confirmed/i.test(m)) return 'Máy chủ đang bật “xác nhận email”. Người quản trị cần tắt mục này trong Supabase (Authentication → Sign In / Providers → Email → Confirm email).';
   if (/rate limit|too many/i.test(m)) return 'Thao tác quá nhiều lần. Vui lòng thử lại sau ít phút.';
   if (/Failed to fetch|NetworkError|network/i.test(m)) return 'Mất kết nối mạng. Kiểm tra mạng rồi thử lại — những gì đang nhập vẫn còn.';
+  if (/exceeded the maximum allowed size|Payload too large/i.test(m)) return 'Tệp quá lớn (tối đa 15 MB). Chọn tệp nhỏ hơn.';
+  if (/Object not found/i.test(m)) return 'Không tìm thấy tệp — có thể đã bị xóa.';
   if (/permission denied|row-level security/i.test(m)) return 'Anh/chị không có quyền thực hiện thao tác này.';
   return m;
 }

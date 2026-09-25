@@ -85,10 +85,11 @@ export function toggleStep(c: CaseData, id: string, i: number, on: boolean) {
   t.stepsDone = { ...(t.stepsDone ?? {}), [i]: on };
 }
 
-export function attachEvidence(c: CaseData, id: string, name: string, now?: Date) {
+export function attachEvidence(c: CaseData, id: string, name: string, now?: Date, path?: string) {
   const t = inst(c, id);
   if (!t) return;
   t.evidence = name;
+  t.evidencePath = path;
   log(c, `Đính kèm bằng chứng: ${name}`, id, now);
 }
 
@@ -186,7 +187,8 @@ export const initials = (name: string) => {
   return (w[w.length - 1] || '?').charAt(0).toUpperCase();
 };
 
-const token = () => Array.from({ length: 12 }, () => 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[Math.floor(Math.random() * 32)]).join('');
+/** Mã link nhờ việc: 20 ký tự ngẫu nhiên (crypto) — đoán không được */
+const token = () => Array.from(crypto.getRandomValues(new Uint8Array(20)), b => 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[b % 32]).join('');
 
 export interface MemberForm { name: string; rel: string; access: Access; areas: string[]; phone?: string }
 

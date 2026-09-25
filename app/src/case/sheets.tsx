@@ -12,6 +12,7 @@ import { Banner, Chips, ErrorBanner, Opts, Sheet, toggleIn, useApp } from '../ui
 import { ACCESS_LABEL, memberOf, useCase } from './CaseContext';
 import { NAV } from './nav';
 import { useBackToList } from './rows';
+import { REMOTE } from '../repo/backend';
 
 export function CaseSheets() {
   const { sheet } = useCase();
@@ -253,7 +254,7 @@ function InviteSheet() {
         {made.access === 'link' ? <>
           <Banner kind="info" icon="check">Đã tạo link cho <b>{made.name}</b>. Người nhận mở link là thấy đúng việc của mình, không cần cài app.</Banner>
           <div className="link-box"><span>{url}</span><button className="btn sm" onClick={async () => toast(await copyText(url) ? 'Đã sao chép link' : 'Không sao chép được — chọn và sao chép thủ công')}><Icon n="copy" c="sm" />Sao chép</button></div>
-          <p className="note">Link chỉ mở được trên thiết bị này cho tới khi có máy chủ (giai đoạn 3).</p>
+          {!REMOTE && <p className="note">Bản chạy thử: link chỉ mở được trên thiết bị này. Bản thật mở được trên mọi máy.</p>}
           <a className="btn" href={url} target="_blank" rel="noreferrer"><Icon n="user" />Xem như người nhận</a>
         </> : <Banner kind="info" icon="check">Đã thêm <b>{made.name}</b> vào đội. Khi người này đăng nhập bằng số <b className="num">{made.phone}</b>, đám hiếu hiện ở trang chủ của họ.</Banner>}
         {c.tasks.length > 0 && <p className="muted">Giao việc cho {made.name} ở nút “Nhờ người khác” của từng việc.</p>}

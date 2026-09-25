@@ -12,6 +12,9 @@ import { Icon } from '../../ui/Icon';
 import { Banner, useApp } from '../../ui/common';
 import { inScope, useCase } from '../CaseContext';
 import { TaskRow } from '../rows';
+import { FileName, useUploader } from '../../ui/files';
+import { uploadCaseFile } from '../../repo/files';
+import { REMOTE } from '../../repo/backend';
 
 const fmtAt = (iso?: string) => (iso ? new Date(iso).toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' }) : '');
 
@@ -77,19 +80,20 @@ export function MyTasksPage() {
 
 /* ---------- S-X-02 ---------- */
 export function DocsPage() {
-  const { c, base, update, me } = useCase();
+  const { c, base, update, me, canFin } = useCase();
   const { toast } = useApp();
-  const ev = visibleTasks(c).filter(t => t.evidence).map(t => ({ id: t.id, name: t.evidence!, from: `Bằng chứng · ${t.title}`, to: `viec/${t.id}` }));
-  const docs = (c.docs ?? []).map(d => ({ id: d.id, name: d.name, from: d.source === 'pre' ? 'Từ hồ sơ chuẩn bị' : d.source === 'after' ? 'Tài liệu kết quả hậu tang' : 'Gia đình tải lên', to: d.source === 'after' ? 'hau-tang' : '' }));
-  const exp = (c.finance?.expenses ?? []).filter(e => e.evidence).map(e => ({ id: e.id, name: e.evidence!, from: `Chứng từ · ${e.name}`, to: 'tai-chinh/khoan-chi' }));
+  const up = useUploader();
+  const ev = visibleTasks(c).filter(t => t.evidence).map(t => ({ id: t.id, name: t.evidence!, path: t.evidencePath, from: `Bằng chứng · ${t.title}`, to: `viec/${t.id}` }));
+  const docs = (c.docs ?? []).map(d => ({ id: d.id, name: d.name, path: d.path, source: d.source, from: d.source === 'pre' ? 'Từ hồ sơ chuẩn bị' : d.source === 'after' ? 'Tài liệu kết quả hậu tang' : 'Gia đình tải lên', to: d.source === 'after' ? 'hau-tang' : '' }));
+  const exp = (c.finance?.expenses ?? []).filter(e => e.evidence).map(e => ({ id: e.id, name: e.evidence!, path: canFin ? e.evidencePath : undefined, from: `Chứng từ · ${e.name}`, to: 'tai-chinh/khoan-chi' }));
   const all = [...docs, ...ev, ...exp];
   return (
     <div className="page" style={{ maxWidth: 860 }}><div className="page-title"><div><h1>Tài liệu</h1><p>Giấy tờ, bằng chứng, chứng từ của đám hiếu ở một chỗ</p></div>
-      <div className="actions"><label className="btn primary file-btn"><Icon n="plus" c="sm" />Thêm tài liệu<input type="file" onChange={e => { const n = e.target.files?.[0]?.name; if (n) { update(d => { (d.docs ??= []).push({ id: 'doc' + Date.now(), name: n, at: new Date().toISOString(), source: 'other' }); d.history.push({ at: new Date().toISOString(), text: `${me.name} thêm tài liệu: ${n}` }); }); toast('Đã thêm tài liệu'); } }} /></label></div></div>
+      <div className="actions"><label className="btn primary file-btn" aria-disabled={up.busy}><Icon n="plus" c="sm" />{up.busy ? 'Đang tải lên…' : 'Thêm tài liệu'}<input type="file" disabled={up.busy} onChange={async e => { const f = e.target.files?.[0]; e.target.value = ''; if (!f) return; const s = await up.run(() => uploadCaseFile(c.id, 'doc', f)); if (s) { update(d => { (d.docs ??= []).push({ id: 'doc' + Date.now(), name: s.name, path: s.path, at: new Date().toISOString(), source: 'other' }); d.history.push({ at: new Date().toISOString(), text: `${me.name} thêm tài liệu: ${s.name}` }); }); toast('Đã thêm tài liệu'); } }} /></label></div></div>
       <section className="card">{all.length ? <div className="list">{all.map(d => (
-        <div key={d.id + d.name} className="row"><Icon n="doc" /><div className="grow"><div className="title">{d.name}</div><div className="meta"><span>{d.from}</span></div></div>{d.to && <Link className="btn sm ghost" to={`${base}/${d.to}`}>Mở</Link>}</div>
+        <div key={d.id + d.name} className="row"><Icon n="doc" /><div className="grow"><div className="title"><FileName name={d.name} path={d.path} bucket={'source' in d && d.source === 'pre' ? 'pre-files' : 'case-files'} /></div><div className="meta"><span>{d.from}</span></div></div>{d.to && <Link className="btn sm ghost" to={`${base}/${d.to}`}>Mở</Link>}</div>
       ))}</div> : <div className="empty"><Icon n="doc" c="lg" /><span>Chưa có tài liệu nào.</span></div>}</section>
-      <p className="note">Giai đoạn này app ghi lại tên tệp; lưu và mở tệp trên máy chủ ở giai đoạn 3.</p>
+      <p className="note">{REMOTE ? 'Bấm vào tên tệp để mở. Tệp lưu riêng tư — chỉ người trong đội mở được; chứng từ chi tiêu chỉ người giữ Tài chính mở được.' : 'Bản chạy thử trên máy chỉ ghi lại tên tệp; bản thật lưu tệp trên máy chủ.'}</p>
     </div>
   );
 }

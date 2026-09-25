@@ -10,6 +10,7 @@ import { FORM_LABEL } from '../../domain/model';
 import { money, parseMoney, fmtMoneyInput } from '../../domain/finance';
 import { Icon } from '../../ui/Icon';
 import { Banner, Chips, ErrorBanner, Sheet, toggleIn, useApp } from '../../ui/common';
+import { AddressFinder } from '../../ui/geo';
 import { useCase } from '../CaseContext';
 import { PaidGate } from '../Paywall';
 
@@ -48,12 +49,13 @@ function VenueSheet({ onClose }: { onClose: () => void }) {
   return (
     <Sheet title="Địa điểm tổ chức lễ viếng" onClose={onClose} foot={<><button className="btn" onClick={onClose}>Hủy</button><button className="btn primary" onClick={save}>Lưu</button></>}>
       {v === 'hall' && <div className="field"><label htmlFor="vName">Tên nhà tang lễ</label><input className="input" id="vName" value={name} onChange={e => setName(e.target.value)} placeholder="Ví dụ: Nhà tang lễ Bệnh viện …" /></div>}
-      <div className="field"><label htmlFor="vAddr">Địa chỉ</label><input className="input" id="vAddr" value={addr} onChange={e => setAddr(e.target.value)} placeholder="Số nhà, đường, phường/xã, quận/huyện, tỉnh" /></div>
+      <div className="field"><label htmlFor="vAddr">Địa chỉ</label><input className="input" id="vAddr" value={addr} onChange={e => setAddr(e.target.value)} placeholder="Số nhà, đường, phường/xã, quận/huyện, tỉnh" />
+        <AddressFinder address={addr} onPick={g => { setGeo(fmtGeo(g)); setErr(null); toast('Đã điền vị trí — bấm Lưu để giữ'); }} /></div>
       <div className="field"><label htmlFor="vGeo">Vị trí trên bản đồ (vĩ độ, kinh độ)</label><input className="input num" id="vGeo" value={geo} onChange={e => setGeo(e.target.value)} placeholder="21.0285, 105.8542" />
-        <p className="muted">Nếu đang ở nơi tổ chức: bấm “Dùng vị trí hiện tại”. Hoặc mở bản đồ trên điện thoại, nhấn giữ đúng chỗ, sao chép tọa độ rồi dán vào đây.</p>
+        <p className="muted">Thường không cần gõ: bấm “Tìm vị trí từ địa chỉ” ở trên, hoặc “Dùng vị trí hiện tại” nếu đang ở nơi tổ chức.</p>
         <button className="btn sm" style={{ alignSelf: 'flex-start' }} onClick={here}><Icon n="pin" c="sm" />Dùng vị trí hiện tại</button></div>
       <ErrorBanner err={err} />
-      <p className="note">Giai đoạn 3 app tự tìm vị trí từ địa chỉ. Khoảng cách tính theo đường chim bay.</p>
+      <p className="note">Khoảng cách tính theo đường chim bay.</p>
     </Sheet>
   );
 }

@@ -1,6 +1,6 @@
 // Lớp lưu trữ có kiểu: LocalRepo (trên máy — bản chạy thử, trang /mau) hoặc SupabaseRepo (máy chủ, Phase 3a).
 // Các màn chỉ dùng giao diện CaseRepo nên không phụ thuộc nơi lưu.
-import type { Answers, CaseData, Member } from '../domain/types';
+import type { Answers, CaseData, Member, TaskInst } from '../domain/types';
 import { normalizeCase } from '../domain/normalize';
 import { REMOTE } from './backend';
 import { SupabaseRepo } from './remoteRepo';
@@ -21,6 +21,8 @@ export interface CaseRepo {
   adminCases?(): Promise<CaseData[]>;
   /** Báo khi người khác cập nhật (máy chủ) */
   subscribe?(id: string, onChange: () => void): () => void;
+  /** Người nhận việc qua link báo trạng thái một việc (máy chủ chỉ cho đổi trạng thái việc của người đó) */
+  linkAct?(token: string, task: TaskInst, log: string): Promise<void>;
 }
 
 const KEY = 'damhieu.cases.v1';

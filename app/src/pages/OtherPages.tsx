@@ -5,7 +5,6 @@ import type { CaseData, Member } from '../domain/types';
 import { completeTask, reportIssue, startTask } from '../domain/actions';
 import { U1_ID, visibleTasks, VENUE_LABEL } from '../domain/model';
 import { repo } from '../repo/repo';
-import { REMOTE } from '../repo/backend';
 import { DN } from '../case/CaseContext';
 import { Icon } from '../ui/Icon';
 import { Banner, StatusPill, useApp } from '../ui/common';
@@ -16,23 +15,36 @@ export function LinkPage() {
   const [st, setSt] = useState<{ c: CaseData; member: Member } | null | undefined>(undefined);
   const [issueFor, setIssueFor] = useState<string | null>(null);
   const [issue, setIssue] = useState('');
-  useEffect(() => { repo.findByLinkToken(token).then(setSt); }, [token]);
+  useEffect(() => { repo.findByLinkToken(token).then(setSt).catch(() => setSt(null)); }, [token]);
 
   if (st === undefined) return <div className="bare"><div className="bare-inner" style={{ justifyContent: 'center' }}><p className="muted" style={{ textAlign: 'center' }}>Đang mở…</p></div></div>;
   if (st === null) return (
     <div className="bare"><div className="bare-inner" style={{ justifyContent: 'center' }}><div className="empty"><Icon n="link" c="lg" />
       <h2 style={{ color: 'var(--text)' }}>Link này không còn dùng được</h2>
-      <p>{REMOTE ? 'Link nhờ việc dùng trên máy khác sẽ mở ở giai đoạn 3b. Trong lúc này, người đại diện gia đình mời bác vào Đội bằng số điện thoại để bác đăng nhập và xem việc.' : 'Người đại diện gia đình đã thu hồi hoặc link đã hết hạn. Bác liên hệ người đại diện gia đình để nhận link mới.'}</p></div></div></div>
+      <p>{'Người đại diện gia đình đã thu hồi hoặc link đã hết hạn. Bác liên hệ người đại diện gia đình để nhận link mới.'}</p></div></div></div>
   );
   const { c, member } = st;
   const u1 = c.members.find(m => m.id === U1_ID)!;
   const mine = visibleTasks(c).filter(t => t.owner === member.id && t.status !== 'skip');
   const act = async (fn: (d: CaseData) => void, msg: string) => {
     const next = structuredClone(c);
-    fn(next);
-    await repo.save(next);
-    setSt({ c: next, member });
-    toast(msg);
+    try {
+      fn(next);
+      if (repo.linkAct) {
+        // Máy chủ: chỉ gửi đúng việc vừa đổi, kèm dòng lịch sử; rồi tải lại bản mới nhất
+        const changed = next.tasks.find(t => JSON.stringify(t) !== JSON.stringify(c.tasks.find(x => x.id === t.id)));
+        if (!changed) return;
+        await repo.linkAct(token, changed, next.history.at(-1)?.text ?? '');
+        const fresh = await repo.findByLinkToken(token);
+        setSt(fresh);
+      } else {
+        await repo.save(next);
+        setSt({ c: next, member });
+      }
+      toast(msg);
+    } catch (e) {
+      toast('Chưa gửi được: ' + (e as Error).message);
+    }
   };
   return (
     <div className="bare"><div className="bare-inner">

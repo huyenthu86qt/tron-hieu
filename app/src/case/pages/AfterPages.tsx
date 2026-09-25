@@ -14,6 +14,9 @@ import { Icon } from '../../ui/Icon';
 import { Banner, ErrorBanner, useApp } from '../../ui/common';
 import { useCase } from '../CaseContext';
 import { OwnerPill } from '../rows';
+import { FileName, useUploader } from '../../ui/files';
+import { uploadCaseFile } from '../../repo/files';
+import { REMOTE } from '../../repo/backend';
 import { PaidGate } from '../Paywall';
 
 const fmtAt = (iso?: string) => (iso ? new Date(iso).toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' }) : '');
@@ -23,6 +26,7 @@ const CLOSE_GO = ['hau-tang', 'tai-chinh/doi-soat', 'nha-cung-cap', 'hau-tang', 
 export function AfterPage() { return <PaidGate module="Hậu tang"><After /></PaidGate>; }
 function After() {
   const { c, base, update, me } = useCase();
+  const up = useUploader();
   const { toast } = useApp();
   const nav = useNavigate();
   const cc = closeConds(c), okN = cc.filter(k => k.ok).length, closed = !!c.after?.closed;
@@ -46,9 +50,9 @@ function After() {
         ))}
         <p className="note">Cùng một danh sách với chặng 13–15 trên Bản đồ: đánh dấu ở đây thì Bản đồ cập nhật theo.</p>
         <section className="card card-pad stack" style={{ gap: 8 }}><h3>Tài liệu kết quả</h3><p className="muted">Lưu bản chụp giấy tờ sau khi làm thủ tục (trích lục khai tử, quyết định chế độ…) để gia đình tìm lại khi cần.</p>
-          {docs.map(d => <span key={d.id} className="pill done" style={{ alignSelf: 'flex-start' }}><Icon n="doc" c="sm" />{d.name}</span>)}
-          <label className="btn file-btn" style={{ alignSelf: 'flex-start' }}><Icon n="doc" c="sm" />Tải tệp lên<input type="file" onChange={e => { const n = e.target.files?.[0]?.name; if (n) { update(d => { (d.docs ??= []).push({ id: 'doc' + Date.now(), name: n, at: new Date().toISOString(), source: 'after' }); d.history.push({ at: new Date().toISOString(), text: `${me.name} lưu tài liệu kết quả: ${n}` }); }); toast('Đã lưu tài liệu'); } }} /></label>
-          <p className="note">Giai đoạn này app ghi lại tên tệp; lưu tệp lên máy chủ mở ở giai đoạn 3.</p></section>
+          {docs.map(d => <span key={d.id} className="pill done" style={{ alignSelf: 'flex-start' }}><Icon n="doc" c="sm" /><FileName name={d.name} path={d.path} /></span>)}
+          <label className="btn file-btn" style={{ alignSelf: 'flex-start' }} aria-disabled={up.busy}><Icon n="doc" c="sm" />{up.busy ? 'Đang tải lên…' : 'Tải tệp lên'}<input type="file" disabled={up.busy} onChange={async e => { const f = e.target.files?.[0]; e.target.value = ''; if (!f) return; const s = await up.run(() => uploadCaseFile(c.id, 'after', f)); if (s) { update(d => { (d.docs ??= []).push({ id: 'doc' + Date.now(), name: s.name, path: s.path, at: new Date().toISOString(), source: 'after' }); d.history.push({ at: new Date().toISOString(), text: `${me.name} lưu tài liệu kết quả: ${s.name}` }); }); toast('Đã lưu tài liệu'); } }} /></label>
+          {!REMOTE && <p className="note">Bản chạy thử trên máy chỉ ghi lại tên tệp; bản thật lưu tệp trên máy chủ.</p>}</section>
       </div><div className="stack">
         <section className="card card-pad stack" style={{ gap: 10 }}><div style={{ display: 'flex', alignItems: 'center', gap: 8 }}><h3 style={{ flex: 1 }}>Tiến độ khép vòng</h3><span className="muted">{okN}/{cc.length}</span></div>
           <div className={'bar ' + (okN === cc.length ? 'ok' : '')}><i style={{ width: `${okN / cc.length * 100}%` }} /></div>

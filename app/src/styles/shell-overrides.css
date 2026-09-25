@@ -43,3 +43,7 @@
 :root{--open:#A9531A;--open-soft:#FCE9DA}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--open:#E8A064;--open-soft:#3D2A1C}}
 :root[data-theme="dark"]{--open:#E8A064;--open-soft:#3D2A1C}
+
+/* Tên tệp bấm để mở */
+.file-link{border:0;background:none;padding:0;font:inherit;color:inherit;text-decoration:underline;text-underline-offset:2px;cursor:pointer}
+.file-link:disabled{opacity:.6;cursor:progress}

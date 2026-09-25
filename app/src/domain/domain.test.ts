@@ -255,7 +255,7 @@ describe('Việc riêng, không áp dụng, đội và vùng', () => {
   it('bỏ thành viên trả việc về “chưa có người nhận”; đổi tên vùng cập nhật người và việc', () => {
     const c = mk();
     const m = inviteMember(c, { name: 'Chú Bảy', rel: 'Hàng xóm', access: 'link', areas: ['Liên lạc'] });
-    expect(m.linkToken).toMatch(/^[A-Z0-9]{12}$/);
+    expect(m.linkToken).toMatch(/^[A-Z0-9]{20}$/);
     expect(() => inviteMember(c, { name: 'Hà', rel: 'Con dâu', access: 'full', areas: ['Tài chính'] })).toThrow('số điện thoại');
     assignTask(c, 't3', m.id);
     removeMember(c, m.id);

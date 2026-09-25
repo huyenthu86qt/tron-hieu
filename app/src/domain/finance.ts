@@ -43,7 +43,7 @@ export const canFinance = (m: Member | null | undefined) => !!m && (m.id === U1_
 
 export interface ExpenseForm {
   name: string; amount: string; cat: VendorCat | 'khac'; vendorId?: string; payer: string; method: Method; fund: string;
-  holder: string; bank: string; acct: string; reason: string; evidence: string; extra: boolean;
+  holder: string; bank: string; acct: string; reason: string; evidence: string; evidencePath?: string; extra: boolean;
 }
 
 export function validateExpense(f: ExpenseForm): string | null {
@@ -60,7 +60,7 @@ export function requestExpense(c: CaseData, f: ExpenseForm, by: string, now = ne
   const payee: Payee | undefined = f.method === 'bank' ? { holder: f.holder.trim().toUpperCase(), bank: f.bank, acct: f.acct.trim() } : undefined;
   const e: Expense = {
     id: 'e' + Math.random().toString(36).slice(2, 9), name: f.name.trim(), cat: f.cat, vendorId: f.vendorId, amount: parseMoney(f.amount), paid: 0,
-    status: by === U1_ID ? 'approved' : 'request', evidence: f.evidence || undefined, payer: f.payer || null, method: f.method, fund: f.fund || null,
+    status: by === U1_ID ? 'approved' : 'request', evidence: f.evidence || undefined, evidencePath: f.evidence ? f.evidencePath : undefined, payer: f.payer || null, method: f.method, fund: f.fund || null,
     payee, extra: f.extra, reason: f.reason.trim() || undefined, requestedBy: by, createdAt: now.toISOString(),
     decidedAt: by === U1_ID ? now.toISOString() : undefined,
   };
@@ -89,9 +89,9 @@ export function recordPayment(c: CaseData, id: string, amount: number, now = new
   c.history.push({ at: now.toISOString(), text: `Ghi đã trả ${money(amount)} — ${e.name}` });
 }
 
-export function attachExpenseEvidence(c: CaseData, id: string, name: string) {
+export function attachExpenseEvidence(c: CaseData, id: string, name: string, path?: string) {
   const e = fin(c).expenses.find(x => x.id === id);
-  if (e) e.evidence = name;
+  if (e) { e.evidence = name; e.evidencePath = path; }
 }
 
 export function addFund(c: CaseData, name: string, type: Method, last4: string): Fund {
