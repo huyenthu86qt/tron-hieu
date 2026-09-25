@@ -36,9 +36,9 @@ describe('Tài khoản trên máy (Phase 2)', () => {
 
   it('đặt đơn, giả lập ngân hàng báo đúng tiền thì đơn đã thanh toán; đơn chờ không tạo trùng', async () => {
     const S = await import('./platformStore');
-    const r = S.placeOrder('pre', { kind: 'pre', id: 'cb1', name: 'Hồ sơ' });
+    const r = await S.placeOrder('pre', { kind: 'pre', id: 'cb1', name: 'Hồ sơ' });
     expect(r.order?.status).toBe('pending');
-    expect(S.placeOrder('pre', { kind: 'pre', id: 'cb1', name: 'Hồ sơ' }).order?.code).toBe(r.order!.code);
+    expect((await S.placeOrder('pre', { kind: 'pre', id: 'cb1', name: 'Hồ sơ' })).order?.code).toBe(r.order!.code);
     const tx = await S.simulateBankTx({ providerTxId: 'T1', amount: r.order!.amount, content: 'CK ' + r.order!.code });
     expect(tx.tx.status).toBe('matched');
     expect(S.getPlatform().orders.find(o => o.code === r.order!.code)!.status).toBe('paid');

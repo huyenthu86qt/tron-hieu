@@ -201,6 +201,8 @@ export function ForgotPage() {
 export function RequireAuth({ children, admin }: { children: ReactNode; admin?: boolean }) {
   const user = useUser();
   const loc = useLocation();
+  const ready = usePlatform(s => s.ready);
+  if (!ready) return <div className="bare"><div className="bare-inner" style={{ justifyContent: 'center' }}><p className="muted" style={{ textAlign: 'center' }}>Đang tải…</p></div></div>;
   if (!user) {
     const exp = sessionExpired(getPlatform());
     return <Navigate to={`${admin ? '/admin/dang-nhap' : '/dang-nhap'}?${exp ? 'het-phien=1&' : ''}tiep=${encodeURIComponent(loc.pathname + loc.search)}`} replace />;

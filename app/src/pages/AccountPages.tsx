@@ -116,7 +116,7 @@ export function AccountPage() {
 
         <section className="card card-pad stack"><h3>Hồ sơ</h3>
           <div className="field"><label htmlFor="accName">Họ tên</label><div style={{ display: 'flex', gap: 8 }}><input className="input" id="accName" value={name} onChange={e => setName(e.target.value)} />
-            <button className="btn" onClick={() => { const e = updateProfile(name); setErr({ ...err, name: e }); if (!e) toast('Đã lưu họ tên'); }}>Lưu</button></div></div>
+            <button className="btn" onClick={async () => { const e = await updateProfile(name); setErr({ ...err, name: e }); if (!e) toast('Đã lưu họ tên'); }}>Lưu</button></div></div>
           <ErrorBanner err={err.name} />
           <dl className="kv"><dt>Số điện thoại</dt><dd className="num">{fmtPhone(user.phone)} <button className="btn sm ghost" onClick={() => setPhoneSheet(true)}>Đổi số</button></dd><dt>Tạo lúc</dt><dd>{fmtAt(user.createdAt)}</dd></dl>
         </section>

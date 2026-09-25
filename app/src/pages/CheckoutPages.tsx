@@ -4,10 +4,11 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import type { CaseData } from '../domain/types';
 import { money } from '../domain/finance';
-import { isExpired, isFull, type ProductId } from '../domain/platform';
+import { fullUntil, isExpired, isFull, type ProductId } from '../domain/platform';
 import { DN_TEXT } from '../domain/text';
 import { repo } from '../repo/repo';
-import { expireOrders, placeOrder, simulateBankTx, usePlatform, useUser } from '../repo/platformStore';
+import { REMOTE } from '../repo/backend';
+import { expireOrders, placeOrder, refreshOrders, simulateBankTx, usePlatform, useUser } from '../repo/platformStore';
 import { Icon } from '../ui/Icon';
 import { Banner, ErrorBanner, useApp } from '../ui/common';
 import { BrandLine } from '../ui/brand';
@@ -44,8 +45,8 @@ export function CheckoutPage() {
   if (c === undefined) return <Frame><p className="muted">Đang tải…</p></Frame>;
   if (!target) return <Frame><div className="empty"><span>Chưa rõ gói áp dụng cho đám hiếu hay hồ sơ nào.</span><Link className="btn" to="/app">Về trang chủ</Link></div></Frame>;
 
-  const create = () => {
-    const r = placeOrder(goi, target, ve);
+  const create = async () => {
+    const r = await placeOrder(goi, target, ve, goi === 'full' && c ? fullUntil(c) : undefined);
     if (r.error) { setErr(r.error); return; }
     nav(`/checkout/don/${r.order!.code}`, { replace: true });
   };
@@ -86,6 +87,9 @@ export function OrderPage() {
   const acct = usePlatform(s => s.settings.sepay.account);
   const [waiting, setWaiting] = useState(false);
   useEffect(() => { expireOrders(); const t = setInterval(() => expireOrders(), 30000); return () => clearInterval(t); }, []);
+  // Trên máy chủ: hỏi lại trạng thái đơn mỗi 5 giây trong lúc chờ thanh toán
+  const pending = o?.status === 'pending';
+  useEffect(() => { if (!REMOTE || !pending) return; void refreshOrders(); const t = setInterval(() => void refreshOrders(), 5000); return () => clearInterval(t); }, [pending]);
   if (!o || o.userId !== user.id) return <Frame><div className="empty"><span>Không tìm thấy đơn {code}.</span><Link className="btn" to="/tai-khoan">Về tài khoản</Link></div></Frame>;
 
   const back = o.returnTo ?? (o.target.kind === 'case' ? `/dh/${o.target.id}` : `/chuan-bi/${o.target.id}`);

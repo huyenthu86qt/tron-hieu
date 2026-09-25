@@ -7,8 +7,7 @@ import { fmtMoneyInput, money, parseMoney } from '../domain/finance';
 import { activatePreNeed } from '../domain/normalize';
 import { normalizePhone, preGroups, readiness, type PreNeed } from '../domain/platform';
 import { CATS } from '../domain/vendors';
-import { repo } from '../repo/repo';
-import { adminLog, createPreNeed, myPreNeeds, savePreNeed, usePlatform, useUser } from '../repo/platformStore';
+import { activatePre, createPreNeed, myPreNeeds, savePreNeed, usePlatform, useUser } from '../repo/platformStore';
 import { Icon } from '../ui/Icon';
 import { Banner, Chips, ErrorBanner, Opts, useApp } from '../ui/common';
 import { AccountShell } from './AccountShell';
@@ -71,10 +70,10 @@ export function PreNewPage() {
   const [forSelf, setForSelf] = useState<'self' | 'other' | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const owned = all.filter(p => p.ownerId === user.id && !p.paid && !p.caseId).length;
-  const go = () => {
+  const go = async () => {
     if (!forSelf) { setErr('Chọn hồ sơ này cho ai.'); return; }
     if (owned >= 1) { setErr('Gói miễn phí tạo được 1 hồ sơ. Mở gói Chuẩn bị trước cho hồ sơ hiện có trước khi tạo thêm.'); return; }
-    const p = createPreNeed(forSelf === 'self');
+    const p = await createPreNeed(forSelf === 'self').catch((e: Error) => { setErr(e.message); return null; });
     if (p) nav(`/chuan-bi/${p.id}`, { replace: true });
   };
   return (
@@ -113,13 +112,13 @@ export function PreOverviewPage() {
   );
 }
 
-function SaveBar({ onSave, id }: { onSave: () => string | null; id: string }) {
+function SaveBar({ onSave, id }: { onSave: () => string | null | Promise<string | null>; id: string }) {
   const nav = useNavigate();
   const { toast } = useApp();
   const [err, setErr] = useState<string | null>(null);
   return <>
     <ErrorBanner err={err} />
-    <div style={{ display: 'flex', gap: 10 }}><button className="btn primary" style={{ flex: 1 }} onClick={() => { const e = onSave(); if (e) setErr(e); else { toast('Đã lưu nhóm này'); nav(`/chuan-bi/${id}`); } }}>Lưu nhóm này</button>
+    <div style={{ display: 'flex', gap: 10 }}><button className="btn primary" style={{ flex: 1 }} onClick={async () => { const e = await onSave(); if (e) setErr(e); else { toast('Đã lưu nhóm này'); nav(`/chuan-bi/${id}`); } }}>Lưu nhóm này</button>
       <button className="btn" onClick={() => nav(`/chuan-bi/${id}`)}>Để sau</button></div>
   </>;
 }
@@ -140,7 +139,7 @@ export function PreInfoPage() {
         <div className="field"><label htmlFor="piHome">Quê quán</label><input className="input" id="piHome" disabled={ro} value={s.hometown} onChange={e => setS({ ...s, hometown: e.target.value })} /></div>
         <div className="field"><label htmlFor="piId">Ghi chú giấy tờ tùy thân (không ghi số đầy đủ)</label><input className="input" id="piId" disabled={ro} value={s.idNote} onChange={e => setS({ ...s, idNote: e.target.value })} placeholder="Ví dụ: CCCD để trong ngăn kéo tủ thờ" /></div>
       </section>
-      {!ro && <SaveBar id={p.id} onSave={() => { if (!s.name.trim()) return 'Cần nhập họ tên.'; savePreNeed({ ...p, subject: { ...s, name: s.name.trim(), title: s.title as Title } }); return null; }} />}
+      {!ro && <SaveBar id={p.id} onSave={() => { if (!s.name.trim()) return 'Cần nhập họ tên.'; return savePreNeed({ ...p, subject: { ...s, name: s.name.trim(), title: s.title as Title } }); }} />}
     </PreFrame>
   );
 }
@@ -167,7 +166,7 @@ export function PreWishPage() {
         <textarea className="input" disabled={ro} value={w.msg} onChange={e => setW({ ...w, msg: e.target.value })} placeholder="Điều muốn con cháu biết khi lo việc…" aria-label="Lời nhắn cho con cháu" /></section>
       <section className="card card-pad stack"><h3>Mong muốn đặc biệt</h3>
         <textarea className="input" disabled={ro} value={special} onChange={e => setSpecial(e.target.value)} placeholder="Ví dụ: bài hát muốn được mở, người muốn mời đọc điếu văn, ảnh thờ đã chọn…" aria-label="Mong muốn đặc biệt" /></section>
-      {!ro && <SaveBar id={p.id} onSave={() => { savePreNeed({ ...p, wish: w, special }); return null; }} />}
+      {!ro && <SaveBar id={p.id} onSave={() => savePreNeed({ ...p, wish: w, special })} />}
     </PreFrame>
   );
 }
@@ -202,7 +201,7 @@ export function PreContactsPage() {
           <input className="input" value={n.rel} onChange={e => setN({ ...n, rel: e.target.value })} placeholder="Quan hệ" aria-label="Quan hệ" />
           <button className="btn" onClick={add}><Icon n="plus" c="sm" />Thêm</button></div>}</section>
       <ErrorBanner err={err} />
-      {!ro && <SaveBar id={p.id} onSave={() => { const ph = rep.phone.trim() ? normalizePhone(rep.phone) : ''; if (ph === null) return 'Số điện thoại người đại diện chưa đúng.'; savePreNeed({ ...p, rep: { ...rep, phone: ph }, contacts: list }); return null; }} />}
+      {!ro && <SaveBar id={p.id} onSave={() => { const ph = rep.phone.trim() ? normalizePhone(rep.phone) : ''; if (ph === null) return 'Số điện thoại người đại diện chưa đúng.'; return savePreNeed({ ...p, rep: { ...rep, phone: ph }, contacts: list }); }} />}
     </PreFrame>
   );
 }
@@ -244,7 +243,7 @@ export function PreBudgetPage() {
           <div key={k.k} className="field"><label htmlFor={'pv-' + k.k}>{k.name}</label><select className="input" id={'pv-' + k.k} disabled={ro} value={vendors[k.k] ?? ''} onChange={e => setVendors({ ...vendors, [k.k]: e.target.value || undefined })}>
             <option value="">Không có mong muốn riêng</option>{opts.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}</select></div>); })}
         {!dir.length && <p className="muted">Danh bạ nhà cung cấp chưa có bên nào.</p>}</section>
-      {!ro && <SaveBar id={p.id} onSave={() => { savePreNeed({ ...p, budget: { amount: parseMoney(amount), vendors: Object.fromEntries(Object.entries(vendors).filter(([, v]) => v)) } }); return null; }} />}
+      {!ro && <SaveBar id={p.id} onSave={() => savePreNeed({ ...p, budget: { amount: parseMoney(amount), vendors: Object.fromEntries(Object.entries(vendors).filter(([, v]) => v)) } })} />}
     </PreFrame>
   );
 }
@@ -309,9 +308,8 @@ export function PreActivatePage() {
     try {
       const c = activatePreNeed(p, x, user.id, user.name);
       c.members[0].phone = user.phone;
-      await repo.save(c);
-      savePreNeed({ ...p, caseId: c.id, activatedAt: new Date().toISOString(), activatedBy: user.name });
-      adminLog('Kích hoạt hồ sơ chuẩn bị', subjectName(p), `bởi ${user.name}`);
+      const e = await activatePre(p, c, c.access?.activeUntil, user.name);
+      if (e) { setErr(e); setBusy(false); return; }
       nav(`/dh/${c.id}/tiep-nhan`, { replace: true });
     } catch (e) { setErr((e as Error).message); setBusy(false); }
   };

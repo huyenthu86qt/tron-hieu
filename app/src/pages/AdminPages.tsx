@@ -8,6 +8,7 @@ import { fmtMoneyInput, money, parseMoney } from '../domain/finance';
 import { fmtPhone, isFull, ORDER_STATUS_LABEL, type OrderStatus, type Product } from '../domain/platform';
 import { DN_TEXT } from '../domain/text';
 import { repo } from '../repo/repo';
+import { REMOTE } from '../repo/backend';
 import {
   assignTx, createAdmin, login, logout, refundOrder, refundTx, saveProduct, saveSettings, saveVendor, setCaseAccess, setSupportNote,
   setUserLocked, setVendorActive, simulateBankTx, usePlatform, useUser,
@@ -23,8 +24,9 @@ const OPill = ({ s }: { s: OrderStatus }) => <span className={'pill ' + ORDER_ST
 
 function useAllCases() {
   const [L, setL] = useState<CaseData[]>([]);
-  useEffect(() => { repo.listAll().then(setL); }, []);
-  return [L, () => repo.listAll().then(setL)] as const;
+  const load = () => (repo.adminCases ?? repo.listAll).call(repo).then(setL);
+  useEffect(() => { void load(); }, []);
+  return [L, load] as const;
 }
 
 const NAVS: [string, IconName, string][] = [
@@ -59,7 +61,7 @@ export function AdminShell({ title, back, children }: { title: string; back?: st
 export function AdminLoginPage() {
   const nav = useNavigate();
   const user = useUser();
-  const hasAdmin = usePlatform(s => s.users.some(u => u.isAdmin));
+  const hasAdmin = usePlatform(s => REMOTE || s.users.some(u => u.isAdmin));
   const [f, setF] = useState({ name: '', phone: '', pass: '' });
   const [err, setErr] = useState<string | null>(null);
   if (user?.isAdmin) return <Navigate to="/admin" replace />;
@@ -72,7 +74,8 @@ export function AdminLoginPage() {
     <div className="bare"><div className="bare-inner" style={{ maxWidth: 440 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--primary)' }}><Icon n="lotus" /><b style={{ fontFamily: 'var(--serif)' }}>Quản trị {BRAND}</b></div>
       <h1 style={{ fontSize: 24 }}>{hasAdmin ? 'Đăng nhập quản trị' : 'Tạo tài khoản Admin (bản chạy thử)'}</h1>
-      {user && !user.isAdmin && <Banner kind="warn">Tài khoản đang đăng nhập không phải Admin.</Banner>}
+      {user && !user.isAdmin && <Banner kind="warn">Tài khoản đang đăng nhập không phải Admin.{REMOTE && ' Chủ hệ thống bật quyền Admin cho số điện thoại này trên máy chủ (Supabase) rồi đăng nhập lại.'}</Banner>}
+      {REMOTE && <p className="muted">Admin đăng nhập bằng số điện thoại và mật khẩu của tài khoản đã đăng ký trong app.</p>}
       {!hasAdmin && <Banner kind="upd">Giai đoạn 3 tài khoản Admin do chủ hệ thống tạo trên máy chủ, không tự đăng ký. Ở bản chạy thử trên máy, tạo một tài khoản Admin để thử các màn quản trị.</Banner>}
       <section className="card card-pad stack">
         {!hasAdmin && <div className="field"><label htmlFor="aName">Họ tên</label><input className="input" id="aName" value={f.name} onChange={e => setF({ ...f, name: e.target.value })} /></div>}
@@ -154,9 +157,9 @@ export function AdminUserPage() {
       <section className="card"><div className="sec-h card-pad" style={{ margin: 0, paddingBottom: 4 }}><h3>Đơn hàng</h3></div>
         {orders.length ? <div className="list">{orders.map(o => <div key={o.id} className="row"><div className="grow"><div className="title num">{o.code} · {o.productName}</div><div className="meta"><span>{o.target.name}</span><span>{fmtAt(o.createdAt)}</span></div></div><OPill s={o.status} /><span className="num">{money(o.amount)}</span></div>)}</div> : <div className="empty">Chưa có đơn.</div>}</section>
       <section className="card card-pad stack"><h3>Ghi chú hỗ trợ</h3><textarea className="input" value={note} onChange={e => setNote(e.target.value)} aria-label="Ghi chú hỗ trợ" />
-        <button className="btn sm" style={{ alignSelf: 'flex-start' }} onClick={() => { setSupportNote(u.id, note); toast('Đã lưu ghi chú'); }}>Lưu ghi chú</button></section>
+        <button className="btn sm" style={{ alignSelf: 'flex-start' }} onClick={async () => { await setSupportNote(u.id, note); toast('Đã lưu ghi chú'); }}>Lưu ghi chú</button></section>
       {lock !== null && <Sheet title={lock ? 'Khóa tài khoản' : 'Mở khóa tài khoản'} onClose={() => setLock(null)} foot={<><button className="btn" onClick={() => setLock(null)}>Hủy</button>
-        <button className={'btn ' + (lock ? 'danger' : 'primary')} disabled={!reason.trim()} onClick={() => { setUserLocked(u.id, lock, reason); setLock(null); setReason(''); toast(lock ? 'Đã khóa tài khoản' : 'Đã mở khóa'); }}>Xác nhận</button></>}>
+        <button className={'btn ' + (lock ? 'danger' : 'primary')} disabled={!reason.trim()} onClick={async () => { const e = await setUserLocked(u.id, lock, reason); setLock(null); setReason(''); toast(e ?? (lock ? 'Đã khóa tài khoản' : 'Đã mở khóa')); }}>Xác nhận</button></>}>
         <div className="field"><label htmlFor="lkR">Lý do (ghi vào nhật ký)</label><textarea className="input" id="lkR" value={reason} onChange={e => setReason(e.target.value)} /></div></Sheet>}
     </div></AdminShell>
   );
@@ -185,7 +188,7 @@ export function AdminOrdersPage() {
         <div className="eyebrow">Giao dịch liên quan</div>
         {txs.filter(t => t.orderId === o.id).map(t => <p key={t.id} className="num">{t.providerTxId} · {money(t.amount)} · {t.status}{t.reason ? ' · ' + t.reason : ''}</p>)}
         {o.status === 'paid' && <div className="stack" style={{ gap: 8 }}><div className="field"><label htmlFor="rfR">Hoàn tiền (xử lý tay) — lý do</label><textarea className="input" id="rfR" value={reason} onChange={e => setReason(e.target.value)} /></div>
-          <button className="btn danger" style={{ alignSelf: 'flex-start' }} disabled={!reason.trim()} onClick={() => { const e = refundOrder(o.code, reason); toast(e ?? 'Đã đánh dấu hoàn tiền. Nhớ thu hồi quyền nếu cần ở mục Quyền truy cập.'); setReason(''); }}>Đánh dấu đã hoàn tiền</button></div>}
+          <button className="btn danger" style={{ alignSelf: 'flex-start' }} disabled={!reason.trim()} onClick={async () => { const e = await refundOrder(o.code, reason); toast(e ?? 'Đã đánh dấu hoàn tiền. Nhớ thu hồi quyền nếu cần ở mục Quyền truy cập.'); setReason(''); }}>Đánh dấu đã hoàn tiền</button></div>}
       </Sheet>}
     </div></AdminShell>
   );
@@ -228,7 +231,7 @@ export function AdminProductsPage() {
         <div key={p.id} className="row"><div className="grow"><div className="title">{p.name}</div><div className="meta"><span className="num">{money(p.price)}</span><span>{p.duration}</span>{p.active ? <span className="pill done">Đang bán</span> : <span className="pill skip">Tạm ngừng</span>}{p.updatedAt && <span>Sửa lúc {fmtAt(p.updatedAt)}</span>}</div><div className="meta"><span>{p.desc}</span></div></div>
           <button className="btn sm" onClick={() => { setEdit({ ...p }); setPrice(p.price.toLocaleString('vi-VN')); }}>Sửa</button></div>
       ))}</div></section>
-      {edit && <Sheet title={`Sửa gói · ${edit.name}`} onClose={() => setEdit(null)} foot={<><button className="btn" onClick={() => setEdit(null)}>Hủy</button><button className="btn primary" onClick={() => { saveProduct({ ...edit, price: parseMoney(price) }); setEdit(null); toast('Đã lưu gói, ghi vào nhật ký'); }}>Lưu</button></>}>
+      {edit && <Sheet title={`Sửa gói · ${edit.name}`} onClose={() => setEdit(null)} foot={<><button className="btn" onClick={() => setEdit(null)}>Hủy</button><button className="btn primary" onClick={async () => { const e = await saveProduct({ ...edit, price: parseMoney(price) }); if (e) { toast(e); return; } setEdit(null); toast('Đã lưu gói, ghi vào nhật ký'); }}>Lưu</button></>}>
         <div className="field"><label htmlFor="pN">Tên gói</label><input className="input" id="pN" value={edit.name} onChange={e => setEdit({ ...edit, name: e.target.value })} /></div>
         <div className="field"><label htmlFor="pD">Mô tả ngắn</label><textarea className="input" id="pD" value={edit.desc} onChange={e => setEdit({ ...edit, desc: e.target.value })} /></div>
         <div className="field"><label htmlFor="pP">Giá (đồng)</label><input className="input num" id="pP" inputMode="numeric" value={price} onChange={e => setPrice(fmtMoneyInput(e.target.value))} /></div>
@@ -247,7 +250,7 @@ export function AdminSepayPage() {
   const check = () => {
     const ok = !!(a.bank && a.number && a.holder);
     const next = { ...s, sepay: { ...s.sepay, lastCheck: { at: new Date().toISOString(), ok, note: ok ? 'Đủ thông tin tài khoản nhận. Kiểm tra kết nối webhook thật ở giai đoạn 4.' : 'Thiếu thông tin tài khoản nhận.' } } };
-    setS(next); saveSettings(next, 'Kiểm tra kết nối SePay'); toast(ok ? 'Thông tin đầy đủ' : 'Thiếu thông tin');
+    setS(next); void saveSettings(next, 'Kiểm tra kết nối SePay').then(e => e && toast(e)); toast(ok ? 'Thông tin đầy đủ' : 'Thiếu thông tin');
   };
   return (
     <AdminShell title="SePay"><div className="page" style={{ maxWidth: 820 }}>
@@ -264,7 +267,7 @@ export function AdminSepayPage() {
       <section className="card card-pad stack"><h3>Hỗ trợ khách</h3>
         <div className="field"><label htmlFor="spP">Số điện thoại hỗ trợ</label><input className="input num" id="spP" value={s.support.phone} onChange={e => setS({ ...s, support: { ...s.support, phone: e.target.value } })} /></div>
         <div className="field"><label htmlFor="spZ">Zalo hỗ trợ</label><input className="input num" id="spZ" value={s.support.zalo} onChange={e => setS({ ...s, support: { ...s.support, zalo: e.target.value } })} /></div></section>
-      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}><button className="btn primary" style={{ flex: 1 }} onClick={() => { saveSettings(s, 'Lưu cài đặt SePay và hỗ trợ'); toast('Đã lưu, ghi vào nhật ký'); }}>Lưu</button><button className="btn" onClick={check}>Kiểm tra kết nối</button></div>
+      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}><button className="btn primary" style={{ flex: 1 }} onClick={async () => { const e = await saveSettings(s, 'Lưu cài đặt SePay và hỗ trợ'); toast(e ?? 'Đã lưu, ghi vào nhật ký'); }}>Lưu</button><button className="btn" onClick={check}>Kiểm tra kết nối</button></div>
     </div></AdminShell>
   );
 }
@@ -280,7 +283,7 @@ export function AdminUnmatchedPage() {
   const [sim, setSim] = useState({ amount: '', content: '' });
   const L = txs.filter(t => t.status === 'unmatched');
   const done = async () => {
-    const e = act!.kind === 'assign' ? await assignTx(act!.id, code, reason) : refundTx(act!.id, reason);
+    const e = act!.kind === 'assign' ? await assignTx(act!.id, code, reason) : await refundTx(act!.id, reason);
     if (e) { setErr(e); return; }
     setAct(null); setCode(''); setReason(''); setErr(null); toast('Đã xử lý, ghi vào nhật ký');
   };
@@ -325,7 +328,7 @@ export function AdminVendorsPage() {
   const [F, setF] = useState({ cat: 'all', status: 'all', q: '' });
   const [hide, setHide] = useState<DirVendor | null>(null);
   const L = dir.filter(v => (F.cat === 'all' || v.cats.includes(F.cat as VendorCat)) && (F.status === 'all' || (F.status === 'on' ? v.active : !v.active)) && `${v.name} ${v.address}`.toLowerCase().includes(F.q.toLowerCase()));
-  const toggle = (v: DirVendor) => { if (v.active) setHide(v); else { setVendorActive(v.id, true); toast(`Đã bật ${v.name}. Gợi ý liên quan tính lại khi gia đình mở.`); } };
+  const toggle = (v: DirVendor) => { if (v.active) setHide(v); else { void setVendorActive(v.id, true).then(e => e && toast(e)); toast(`Đã bật ${v.name}. Gợi ý liên quan tính lại khi gia đình mở.`); } };
   return (
     <AdminShell title="Danh bạ nhà cung cấp"><div className="page">
       <div className="page-title"><div><h1>Danh bạ nhà cung cấp</h1><p>Nguồn cho gợi ý “đúng + gần nhất” của mọi gia đình · {dir.filter(v => v.active).length} bên đang hoạt động</p></div>
@@ -336,7 +339,7 @@ export function AdminVendorsPage() {
         <select className="input" style={{ width: 'auto' }} value={F.status} onChange={e => setF({ ...F, status: e.target.value })} aria-label="Trạng thái"><option value="all">Mọi trạng thái</option><option value="on">Đang hoạt động</option><option value="off">Đã ẩn</option></select>
         <input className="input" style={{ flex: 1, minWidth: 180 }} value={F.q} onChange={e => setF({ ...F, q: e.target.value })} placeholder="Tìm theo tên hoặc khu vực (địa chỉ)" aria-label="Tìm" /></div>
       {hide && <Banner kind="warn"><b>Ẩn {hide.name}?</b> Bên này sẽ không còn được gợi ý; các gợi ý đang dùng bên này sẽ được tính lại. Bên đã cam kết với gia đình không bị ảnh hưởng.
-        <div style={{ display: 'flex', gap: 8, marginTop: 10 }}><button className="btn sm danger" onClick={() => { setVendorActive(hide.id, false); setHide(null); toast(`Đã ẩn ${hide.name}. Gợi ý liên quan đã tính lại.`); }}>Ẩn nhà cung cấp</button><button className="btn sm" onClick={() => setHide(null)}>Hủy</button></div></Banner>}
+        <div style={{ display: 'flex', gap: 8, marginTop: 10 }}><button className="btn sm danger" onClick={() => { void setVendorActive(hide.id, false).then(e => e && toast(e)); setHide(null); toast(`Đã ẩn ${hide.name}. Gợi ý liên quan đã tính lại.`); }}>Ẩn nhà cung cấp</button><button className="btn sm" onClick={() => setHide(null)}>Hủy</button></div></Banner>}
       {mobile ? <section className="card"><div className="list">{L.map(v => <div key={v.id} className="row"><div className="grow"><div className="title">{v.name}</div><div className="meta"><span>{v.cats.map(catName).join(', ')}</span>{v.cats.length > 1 && <span className="pill prio">Trọn gói</span>}{v.active ? <span className="pill done">Hoạt động</span> : <span className="pill skip">Đã ẩn</span>}</div></div><button className="btn sm" onClick={() => toggle(v)}>{v.active ? 'Ẩn' : 'Bật'}</button></div>)}{!L.length && <div className="empty">Chưa có nhà cung cấp.</div>}</div></section>
         : <section className="card" style={{ overflowX: 'auto' }}><table className="tbl"><thead><tr><th>Nhà cung cấp</th><th>Loại dịch vụ</th><th>Địa chỉ</th><th className="num">Bán kính phục vụ</th><th>Áp dụng</th><th>Trạng thái</th><th /></tr></thead>
           <tbody>{L.map(v => <tr key={v.id}><td><button className="btn ghost sm" style={{ padding: 0, minHeight: 0, fontWeight: 600 }} onClick={() => nav(`/admin/nha-cung-cap/${v.id}`)}>{v.name}</button><div className="muted num">{v.phone}</div></td>
@@ -359,11 +362,12 @@ export function AdminVendorEditPage() {
   const [f, setF] = useState(() => ({ name: orig?.name ?? '', phone: orig?.phone ?? '', cats: orig?.cats ?? [] as VendorCat[], address: orig?.address ?? '', geo: fmtGeo(orig?.geo), radiusKm: orig?.radiusKm ?? 10, cond: orig?.cond ?? 'both' as VendorCond, active: orig?.active ?? true }));
   const [err, setErr] = useState<string | null>(null);
   const g = parseGeo(f.geo);
-  const save = () => {
+  const save = async () => {
     if (!f.name.trim()) return setErr('Cần ghi tên nhà cung cấp.');
     if (!f.cats.length) return setErr('Chọn ít nhất một loại dịch vụ.');
     if (!g) return setErr('Chưa có vị trí đúng. Nhập tọa độ “vĩ độ, kinh độ” (dán từ bản đồ).');
-    saveVendor({ id: orig?.id ?? 'v' + Math.random().toString(36).slice(2, 9), name: f.name.trim(), phone: f.phone.trim(), cats: f.cats, address: f.address.trim(), geo: g, radiusKm: f.radiusKm, cond: f.cond, active: f.active, updatedAt: new Date().toISOString() }, isNew);
+    const e = await saveVendor({ id: orig?.id ?? 'v' + Math.random().toString(36).slice(2, 9), name: f.name.trim(), phone: f.phone.trim(), cats: f.cats, address: f.address.trim(), geo: g, radiusKm: f.radiusKm, cond: f.cond, active: f.active, updatedAt: new Date().toISOString() }, isNew);
+    if (e) return setErr(e);
     toast('Đã lưu. Gợi ý của các gia đình liên quan tính lại khi mở.'); nav('/admin/nha-cung-cap');
   };
   const form = (

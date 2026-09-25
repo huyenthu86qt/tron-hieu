@@ -1,6 +1,7 @@
 import { lazy, Suspense, type ReactNode } from 'react';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import { AppFrame } from './ui/common';
+import { FORCED_LOCAL, HAS_SERVER } from './repo/backend';
 import { Ent01, Ent02, Ent03 } from './pages/EntryPages';
 import { LinkPage, NotFound } from './pages/OtherPages';
 import { ForgotPage, LoginPage, RegisterPage, RequireAuth } from './pages/AuthPages';
@@ -38,6 +39,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <AppFrame>
+        {HAS_SERVER && FORCED_LOCAL && <div role="status" style={{ background: 'var(--warn-bg, #fff4d6)', color: 'var(--text)', padding: '6px 16px', fontSize: 14, textAlign: 'center' }}>Đang xem dữ liệu mẫu trên trình duyệt này (không phải tài khoản thật). <a href="/mau">Thoát chế độ xem mẫu</a></div>}
         <Routes>
           {/* Lối vào — không cần đăng nhập */}
           <Route path="/" element={<Ent01 />} />

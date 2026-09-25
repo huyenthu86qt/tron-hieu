@@ -6,6 +6,8 @@ import { pendingDecisions, U1_ID } from '../domain/model';
 import { isFull } from '../domain/platform';
 import { syncPublicPage } from '../domain/guests';
 import { repo } from '../repo/repo';
+import { ConflictError } from '../repo/remoteRepo';
+import { REMOTE } from '../repo/backend';
 import { usePlatform, useUser } from '../repo/platformStore';
 import { Icon } from '../ui/Icon';
 import { useApp } from '../ui/common';
@@ -20,13 +22,14 @@ export function CaseLayout() {
   const dir = usePlatform(s => s.directory);
   const [c, setC] = useState<CaseData | null | undefined>(undefined);
   const [sheet, setSheet] = useState<SheetState | null>(null);
+  const { toast } = useApp();
   const cRef = useRef<CaseData | null>(null);
 
   useEffect(() => {
     let live = true;
     repo.get(id).then(async x => {
       // Đám hiếu tạo trước khi có tài khoản (Phase 1): người mở đầu tiên thành người đại diện
-      if (x && !x.ownerId) {
+      if (x && !x.ownerId && !REMOTE) {
         x.ownerId = user.id;
         const u1 = x.members.find(m => m.id === U1_ID)!;
         u1.userId = user.id; u1.phone = user.phone;
@@ -37,6 +40,47 @@ export function CaseLayout() {
     });
     return () => { live = false; };
   }, [id, user.id, user.phone, user.name]);
+
+  // Lưu lần lượt; nếu người khác vừa lưu trước (máy chủ), tải bản mới rồi áp lại các thao tác chưa lưu
+  const pendingFns = useRef<((d: CaseData) => void)[]>([]);
+  const saving = useRef(false);
+
+  const reload = useCallback(async () => {
+    const x = await repo.get(id);
+    if (x) { cRef.current = x; setC(x); }
+  }, [id]);
+
+  const flush = useCallback(async () => {
+    if (saving.current) return;
+    saving.current = true;
+    let conflicts = 0;
+    try {
+      while (pendingFns.current.length) {
+        const n = pendingFns.current.length;
+        try {
+          await repo.save(cRef.current!);
+          pendingFns.current.splice(0, n);
+          conflicts = 0;
+        } catch (e) {
+          if (!(e instanceof ConflictError) || ++conflicts > 5) throw e;
+          const fresh = await repo.get(id);
+          if (!fresh) throw e;
+          for (const f of pendingFns.current) { try { f(fresh); syncPublicPage(fresh); } catch { /* thao tác không còn hợp lệ trên bản mới */ } }
+          cRef.current = fresh; setC(fresh);
+          toast('Có người vừa cập nhật — đã gộp thay đổi của anh/chị vào bản mới nhất');
+        }
+      }
+    } catch (e) {
+      pendingFns.current = [];
+      toast('Chưa lưu được: ' + (e as Error).message);
+      await reload().catch(() => undefined);
+    } finally {
+      saving.current = false;
+    }
+  }, [id, reload, toast]);
+
+  // Người khác cập nhật thì tải lại (khi mình không đang lưu dở)
+  useEffect(() => repo.subscribe?.(id, () => { if (!saving.current && !pendingFns.current.length) void reload(); }), [id, reload]);
 
   const update = useCallback((fn: (d: CaseData) => void) => {
     const cur = cRef.current;
@@ -51,9 +95,10 @@ export function CaseLayout() {
     }
     cRef.current = next;
     setC(next);
-    void repo.save(next);
+    pendingFns.current.push(fn);
+    void flush();
     return null;
-  }, []);
+  }, [flush]);
 
   if (c === undefined) return <div className="bare"><div className="bare-inner" style={{ justifyContent: 'center' }}><p className="muted" style={{ textAlign: 'center' }}>Đang mở đám hiếu…</p></div></div>;
   const me = c?.members.find(m => m.userId === user.id) ?? c?.members.find(m => m.phone && m.phone === user.phone && m.access !== 'link');

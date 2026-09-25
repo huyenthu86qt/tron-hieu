@@ -1,7 +1,9 @@
-// Lớp lưu trữ có kiểu. Phase 1: lưu trên máy (localStorage).
-// Phase 3 thay bằng SupabaseRepo cùng giao diện này — các màn không phải sửa.
+// Lớp lưu trữ có kiểu: LocalRepo (trên máy — bản chạy thử, trang /mau) hoặc SupabaseRepo (máy chủ, Phase 3a).
+// Các màn chỉ dùng giao diện CaseRepo nên không phụ thuộc nơi lưu.
 import type { Answers, CaseData, Member } from '../domain/types';
 import { normalizeCase } from '../domain/normalize';
+import { REMOTE } from './backend';
+import { SupabaseRepo } from './remoteRepo';
 
 export interface CaseSummary { id: string; name: string; createdAt: string; ownerId?: string; full: boolean; closed: boolean }
 
@@ -15,6 +17,10 @@ export interface CaseRepo {
   remove(id: string): Promise<void>;
   /** Link User: tìm đám hiếu và người được nhờ theo mã link */
   findByLinkToken(token: string): Promise<{ c: CaseData; member: Member } | null>;
+  /** Admin: danh sách đám hiếu chỉ gồm tên và trạng thái */
+  adminCases?(): Promise<CaseData[]>;
+  /** Báo khi người khác cập nhật (máy chủ) */
+  subscribe?(id: string, onChange: () => void): () => void;
 }
 
 const KEY = 'damhieu.cases.v1';
@@ -71,7 +77,7 @@ export class LocalRepo implements CaseRepo {
   }
 }
 
-export const repo: CaseRepo = new LocalRepo();
+export const repo: CaseRepo = REMOTE ? new SupabaseRepo() : new LocalRepo();
 
 /* ---------- Bản nháp bước đầu (chưa tạo đám hiếu) ---------- */
 export interface EntryDraft { answers: Answers; step: number; mine: string[]; notified: string[] }
