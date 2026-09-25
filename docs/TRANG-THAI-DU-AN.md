@@ -1,6 +1,6 @@
 # TRẠNG THÁI DỰ ÁN — APP ĐÁM HIẾU
 
-**Cập nhật:** 2026-09-25 · Snapshot v6
+**Cập nhật:** 2026-09-25 · Snapshot v7
 
 ## Khóa đang hiệu lực
 - LOCK_IDEA
@@ -25,13 +25,20 @@
 - Giá do Admin nhập; Chủ dự án chốt trước khi mở bán.
 - Thanh toán: SePay (chuyển khoản / QR, webhook, tự mở quyền). Hoàn tiền xử lý tay trong Admin.
 - **Công cụ xây app: toàn bộ bằng Claude Code** (Chủ dự án chọn, 2026-09-25).
+- **Cách làm việc mới (Chủ dự án “làm theo đề xuất”, 2026-09-25):**
+  1. Lưu code lên GitHub (kho riêng tư).
+  2. Đưa bản xem thử lên Vercel **ngay sau khi Phase 2 được duyệt** (trước đây để tới Phase 4) — xem trên điện thoại, gửi link cho người thử; bản xem thử bật trang `/mau` bằng biến `VITE_DEMO=1`, bản thật cho khách không có.
+  3. Chia Phase 3 thành **3a** (tài khoản thật + dữ liệu trên máy chủ, cả nhà dùng chung) · **3b** (lưu tệp, link mời dùng được trên máy khác, bản đồ tìm vị trí từ địa chỉ, gửi OTP thật) · **3c** (kích hoạt hồ sơ trên máy chủ, nhật ký, xuất / xóa dữ liệu) — mỗi phần duyệt riêng.
+  4. Góp ý theo mã màn (ví dụ “S-FIN-01: …”), gom nhiều ý một lần; mỗi đợt lưu mốc và cập nhật tệp này.
+  - Mật khẩu, khóa bí mật: Chủ dự án tự nhập vào trang cài đặt của dịch vụ (Vercel / Supabase), không gửi qua tin nhắn, không lưu trong dự án.
 
 ## Việc Chủ dự án cần chuẩn bị
-- [ ] Bên gửi OTP (SMS / Zalo) — trước Giai đoạn 3
-- [ ] Tài khoản Supabase — trước Giai đoạn 3
-- [ ] Tài khoản SePay (thử + thật) và tài khoản ngân hàng nhận — trước Giai đoạn 3–4
-- [ ] Tài khoản Vercel (hoặc tương tự) để đưa app lên mạng — trước Giai đoạn 4
-- [x] Git đã cài lại (2.55) — [ ] GitHub (khuyên có) nếu muốn lưu bản sao trên mạng
+- [x] Git đã cài lại (2.55)
+- [ ] Tài khoản **GitHub** — ngay bây giờ (lưu code, điều kiện để đưa lên mạng)
+- [ ] Tài khoản **Vercel** (đăng nhập bằng GitHub) — ngay sau khi Phase 2 được duyệt
+- [ ] Tài khoản **Supabase** — trước Phase 3a
+- [ ] Chọn **bên gửi OTP** (SMS / Zalo) và **dịch vụ bản đồ** — trước Phase 3b (em so sánh lựa chọn khi tới đó)
+- [ ] Tài khoản **SePay** (thử + thật) và tài khoản ngân hàng nhận — trước Phase 4
 - [ ] Chốt giá bán — trước khi mở bán
 
 ## Bước hiện tại
@@ -39,14 +46,17 @@
 - ✓ **Gói xây app** — `docs/Goi-xay-app-App-Dam-Hieu.md` (4 phase, cả 4 bằng Claude Code)
 - ✓ **Xây app — Phase 1: Nền giao diện & phần lõi** — APPROVE 25/09/2026 (mốc caae070)
 - ● **Xây app — Phase 2: Giao diện phần còn lại** — đã xây xong, **chờ Chủ dự án duyệt (APPROVE / NEEDS_FIX)**
-- ○ Phase 3 · ○ Phase 4 · ○ Working App · ○ Sales Page · ○ Kiểm chứng thị trường
+- ○ Đưa bản xem thử lên mạng (GitHub + Vercel) · ○ Phase 3a · ○ 3b · ○ 3c · ○ Phase 4 · ○ Working App · ○ Sales Page · ○ Kiểm chứng thị trường
 
 ## Mốc các phase
 | Phase | Trạng thái | Mốc (commit / snapshot) |
 |---|---|---|
 | 1 Nền giao diện & phần lõi | APPROVE 25/09/2026 | caae070 |
 | 2 Giao diện phần còn lại | Xong — chờ duyệt | commit “Phase 2 (8/8)” (xem git log) |
-| 3 Máy chủ & dữ liệu thật | Chưa bắt đầu | — |
+| Bản xem thử online (GitHub + Vercel) | Chờ tài khoản của Chủ dự án | — |
+| 3a Tài khoản thật + dữ liệu trên máy chủ | Chưa bắt đầu | — |
+| 3b Tệp, link mời, bản đồ, OTP thật | Chưa bắt đầu | — |
+| 3c Kích hoạt, nhật ký, xuất / xóa dữ liệu | Chưa bắt đầu | — |
 | 4 Thanh toán, vận hành & Working App | Chưa bắt đầu | — |
 
 ## Phase 1 — ghi chú bàn giao
@@ -61,3 +71,5 @@
 - Giả lập đến Phase 3–4: mã OTP hiện trên màn (chưa có bên gửi tin nhắn); thanh toán giả lập, ghi rõ “chưa thanh toán thật”; dữ liệu vẫn lưu trên trình duyệt; tệp chỉ ghi tên; vị trí nhập bằng tọa độ hoặc “Dùng vị trí hiện tại” (chưa có dịch vụ bản đồ)
 - Giá đang là giá thử nghiệm (299.000 đ / 199.000 đ) — chị chốt giá (U1) trước khi mở bán
 - Kiểm thử: `npm test` 64 bài xanh · `npm run build` sạch
+- Xem như khách trả phí: chạy thử trên máy → mở http://localhost:5180/mau → “Dựng dữ liệu mẫu và vào app”
+- Sau Phase 2: thanh điều hướng bên trái đổi sang tone nâu (Chủ dự án yêu cầu) — `app/src/styles/shell-overrides.css`

@@ -28,8 +28,8 @@ import { ComposePage, GuestListPage, GuestsPage, PublicPage, ShiftPage } from '.
 import { AfterPage, ClosePage, MilestonePage, MilestonesPage, ProceduresPage, ThanksPage } from './case/pages/AfterPages';
 import { DocsPage, HistoryPage, IntakePage, MyTasksPage, SettingsPage } from './case/pages/MiscPages';
 
-// Chỉ khi chạy thử: trang dựng dữ liệu mẫu (không vào bản build thật)
-const DemoPage = import.meta.env.DEV ? lazy(() => import('./dev/DemoPage')) : null;
+// Trang dựng dữ liệu mẫu: có khi chạy thử trên máy, hoặc bản xem thử online bật VITE_DEMO=1. Bản thật cho khách không có.
+const DemoPage = import.meta.env.DEV || import.meta.env.VITE_DEMO === '1' ? lazy(() => import('./dev/DemoPage')) : null;
 
 const A = (el: ReactNode) => <RequireAuth>{el}</RequireAuth>;
 const AD = (el: ReactNode) => <RequireAuth admin>{el}</RequireAuth>;

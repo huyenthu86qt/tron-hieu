@@ -20,7 +20,7 @@ export default function DemoPage() {
       <Banner kind="warn">Dữ liệu đang có trên trình duyệt này sẽ được thay bằng dữ liệu mẫu.</Banner>
       <button className="btn primary block" disabled={busy} onClick={make}>{busy ? 'Đang dựng…' : 'Dựng dữ liệu mẫu và vào app'}</button>
       <button className="btn block" onClick={clear}>Xóa hết dữ liệu trên trình duyệt này</button>
-      <p className="note">Trang này chỉ có khi chạy thử trên máy, không có trong app thật.</p>
+      <p className="note">Trang này chỉ có ở bản chạy thử và bản xem thử online, không có trong app thật cho khách.</p>
     </div></div>
   );
 }
