@@ -224,7 +224,7 @@ export function createCase({ answers, mine = [], notified = [], now = new Date()
 export interface DecisionOption { k: string; label: string; note: string }
 export interface DecisionView extends Decision {
   title: string;
-  kind: 'root' | 'org';
+  kind: 'root' | 'org' | 'vendor';
   lock: boolean;
   due?: string;
   from?: string;
@@ -232,9 +232,20 @@ export interface DecisionView extends Decision {
   options: DecisionOption[];
 }
 
+const kmText = (d: number | null | undefined) => (typeof d === 'number' ? d.toFixed(1).replace('.', ',') + ' km' : 'chưa rõ khoảng cách');
+
 export function decisionView(c: CaseData, d: Decision): DecisionView {
   const s = c.situation, r = (x: string) => resolveText(x, c.person);
   switch (d.key) {
+    case 'vendor': {
+      const info = d.vendorInfo ?? {}, cur = info[d.vendorId ?? ''];
+      return { ...d, kind: 'vendor', lock: false, from: 'Tự động khi đổi nơi tổ chức',
+        title: `${cur?.name ?? 'Nhà cung cấp đã cam kết'} cách nơi tổ chức mới ${kmText(cur?.km)}`,
+        options: [
+          { k: 'keep', label: `Giữ ${cur?.name ?? 'bên đã cam kết'}`, note: `Đã cam kết · cách ${kmText(cur?.km)}${d.oldKm !== undefined ? ' (trước đây ' + kmText(d.oldKm) + ')' : ''}` },
+          ...(d.alts ?? []).map((id, i) => ({ k: id, label: `Đổi sang ${info[id]?.name ?? id}`, note: `Cách nơi tổ chức mới ${kmText(info[id]?.km)}${i === 0 ? ' · gần nhất' : ''}` })),
+        ] };
+    }
     case 'form': return { ...d, kind: 'root', lock: false, title: 'Hình thức an táng', options: [
       { k: 'cremation', label: 'Hỏa táng', note: 'Tại đài hóa thân; nhận tro cốt về thờ hoặc gửi chùa' },
       { k: 'burial', label: 'Địa táng (mai táng)', note: 'Chôn cất tại nghĩa trang, đất gia đình hoặc khu mộ dòng họ' }] };
@@ -274,7 +285,7 @@ export function chosenLabel(d: DecisionView): string {
   return (o ? o.label : d.chosen) + (d.detail ? ' · ' + d.detail : '');
 }
 
-const COMPLETES: Record<DecisionKey, string[]> = { venue: ['m3a'], form: ['m3b'], time: ['m3c', 'b3c'], org: ['o3a'] };
+const COMPLETES: Record<DecisionKey, string[]> = { venue: ['m3a'], form: ['m3b'], time: ['m3c', 'b3c'], org: ['o3a'], vendor: [] };
 
 function completeDecisionTasks(c: CaseData, key: DecisionKey, chosen: string | null) {
   if (key === 'org' && chosen !== 'ok') return;

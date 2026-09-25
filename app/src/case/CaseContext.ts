@@ -1,6 +1,6 @@
 import { createContext, useContext } from 'react';
 import type { CaseData } from '../domain/types';
-import { displayName } from '../domain/person';
+import { DN_TEXT } from '../domain/text';
 import { currentPhase, VENUE_LABEL } from '../domain/model';
 import { PHASES } from '../domain/templates';
 
@@ -31,7 +31,7 @@ export function useCase() {
   return v;
 }
 
-export const DN = (c: CaseData) => (c.person.name.trim() ? displayName(c.person, c.situation.rite === 'catholic') : 'Người đã khuất (chưa nhập tên)');
+export const DN = DN_TEXT;
 
 export function caseLine(c: CaseData) {
   const cur = currentPhase(c);

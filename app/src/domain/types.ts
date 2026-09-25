@@ -130,9 +130,13 @@ export interface Member {
   /** Thành viên do hệ thống thêm (Ban lễ tang, hỗ trợ địa phương) */
   system?: 'blt' | 'mttq' | 'hnct';
   linkToken?: string;
+  /** Tài khoản đã gắn (người có tài khoản) */
+  userId?: string;
+  /** Số điện thoại mời — khi người đó đăng nhập bằng số này sẽ thấy đám hiếu */
+  phone?: string;
 }
 
-export type DecisionKey = 'venue' | 'form' | 'time' | 'org';
+export type DecisionKey = 'venue' | 'form' | 'time' | 'org' | 'vendor';
 
 export interface Decision {
   id: string;
@@ -144,6 +148,13 @@ export interface Decision {
   decidedAt?: string;
   /** Nguyện vọng từ hồ sơ chuẩn bị */
   wish?: { text: string; value: string } | null;
+  /** Quyết định nhà cung cấp: bên đã cam kết ở xa sau khi đổi nơi tổ chức */
+  cat?: VendorCat;
+  vendorId?: string;
+  alts?: string[];
+  oldKm?: number;
+  /** Tên + khoảng cách tới nơi mới của từng bên (lưu lúc tạo quyết định) */
+  vendorInfo?: Record<string, { name: string; km: number | null }>;
 }
 
 export interface HistoryEntry {
@@ -163,7 +174,93 @@ export interface CaseData {
   decisions: Decision[];
   mourning: boolean;
   history: HistoryEntry[];
+  /* ----- Phase 2 (tùy chọn để đọc được dữ liệu cũ; normalizeCase điền mặc định) ----- */
+  ownerId?: string;
+  access?: CaseAccess;
+  venues?: { home: VenueSite; hall: VenueSite };
+  familyPick?: Partial<Record<VendorCat, string>>;
+  familyVendors?: FamilyVendor[];
+  vendors?: Partial<Record<VendorCat, CaseVendor>>;
+  updatedCats?: VendorCat[];
+  updatedAt?: string;
+  finance?: Finance;
+  ledger?: Condolence[];
+  publicPage?: PublicPage;
+  shifts?: Shift[];
+  milestones?: Milestones;
+  after?: AfterCare;
+  docs?: CaseDoc[];
+  preNeedId?: string;
+  intake?: Record<string, boolean>;
+  pendingContacts?: { name: string; phone: string; rel: string }[];
+  deleteRequestedAt?: string;
 }
+
+/* ---------- Địa điểm & nhà cung cấp ---------- */
+export interface GeoPoint { lat: number; lng: number }
+export interface VenueSite { name: string; address: string; geo?: GeoPoint }
+export type VendorCond = 'both' | 'burial' | 'cremation';
+
+/** Nhà cung cấp trong danh bạ do Admin quản lý */
+export interface DirVendor {
+  id: string; name: string; phone: string; cats: VendorCat[]; address: string; geo?: GeoPoint;
+  radiusKm: number; cond: VendorCond; active: boolean; updatedAt: string;
+}
+/** Nhà cung cấp gia đình tự thêm — chỉ thuộc đám hiếu này */
+export interface FamilyVendor { id: string; name: string; phone: string; cats: VendorCat[]; address: string; note: string }
+export type CatStatus = 'suggest' | 'confirmed' | 'committed';
+export interface VendorLog { text: string; amount?: number; at: string; by?: string }
+export interface CaseVendor {
+  vendorId: string | null;
+  family?: boolean;
+  status: CatStatus;
+  quote?: VendorLog;
+  commitment?: { what: string; when: string; at: string };
+  incidents: VendorLog[];
+  acceptedAt?: string;
+  acceptedBy?: string;
+}
+
+/* ---------- Tài chính ---------- */
+export type Method = 'cash' | 'bank';
+export interface Fund { id: string; name: string; type: Method; last4?: string }
+export interface Payee { holder: string; bank: string; acct: string }
+export type ExpenseStatus = 'estimate' | 'request' | 'approved' | 'paid' | 'rejected';
+export interface Expense {
+  id: string; name: string; cat: VendorCat | 'khac'; vendorId?: string; amount: number; paid: number; status: ExpenseStatus;
+  evidence?: string; payer: string | null; method: Method | null; fund: string | null; payee?: Payee;
+  extra?: boolean; reason?: string; requestedBy: string; createdAt: string; decidedAt?: string; rejectReason?: string;
+}
+export interface OrgExpense { id: string; name: string; amount: number | null; note: string }
+export interface Finance {
+  budget: number; budgetFromPre?: boolean; funds: Fund[]; expenses: Expense[]; orgExpenses: OrgExpense[];
+  locked: boolean; lockedAt?: string; lockedBy?: string; debtMoved: boolean; counted: string; bankOk: boolean;
+}
+
+/* ---------- Khách viếng ---------- */
+export type GuestGroup = 'Họ nội' | 'Họ ngoại' | 'Cơ quan, đoàn thể' | 'Tổ dân phố, lối xóm' | 'Bạn bè' | 'Khác';
+export interface Condolence {
+  id: string; name: string; group: GuestGroup | null; of: string | null; amount: number; method: Method;
+  gifts: string[]; note?: string; by: string; at: string;
+}
+export interface PublicPage {
+  slug: string; published: boolean; text: string; auto: boolean; showPhone: boolean; phone: string;
+  publishedAt?: string; snapshot?: string; changedAt?: string;
+  /** Dòng lịch lễ gia đình tự ghi đè: nq (nhập quan), vieng, dua */
+  sched?: Record<string, string>;
+}
+export interface Shift { id: string; memberId: string; from: string; note: string; handedTo?: string; at: string }
+
+/* ---------- Hậu tang ---------- */
+export interface Milestones {
+  sel: { d49: boolean; d100: boolean; gio: boolean; custom: boolean; none: boolean };
+  customName: string; customDate: string; base: 'death' | 'burial'; count: 'incl' | 'excl'; gioCal: 'lunar' | 'solar'; saved: boolean;
+}
+export interface AfterCare { closed: boolean; closedAt?: string; thanked: Record<string, boolean>; thankText: string; thankAuto: boolean }
+export interface CaseDoc { id: string; name: string; at: string; source: 'after' | 'task' | 'pre' | 'other' }
+
+/* ---------- Quyền dùng ---------- */
+export interface CaseAccess { plan: 'free' | 'full'; activeUntil?: string; source?: 'payment' | 'manual' | 'activation'; orderId?: string; revokedReason?: string }
 
 export interface Answers {
   place: Place;
