@@ -35,8 +35,8 @@
 
 ## Việc Chủ dự án cần chuẩn bị
 - [x] Git đã cài lại (2.55)
-- [ ] Tài khoản **GitHub** — ngay bây giờ (lưu code, điều kiện để đưa lên mạng)
-- [ ] Tài khoản **Vercel** (đăng nhập bằng GitHub) — ngay sau khi Phase 2 được duyệt
+- [x] Tài khoản **GitHub** (huyenthu86qt) — kho riêng tư tron-hieu
+- [x] Tài khoản **Vercel** (nhóm Auto365, gói Hobby) — dự án tron-hieu, Root Directory = app, biến VITE_DEMO=1
 - [ ] Tài khoản **Supabase** — trước Phase 3a
 - [ ] Chọn **bên gửi OTP** (SMS / Zalo) và **dịch vụ bản đồ** — trước Phase 3b (em so sánh lựa chọn khi tới đó)
 - [ ] Tài khoản **SePay** (thử + thật) và tài khoản ngân hàng nhận — trước Phase 4
@@ -47,7 +47,8 @@
 - ✓ **Gói xây app** — `docs/Goi-xay-app-App-Dam-Hieu.md` (4 phase, cả 4 bằng Claude Code)
 - ✓ **Xây app — Phase 1: Nền giao diện & phần lõi** — APPROVE 25/09/2026 (mốc caae070)
 - ✓ **Xây app — Phase 2: Giao diện phần còn lại** — APPROVE 25/09/2026 (mốc f13fb1f, gồm thanh bên tone nâu, tên Trọn Hiếu, trang /mau)
-- ● **Đưa bản xem thử lên mạng (GitHub + Vercel)** — chờ tài khoản của Chủ dự án
+- ✓ **Bản xem thử online** — https://tron-hieu.vercel.app (xem như khách trả phí: /mau) · code: https://github.com/huyenthu86qt/tron-hieu (riêng tư) · mỗi lần đẩy code lên GitHub, Vercel tự cập nhật
+- ● **Phase 3a** — chờ tài khoản Supabase của Chủ dự án
 - ○ Phase 3a · ○ 3b · ○ 3c · ○ Phase 4 · ○ Working App · ○ Sales Page · ○ Kiểm chứng thị trường
 
 ## Mốc các phase
@@ -55,7 +56,7 @@
 |---|---|---|
 | 1 Nền giao diện & phần lõi | APPROVE 25/09/2026 | caae070 |
 | 2 Giao diện phần còn lại | APPROVE 25/09/2026 | f13fb1f |
-| Bản xem thử online (GitHub + Vercel) | Chờ tài khoản của Chủ dự án | — |
+| Bản xem thử online (GitHub + Vercel) | Đã chạy 25/09/2026 — https://tron-hieu.vercel.app | — |
 | 3a Tài khoản thật + dữ liệu trên máy chủ | Chưa bắt đầu | — |
 | 3b Tệp, link mời, bản đồ, OTP thật | Chưa bắt đầu | — |
 | 3c Kích hoạt, nhật ký, xuất / xóa dữ liệu | Chưa bắt đầu | — |
