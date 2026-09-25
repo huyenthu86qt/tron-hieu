@@ -31,19 +31,27 @@
 - [ ] Tài khoản Supabase — trước Giai đoạn 3
 - [ ] Tài khoản SePay (thử + thật) và tài khoản ngân hàng nhận — trước Giai đoạn 3–4
 - [ ] Tài khoản Vercel (hoặc tương tự) để đưa app lên mạng — trước Giai đoạn 4
-- [ ] GitHub (khuyên có) — Git trên máy hiện chạy lỗi, cần cài lại khi dùng
+- [x] Git đã cài lại (2.55) — [ ] GitHub (khuyên có) nếu muốn lưu bản sao trên mạng
 - [ ] Chốt giá bán — trước khi mở bán
 
 ## Bước hiện tại
 - ✓ Ý tưởng · ✓ Nghiên cứu · ✓ Cấu trúc (v2) · ✓ Trải nghiệm · ✓ Hoàn thiện vận hành (đặc tả)
 - ✓ **Gói xây app** — `docs/Goi-xay-app-App-Dam-Hieu.md` (4 phase, cả 4 bằng Claude Code)
-- ● **Xây app — Phase 1: Nền giao diện & phần lõi** — chờ lệnh bắt đầu
+- ● **Xây app — Phase 1: Nền giao diện & phần lõi** — đã xây xong, **chờ Chủ dự án duyệt (APPROVE / NEEDS_FIX)**
 - ○ Phase 2 · ○ Phase 3 · ○ Phase 4 · ○ Working App · ○ Sales Page · ○ Kiểm chứng thị trường
 
 ## Mốc các phase
 | Phase | Trạng thái | Mốc (commit / snapshot) |
 |---|---|---|
-| 1 Nền giao diện & phần lõi | Chưa bắt đầu | — |
+| 1 Nền giao diện & phần lõi | Xong — chờ duyệt | commit “Phase 1: nền giao diện & phần lõi” (xem git log) |
 | 2 Giao diện phần còn lại | Chưa bắt đầu | — |
 | 3 Máy chủ & dữ liệu thật | Chưa bắt đầu | — |
 | 4 Thanh toán, vận hành & Working App | Chưa bắt đầu | — |
+
+## Phase 1 — ghi chú bàn giao
+- Chạy thử: trong thư mục `app/`: `npm install` (lần đầu) → `npm run dev` → mở http://localhost:5173
+- Kiểm thử phần lõi: `npm test` (41 bài, xanh) · `npm run build` sạch · không lỗi console
+- Màn đã xây: S-ENT-01/02/03/06 · S-MAP-01/02/04 (máy tính chia đôi)/05/07 · S-DEC-01/02/03 · S-TEAM-01/02/03/04/06/08
+- Dữ liệu Phase 1 lưu trên máy (trình duyệt); link mời người hỗ trợ chỉ mở được trên cùng thiết bị cho tới Phase 3
+- Mục Nhà cung cấp / Tài chính / Khách viếng / Hậu tang hiện trang “mở ở giai đoạn 2”
+
