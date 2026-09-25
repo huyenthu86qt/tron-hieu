@@ -37,7 +37,7 @@
 - [x] Git đã cài lại (2.55)
 - [x] Tài khoản **GitHub** (huyenthu86qt) — kho riêng tư tron-hieu
 - [x] Tài khoản **Vercel** (nhóm Auto365, gói Hobby) — dự án tron-hieu, Root Directory = app, biến VITE_DEMO=1
-- [ ] Tài khoản **Supabase** — trước Phase 3a
+- [x] Tài khoản **Supabase** — dự án tron-hieu (Singapore); đã chạy tệp tạo bảng + phân quyền, đã tắt “Confirm email” (25/09/2026)
 - [ ] Chọn **bên gửi OTP** (SMS / Zalo) và **dịch vụ bản đồ** — trước Phase 3b (em so sánh lựa chọn khi tới đó)
 - [ ] Tài khoản **SePay** (thử + thật) và tài khoản ngân hàng nhận — trước Phase 4
 - [ ] Chốt giá bán — trước khi mở bán
@@ -48,7 +48,7 @@
 - ✓ **Xây app — Phase 1: Nền giao diện & phần lõi** — APPROVE 25/09/2026 (mốc caae070)
 - ✓ **Xây app — Phase 2: Giao diện phần còn lại** — APPROVE 25/09/2026 (mốc f13fb1f, gồm thanh bên tone nâu, tên Trọn Hiếu, trang /mau)
 - ✓ **Bản xem thử online** — https://tron-hieu.vercel.app (xem như khách trả phí: /mau) · code: https://github.com/huyenthu86qt/tron-hieu (riêng tư) · mỗi lần đẩy code lên GitHub, Vercel tự cập nhật
-- ● **Phase 3a** — chờ tài khoản Supabase của Chủ dự án
+- ● **Phase 3a** — code xong (c0fdb23 máy chủ, 486c18d app); chờ Chủ dự án dán 2 biến môi trường vào Vercel và đăng ký tài khoản để bật Admin
 - ○ Phase 3a · ○ 3b · ○ 3c · ○ Phase 4 · ○ Working App · ○ Sales Page · ○ Kiểm chứng thị trường
 
 ## Mốc các phase
@@ -57,7 +57,7 @@
 | 1 Nền giao diện & phần lõi | APPROVE 25/09/2026 | caae070 |
 | 2 Giao diện phần còn lại | APPROVE 25/09/2026 | f13fb1f |
 | Bản xem thử online (GitHub + Vercel) | Đã chạy 25/09/2026 — https://tron-hieu.vercel.app | — |
-| 3a Tài khoản thật + dữ liệu trên máy chủ | Chưa bắt đầu | — |
+| 3a Tài khoản thật + dữ liệu trên máy chủ | Đang làm — code xong, đang nối bản online | c0fdb23, 486c18d |
 | 3b Tệp, link mời, bản đồ, OTP thật | Chưa bắt đầu | — |
 | 3c Kích hoạt, nhật ký, xuất / xóa dữ liệu | Chưa bắt đầu | — |
 | 4 Thanh toán, vận hành & Working App | Chưa bắt đầu | — |
