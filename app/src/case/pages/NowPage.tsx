@@ -1,4 +1,5 @@
 // S-MAP-01 · Bây giờ
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { currentPhase, FORM_LABEL, issueTasks, nowTasks, pendingDecisions, portraitIcon, soonTasks } from '../../domain/model';
 import { venueLabel } from '../../domain/vendors';
@@ -36,7 +37,11 @@ export function NowPage() {
   const nav = useNavigate();
   const pd = pendingDecisions(c);
   const scope = nowTasks(c).filter(t => inScope(me, t));
-  const nt = c.mourning ? scope.filter(t => t.owner === me.id || !t.owner) : scope;
+  const all = c.mourning ? scope.filter(t => t.owner === me.id || !t.owner) : scope;
+  const mineN = all.filter(t => t.owner === me.id).length;
+  // Mặc định chỉ hiện việc của mình khi đã được giao việc; việc của mình luôn đứng đầu
+  const [onlyMine, setOnlyMine] = useState(mineN > 0);
+  const nt = onlyMine ? all.filter(t => t.owner === me.id) : [...all].sort((a, b) => Number(b.owner === me.id) - Number(a.owner === me.id));
   const it = issueTasks(c).filter(t => inScope(me, t)), st = soonTasks(c).filter(t => inScope(me, t));
 
   const decBlock = (
@@ -45,7 +50,11 @@ export function NowPage() {
   );
   const nowBlock = (
     <section className="card"><div className="sec-h card-pad" style={{ margin: 0, paddingBottom: 6 }}><h3>Bây giờ</h3><span className="muted">{c.mourning ? 'Chỉ việc của anh và việc chưa có người nhận' : nt.length + ' việc'}</span></div>
-      {nt.length ? <div className="list">{nt.map(t => <TaskRow key={t.id} t={t} from="" />)}</div> : <div className="empty"><Icon n="check" c="lg" /><span>Mọi việc hiện đã có người lo.</span></div>}</section>
+      <div className="chips card-pad" style={{ paddingTop: 0, paddingBottom: 8 }} role="group" aria-label="Lọc việc">
+        <button type="button" className="chip" aria-pressed={onlyMine} onClick={() => setOnlyMine(true)}>Việc của tôi ({mineN})</button>
+        <button type="button" className="chip" aria-pressed={!onlyMine} onClick={() => setOnlyMine(false)}>Tất cả ({all.length})</button>
+      </div>
+      {nt.length ? <div className="list">{nt.map(t => <TaskRow key={t.id} t={t} from="" />)}</div> : <div className="empty"><Icon n="check" c="lg" /><span>{onlyMine ? 'Anh/chị chưa có việc nào cần làm lúc này. Bấm “Tất cả” để nhận thêm việc.' : 'Mọi việc hiện đã có người lo.'}</span></div>}</section>
   );
   const issBlock = it.length > 0 && (
     <section className="card"><div className="sec-h card-pad" style={{ margin: 0, paddingBottom: 6 }}><h3 style={{ color: 'var(--danger)' }}>Có vấn đề</h3></div>

@@ -11,7 +11,7 @@ import { PHASES } from '../../domain/templates';
 import { Icon } from '../../ui/Icon';
 import { Banner, KindPill, LockPill, StatusPill, useApp } from '../../ui/common';
 import { memberOf, useCase } from '../CaseContext';
-import { useOpenTask } from '../rows';
+import { useBackToList, useOpenTask } from '../rows';
 
 const fmtAt = (iso: string) => {
   const d = new Date(iso), p = (n: number) => String(n).padStart(2, '0');
@@ -20,7 +20,7 @@ const fmtAt = (iso: string) => {
 
 export function TaskPage() {
   const { tid = '' } = useParams();
-  const { c, base } = useCase();
+  const { c, base, me } = useCase();
   const { mobile } = useApp();
   const loc = useLocation();
   const from = (loc.state as { from?: string } | null)?.from ?? `ban-do`;
@@ -55,12 +55,12 @@ export function TaskPage() {
       </div>
       <div className="list" style={{ overflowY: 'auto' }}>
         {list.length ? list.map(x => {
-          const on = x.id === t.id, ow = memberOf(c, x.owner)?.name ?? 'Chưa có người nhận';
+          const on = x.id === t.id, mine = !!x.owner && x.owner === me.id, ow = memberOf(c, x.owner)?.name;
           return (
-            <button key={x.id} className="row" onClick={() => open(x.id, ctxNow ? '' : `ban-do?chang=${x.phase}`)} aria-current={on ? 'true' : undefined}
+            <button key={x.id} className={mine && !on ? 'row mine' : 'row'} onClick={() => open(x.id, ctxNow ? '' : `ban-do?chang=${x.phase}`)} aria-current={on ? 'true' : undefined}
               style={on ? { background: 'var(--primary-soft)', boxShadow: 'inset 3px 0 0 var(--accent)' } : undefined}>
               <div className="grow"><div className="title" style={on ? { color: 'var(--primary)', fontWeight: 600 } : undefined}>{x.title}</div>
-                <div className="meta"><StatusPill s={x.status} />{x.lock && <Icon n="lock" c="sm" />}<span>{ow}</span></div></div>
+                <div className="meta"><StatusPill s={x.status} />{x.lock && <Icon n="lock" c="sm" />}{mine ? <span className="pill mine">Việc của tôi</span> : ow ? <span className="pill owner">{ow}</span> : <span className="pill nobody">Chưa có người nhận</span>}</div></div>
             </button>
           );
         }) : <div className="empty">Không có việc.</div>}
@@ -145,6 +145,7 @@ function Actions({ t }: { t: TaskView }) {
   const { c, base, update, openSheet, me } = useCase();
   const { toast } = useApp();
   const nav = useNavigate();
+  const back = useBackToList();
   const [issueOpen, setIssueOpen] = useState(false);
   const [issue, setIssue] = useState('');
   const d = t.decision ? findDecision(c, t.decision) : null;
@@ -167,7 +168,8 @@ function Actions({ t }: { t: TaskView }) {
     <button className="btn primary block" disabled={blocked} onClick={() => {
       if (t.lock) { openSheet({ type: 'lock', taskId: t.id }); return; }
       const e = update(dr => completeTask(dr, t.id));
-      toast(e ?? `Đã ghi nhận: ${t.title} đã xong`);
+      toast(e ?? `Đã xong: ${t.title}. Đây là các việc tiếp theo.`);
+      if (!e) back();
     }}><Icon n="check" c="sm" />{t.byOrg ? 'Xác nhận Ban lễ tang đã làm xong' : 'Đánh dấu xong'}</button>
     {blocked
       ? <p className="muted" style={{ color: 'var(--danger)' }}><Icon n="lock" c="sm" /> Việc không thể quay lại: cần xong {openDeps.length} việc phía trước mới được đánh dấu xong.</p>

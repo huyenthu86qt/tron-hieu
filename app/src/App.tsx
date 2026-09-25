@@ -39,7 +39,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <AppFrame>
-        {HAS_SERVER && FORCED_LOCAL && <div role="status" style={{ background: 'var(--warn-bg, #fff4d6)', color: 'var(--text)', padding: '6px 16px', fontSize: 14, textAlign: 'center' }}>Đang xem dữ liệu mẫu trên trình duyệt này (không phải tài khoản thật). <a href="/mau">Thoát chế độ xem mẫu</a></div>}
+        {HAS_SERVER && FORCED_LOCAL && <div role="status" className="demo-bar">Đang xem dữ liệu mẫu trên trình duyệt này (không phải tài khoản thật). <a href="/mau">Thoát chế độ xem mẫu</a></div>}
         <Routes>
           {/* Lối vào — không cần đăng nhập */}
           <Route path="/" element={<Ent01 />} />

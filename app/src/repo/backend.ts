@@ -5,8 +5,8 @@ const URL = import.meta.env.VITE_SUPABASE_URL as string | undefined;
 const KEY = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
 const MODE_KEY = 'tronhieu.mode';
 
-/** Có cấu hình máy chủ trong bản build này */
-export const HAS_SERVER = !!(URL && KEY);
+/** Có cấu hình máy chủ trong bản build này (bài kiểm tra tự động không bao giờ dùng máy chủ thật) */
+export const HAS_SERVER = !!(URL && KEY) && import.meta.env.MODE !== 'test';
 
 /** Trình duyệt này đang ở chế độ xem dữ liệu mẫu trên máy (bật từ trang /mau) */
 export const FORCED_LOCAL = (() => { try { return localStorage.getItem(MODE_KEY) === 'local'; } catch { return false; } })();

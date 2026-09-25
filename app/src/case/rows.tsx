@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import type { DecisionView, TaskView } from '../domain/model';
 import { takeTask } from '../domain/actions';
 import { Icon } from '../ui/Icon';
@@ -12,6 +12,18 @@ export function useOpenTask() {
   return (id: string, from: string) => nav(`${base}/viec/${id}`, { state: { from } });
 }
 
+/** Sau khi xong một việc ở màn chi tiết: quay về đúng danh sách đang làm (Bây giờ, Bản đồ, Việc của tôi) */
+export function useBackToList() {
+  const nav = useNavigate();
+  const loc = useLocation();
+  const { base } = useCase();
+  return () => {
+    if (!loc.pathname.includes('/viec/')) return;
+    const from = (loc.state as { from?: string } | null)?.from ?? 'ban-do';
+    nav(from === '' ? base : `${base}/${from}`);
+  };
+}
+
 export function TaskRow({ t, why, acts = true, from }: { t: TaskView; why?: boolean; acts?: boolean; from: string }) {
   const { c, base, update, openSheet, me } = useCase();
   const { toast } = useApp();
@@ -19,14 +31,17 @@ export function TaskRow({ t, why, acts = true, from }: { t: TaskView; why?: bool
   const open = useOpenTask();
   const o = memberOf(c, t.owner);
   const finished = t.status === 'done' || t.status === 'skip';
+  const mine = !!t.owner && t.owner === me.id;
   return (
-    <div className="row">
+    <div className={mine ? 'row mine' : 'row'}>
       <div className="grow">
         <button className="title" onClick={() => open(t.id, from)} style={{ border: 0, background: 'none', padding: 0, textAlign: 'left', fontWeight: 500 }}>{t.title}</button>
         <div className="meta">
           <StatusPill s={t.status} />{t.lock && <LockPill />}
           <span><Icon n="now" c="sm" /> {t.due}</span>
-          <span>{o ? o.name : <i>Chưa có người nhận</i>}</span>
+          {mine ? <span className="pill mine"><Icon n="user" c="sm" />Việc của tôi</span>
+            : o ? <span className="pill owner"><Icon n="user" c="sm" />{o.name}</span>
+            : <span className="pill nobody">Chưa có người nhận</span>}
         </div>
         {why && (
           <div className="meta">

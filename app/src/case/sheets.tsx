@@ -11,6 +11,7 @@ import { Icon } from '../ui/Icon';
 import { Banner, Chips, ErrorBanner, Opts, Sheet, toggleIn, useApp } from '../ui/common';
 import { ACCESS_LABEL, memberOf, useCase } from './CaseContext';
 import { NAV } from './nav';
+import { useBackToList } from './rows';
 
 export function CaseSheets() {
   const { sheet } = useCase();
@@ -59,6 +60,7 @@ function MoreSheet() {
 function LockSheet({ taskId }: { taskId: string }) {
   const { c, update, openSheet } = useCase();
   const { toast } = useApp();
+  const back = useBackToList();
   const t = findTask(c, taskId);
   const [checks, setChecks] = useState<Record<number, boolean>>({});
   const [note, setNote] = useState('');
@@ -73,6 +75,7 @@ function LockSheet({ taskId }: { taskId: string }) {
     if (e) { setErr(e); return; }
     close();
     toast(`Đã ghi nhận: ${t.title} xong. Việc đã khóa.`);
+    back();
   };
   return (
     <Sheet title="Trước khi đánh dấu xong" onClose={close} foot={<>

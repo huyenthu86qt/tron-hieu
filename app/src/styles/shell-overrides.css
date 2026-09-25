@@ -27,3 +27,13 @@
 /* Logo thương hiệu Trọn Hiếu: tên + câu định vị */
 .side .logo .brand-name{display:block}
 .side .logo .brand-tag{display:block;font-family:var(--sans);font-size:11px;font-weight:400;line-height:1.35;color:var(--side-muted);margin-top:2px}
+
+/* Việc của tôi: nổi bật để mỗi người nhận ra ngay việc mình phụ trách */
+.row.mine{background:var(--accent-soft);box-shadow:inset 4px 0 0 var(--accent)}
+.pill.mine{background:var(--primary);color:var(--primary-ink);font-weight:600}
+.pill.owner{background:var(--primary-soft);color:var(--primary)}
+.pill.nobody{border:1px dashed var(--muted);color:var(--muted)}
+
+/* Thanh nhắc đang xem dữ liệu mẫu: ghim đáy màn hình, không chen vào bố cục */
+.demo-bar{position:fixed;left:50%;bottom:12px;transform:translateX(-50%);z-index:60;max-width:calc(100vw - 32px);background:var(--accent-soft);color:var(--text);border:1px solid var(--accent);border-radius:999px;padding:6px 14px;font-size:13px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.12)}
+@media (max-width:767px){.demo-bar{bottom:84px}}
