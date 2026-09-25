@@ -170,7 +170,8 @@ export function savePerson(c: CaseData, f: PersonForm, now?: Date) {
 
 /* ---------- Đội & vùng trách nhiệm ---------- */
 export const initials = (name: string) => {
-  const w = name.trim().split(/\s+/);
+  // Chữ cái đầu của từ cuối có chữ (bỏ qua phần như “(mẫu)”, số, dấu câu)
+  const w = name.trim().split(/\s+/).filter(x => /^\p{L}/u.test(x));
   return (w[w.length - 1] || '?').charAt(0).toUpperCase();
 };
 
