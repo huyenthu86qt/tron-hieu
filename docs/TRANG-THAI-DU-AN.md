@@ -48,8 +48,9 @@
 - ✓ **Xây app — Phase 1: Nền giao diện & phần lõi** — APPROVE 25/09/2026 (mốc caae070)
 - ✓ **Xây app — Phase 2: Giao diện phần còn lại** — APPROVE 25/09/2026 (mốc f13fb1f, gồm thanh bên tone nâu, tên Trọn Hiếu, trang /mau)
 - ✓ **Bản xem thử online** — https://tron-hieu.vercel.app (xem như khách trả phí: /mau) · code: https://github.com/huyenthu86qt/tron-hieu (riêng tư) · mỗi lần đẩy code lên GitHub, Vercel tự cập nhật
-- ● **Phase 3a** — code xong (c0fdb23 máy chủ, 486c18d app); bản online đã nối máy chủ Supabase (25/09/2026). Chờ Chủ dự án đăng ký tài khoản để bật Admin, rồi thử cả nhà dùng chung
-- ○ Phase 3a · ○ 3b · ○ 3c · ○ Phase 4 · ○ Working App · ○ Sales Page · ○ Kiểm chứng thị trường
+- ✓ **Xây app — Phase 3a: Tài khoản thật + dữ liệu trên máy chủ** — APPROVE 25/09/2026 (mốc dbc7b3f). Supabase (Singapore) đã cài, bản online dùng máy chủ; đăng nhập bằng số điện thoại; Admin: 0784869988. Kèm sửa theo góp ý: lọc Việc của tôi, việc của mình nổi màu, xong việc tự về danh sách, trả lại việc kèm lý do, nhãn Chưa có người nhận màu cam đất
+- ● **Phase 3b** — tiếp theo: lưu tệp, link nhờ việc dùng trên máy khác, bản đồ tìm vị trí từ địa chỉ, gửi OTP thật (quên mật khẩu, đổi số)
+- ○ 3b · ○ 3c · ○ Phase 4 · ○ Working App · ○ Sales Page · ○ Kiểm chứng thị trường
 
 ## Mốc các phase
 | Phase | Trạng thái | Mốc (commit / snapshot) |
@@ -57,7 +58,7 @@
 | 1 Nền giao diện & phần lõi | APPROVE 25/09/2026 | caae070 |
 | 2 Giao diện phần còn lại | APPROVE 25/09/2026 | f13fb1f |
 | Bản xem thử online (GitHub + Vercel) | Đã chạy 25/09/2026 — https://tron-hieu.vercel.app | — |
-| 3a Tài khoản thật + dữ liệu trên máy chủ | Đang làm — code xong, đang nối bản online | c0fdb23, 486c18d |
+| 3a Tài khoản thật + dữ liệu trên máy chủ | APPROVE 25/09/2026 | dbc7b3f |
 | 3b Tệp, link mời, bản đồ, OTP thật | Chưa bắt đầu | — |
 | 3c Kích hoạt, nhật ký, xuất / xóa dữ liệu | Chưa bắt đầu | — |
 | 4 Thanh toán, vận hành & Working App | Chưa bắt đầu | — |
