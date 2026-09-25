@@ -46,14 +46,15 @@
 - ✓ Ý tưởng · ✓ Nghiên cứu · ✓ Cấu trúc (v2) · ✓ Trải nghiệm · ✓ Hoàn thiện vận hành (đặc tả)
 - ✓ **Gói xây app** — `docs/Goi-xay-app-App-Dam-Hieu.md` (4 phase, cả 4 bằng Claude Code)
 - ✓ **Xây app — Phase 1: Nền giao diện & phần lõi** — APPROVE 25/09/2026 (mốc caae070)
-- ● **Xây app — Phase 2: Giao diện phần còn lại** — đã xây xong, **chờ Chủ dự án duyệt (APPROVE / NEEDS_FIX)**
-- ○ Đưa bản xem thử lên mạng (GitHub + Vercel) · ○ Phase 3a · ○ 3b · ○ 3c · ○ Phase 4 · ○ Working App · ○ Sales Page · ○ Kiểm chứng thị trường
+- ✓ **Xây app — Phase 2: Giao diện phần còn lại** — APPROVE 25/09/2026 (mốc f13fb1f, gồm thanh bên tone nâu, tên Trọn Hiếu, trang /mau)
+- ● **Đưa bản xem thử lên mạng (GitHub + Vercel)** — chờ tài khoản của Chủ dự án
+- ○ Phase 3a · ○ 3b · ○ 3c · ○ Phase 4 · ○ Working App · ○ Sales Page · ○ Kiểm chứng thị trường
 
 ## Mốc các phase
 | Phase | Trạng thái | Mốc (commit / snapshot) |
 |---|---|---|
 | 1 Nền giao diện & phần lõi | APPROVE 25/09/2026 | caae070 |
-| 2 Giao diện phần còn lại | Xong — chờ duyệt | commit “Phase 2 (8/8)” (xem git log) |
+| 2 Giao diện phần còn lại | APPROVE 25/09/2026 | f13fb1f |
 | Bản xem thử online (GitHub + Vercel) | Chờ tài khoản của Chủ dự án | — |
 | 3a Tài khoản thật + dữ liệu trên máy chủ | Chưa bắt đầu | — |
 | 3b Tệp, link mời, bản đồ, OTP thật | Chưa bắt đầu | — |
