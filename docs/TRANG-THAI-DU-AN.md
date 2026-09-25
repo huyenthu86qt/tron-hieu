@@ -37,14 +37,15 @@
 ## Bước hiện tại
 - ✓ Ý tưởng · ✓ Nghiên cứu · ✓ Cấu trúc (v2) · ✓ Trải nghiệm · ✓ Hoàn thiện vận hành (đặc tả)
 - ✓ **Gói xây app** — `docs/Goi-xay-app-App-Dam-Hieu.md` (4 phase, cả 4 bằng Claude Code)
-- ● **Xây app — Phase 1: Nền giao diện & phần lõi** — đã xây xong, **chờ Chủ dự án duyệt (APPROVE / NEEDS_FIX)**
-- ○ Phase 2 · ○ Phase 3 · ○ Phase 4 · ○ Working App · ○ Sales Page · ○ Kiểm chứng thị trường
+- ✓ **Xây app — Phase 1: Nền giao diện & phần lõi** — APPROVE 25/09/2026 (mốc caae070)
+- ● **Xây app — Phase 2: Giao diện phần còn lại** — đang xây
+- ○ Phase 3 · ○ Phase 4 · ○ Working App · ○ Sales Page · ○ Kiểm chứng thị trường
 
 ## Mốc các phase
 | Phase | Trạng thái | Mốc (commit / snapshot) |
 |---|---|---|
-| 1 Nền giao diện & phần lõi | Xong — chờ duyệt | commit “Phase 1: nền giao diện & phần lõi” (xem git log) |
-| 2 Giao diện phần còn lại | Chưa bắt đầu | — |
+| 1 Nền giao diện & phần lõi | APPROVE 25/09/2026 | caae070 |
+| 2 Giao diện phần còn lại | Đang xây | — |
 | 3 Máy chủ & dữ liệu thật | Chưa bắt đầu | — |
 | 4 Thanh toán, vận hành & Working App | Chưa bắt đầu | — |
 
