@@ -1,0 +1,25 @@
+# Thư viện và bản build
+node_modules/
+dist/
+build/
+.vite/
+coverage/
+playwright-report/
+test-results/
+
+# Khóa bí mật và cấu hình máy — KHÔNG bao giờ đưa vào Git
+.env
+.env.*
+!.env.example
+*.pem
+supabase/.temp/
+.vercel/
+
+# Mốc nén dự phòng
+snapshots/
+
+# Hệ điều hành / trình soạn thảo
+.DS_Store
+Thumbs.db
+desktop.ini
+*.log
