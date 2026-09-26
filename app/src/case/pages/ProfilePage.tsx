@@ -5,11 +5,11 @@ import { savePerson, validatePerson, type PersonForm } from '../../domain/action
 import { portraitIcon, U1_ID } from '../../domain/model';
 import { longevityWord, lunarAge, lunarDeathText } from '../../domain/person';
 import { Icon } from '../../ui/Icon';
-import { Banner, Chips, ErrorBanner, useApp } from '../../ui/common';
+import { Banner, ErrorBanner, useApp } from '../../ui/common';
 import { TitlePicker } from '../../ui/title';
 import { useCase } from '../CaseContext';
+import { RelationPicker, REP_RELS } from '../../ui/relation';
 
-const U1_RELS = ['Con trai trưởng', 'Con trai', 'Con gái', 'Vợ', 'Chồng', 'Cháu đích tôn', 'Người thân khác'];
 
 /** Thu nhỏ ảnh thờ trước khi lưu (lưu trên máy có giới hạn dung lượng) */
 function shrinkImage(file: File, max = 480): Promise<string> {
@@ -95,7 +95,7 @@ export function ProfilePage() {
       </section>
       <section className="card card-pad stack"><h3>Người đại diện gia đình (tang chủ)</h3>
         <div className="field"><label htmlFor="uName">Họ tên</label><input className="input" id="uName" value={f.u1name} onChange={e => set('u1name', e.target.value)} placeholder="Ví dụ: Nguyễn Minh Tuấn" /></div>
-        <div className="field"><label>Quan hệ với người đã khuất</label><Chips items={U1_RELS} isOn={x => f.u1rel === x} onToggle={x => set('u1rel', x)} /></div>
+        <div className="field"><label>Quan hệ với người đã khuất</label><RelationPicker items={REP_RELS} value={f.u1rel} onChange={x => set('u1rel', x)} /></div>
       </section>
       <ErrorBanner err={err} />
       <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>

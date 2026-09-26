@@ -396,3 +396,15 @@ describe('Nguyện vọng: hình thức tổ chức và nghi lễ chuyển đún
     expect(activatePreNeed(old, { death: '2026-09-24', place: 'home', org: 'family' }, 'u1', 'Tuấn').situation.rite).toBe('traditional');
   });
 });
+
+describe('Xưng hô theo quan hệ (kể cả quan hệ tự viết)', () => {
+  it('con gái → chị, con trai → anh, anh chị em ruột / tự viết không rõ → anh/chị', async () => {
+    const { xung } = await import('./text');
+    expect(xung('Con gái')).toBe('chị');
+    expect(xung('Con trai trưởng')).toBe('anh');
+    expect(xung('Anh, chị, em ruột')).toBe('anh/chị');
+    expect(xung('Con nuôi')).toBe('anh/chị');
+    expect(xung('Chị gái')).toBe('chị');
+    expect(xung('')).toBe('anh/chị');
+  });
+});

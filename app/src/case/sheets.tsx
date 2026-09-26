@@ -15,6 +15,7 @@ import { NAV } from './nav';
 import { useBackToList } from './rows';
 import { REMOTE } from '../repo/backend';
 import { repo } from '../repo/repo';
+import { MEMBER_RELS, RelationPicker, REP_RELS } from '../ui/relation';
 
 export function CaseSheets() {
   const { sheet } = useCase();
@@ -225,7 +226,6 @@ const ACCESS_OPTS: { k: Access; title: string; note: string }[] = [
   { k: 'limited', title: 'Giới hạn', note: 'Chỉ thấy các vùng trách nhiệm được giao' },
   { k: 'link', title: 'Chỉ qua link', note: 'Không cần cài app — chỉ thấy việc được nhờ' },
 ];
-const RELS = ['Con trai trưởng', 'Con trai', 'Con gái', 'Con dâu', 'Con rể', 'Cháu', 'Họ hàng', 'Hàng xóm', 'Bạn của gia đình'];
 
 function InviteSheet() {
   const { c, update, openSheet } = useCase();
@@ -266,8 +266,7 @@ function InviteSheet() {
   return (
     <Sheet title="Mời người hỗ trợ" onClose={close} foot={<><button className="btn" onClick={close}>Hủy</button><button className="btn primary" onClick={make}><Icon n="link" c="sm" />{access === 'link' ? 'Tạo link mời' : 'Thêm vào đội'}</button></>}>
       <div className="field"><label htmlFor="invName">Tên người hỗ trợ</label><input className="input" id="invName" value={name} onChange={e => setName(e.target.value)} placeholder="Ví dụ: Chú Bảy" /></div>
-      <div className="field"><label htmlFor="invRel">Quan hệ với gia đình</label><input className="input" id="invRel" value={rel} onChange={e => setRel(e.target.value)} />
-        <Chips items={RELS} isOn={x => rel === x} onToggle={setRel} /></div>
+      <div className="field"><label htmlFor="invRel">Quan hệ với gia đình</label><RelationPicker id="invRel" items={MEMBER_RELS} value={rel} onChange={setRel} /></div>
       <div className="field"><label>Cách tham gia</label><Opts value={access} onChange={setAccess} items={ACCESS_OPTS} /></div>
       <div className="field"><label htmlFor="invPhone">Số điện thoại (tùy chọn, để liên lạc)</label><input className="input num" id="invPhone" inputMode="tel" value={phone} onChange={e => setPhone(e.target.value)} placeholder="0912 345 678" />
         {access !== 'link' && <p className="muted">Sau khi thêm, app tạo link mời riêng cho người này. Chỉ ai mở link đó và đăng nhập mới vào được đội.</p>}</div>
@@ -301,8 +300,8 @@ function MemberSheet({ id }: { id: string }) {
       {m.phone?.trim() && <a className="btn block" href={`tel:${m.phone.replace(/[^\d+]/g, '')}`}><Icon n="user" c="sm" />Gọi {m.name} · {fmtPhone(m.phone)}</a>}
       <div className="field"><label htmlFor="mName">Họ tên</label><input className="input" id="mName" value={f.name} onChange={e => setF({ ...f, name: e.target.value })} /></div>
       <div className="field"><label htmlFor="mRel">Quan hệ với người đã khuất / gia đình</label>
-        <input className="input" id="mRel" value={f.rel} disabled={isOrg} onChange={e => setF({ ...f, rel: e.target.value })} />
-        {!isOrg && <Chips items={RELS} isOn={x => f.rel === x} onToggle={x => setF({ ...f, rel: x })} />}</div>
+        {isOrg ? <input className="input" id="mRel" value={f.rel} disabled />
+          : <RelationPicker id="mRel" items={isU1 ? REP_RELS : MEMBER_RELS} value={f.rel} onChange={x => setF({ ...f, rel: x })} />}</div>
       {!isU1 && !isOrg && <div className="field"><label htmlFor="mPhone">Số điện thoại</label><input className="input num" id="mPhone" inputMode="tel" value={f.phone} onChange={e => setF({ ...f, phone: e.target.value })} /></div>}
       <div className="field"><label>Cách tham gia</label>
         <Opts value={f.access} onChange={a => setF({ ...f, access: a })} items={ACCESS_OPTS} disabled={isU1} />
