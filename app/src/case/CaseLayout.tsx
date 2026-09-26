@@ -156,7 +156,7 @@ function Shell() {
 
   if (mobile) {
     const items = NAV.slice(0, 4);
-    const inMore = ['ven', 'fin', 'gst', 'book', 'aft', 'mem', 'doc'].includes(m.nav);
+    const inMore = ['ven', 'fin', 'gst', 'aft', 'mem', 'doc'].includes(m.nav);
     return (
       <div className="shell-m">
         <header className="top-m">

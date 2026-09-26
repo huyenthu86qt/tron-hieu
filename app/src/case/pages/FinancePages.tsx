@@ -193,7 +193,7 @@ function Finance() {
         <p className="note" style={{ margin: '0 16px 14px' }}>App chỉ ghi nhận, không kết nối hay chuyển tiền. Tài khoản của gia đình chỉ lưu tên gợi nhớ và 4 số cuối. Tài khoản bên nhận lưu đầy đủ để chuyển khoản, chỉ người có quyền Tài chính xem được.</p></section>
       {f.orgExpenses.length > 0 && <section className="card"><div className="sec-h card-pad" style={{ margin: 0, paddingBottom: 4 }}><h3>Do Ban lễ tang, đơn vị chi trả</h3><span className="muted">Tách riêng, không tính vào chi phí gia đình</span></div>
         <div className="list">{f.orgExpenses.map(x => <div key={x.id} className="row"><span className="num-badge"><Icon n="team" c="sm" /></span><div className="grow"><div className="title">{x.name}</div><div className="meta"><span>{x.note}</span></div></div><span className="num" style={{ fontWeight: 600 }}>{x.amount ? money(x.amount) : <span className="pill soft">Chờ xác nhận</span>}</span></div>)}</div></section>}
-      <button className="card card-pad row" style={{ border: '1px solid var(--border)', borderRadius: 12 }} onClick={() => nav(`${base}/so-phung-vieng`)}><Icon n="lock" />
+      <button className="card card-pad row" style={{ border: '1px solid var(--border)', borderRadius: 12 }} onClick={() => nav(`${base}/tai-chinh/phung-vieng`)}><Icon n="lock" />
         <div className="grow"><div className="title">Sổ phúng viếng</div><div className="meta">{canFin ? `${c.ledger?.length ?? 0} lượt ghi · tách riêng với chi phí` : 'Chỉ người đại diện và người giữ Tài chính xem được'}</div></div><Icon n="chev" c="chev" /></button>
       <button className="card card-pad row" style={{ border: '1px solid var(--border)', borderRadius: 12 }} onClick={() => nav(`${base}/tai-chinh/cong-no`)}><Icon n="wallet" />
         <div className="grow"><div className="title">Công nợ</div><div className="meta">{debts(f).length} khoản còn phải trả</div></div><Icon n="chev" c="chev" /></button>
@@ -278,10 +278,10 @@ function Debts() {
 }
 
 /* ---------- S-FIN-06 ---------- */
-/** Sổ phúng viếng đã gộp vào trang chung (Khách viếng → Sổ phúng viếng): đường dẫn cũ tự chuyển về */
+/** Sổ phúng viếng nằm ở Tài chính (tai-chinh/phung-vieng): đường dẫn cũ (so-tang, so-phung-vieng) tự chuyển về */
 export function LedgerPage() {
   const { base } = useCase();
-  return <Navigate to={`${base}/so-phung-vieng`} replace />;
+  return <Navigate to={`${base}/tai-chinh/phung-vieng`} replace />;
 }
 
 /* ---------- S-FIN-07 ---------- */

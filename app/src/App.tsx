@@ -100,12 +100,12 @@ export default function App() {
             <Route path="tai-chinh/ngan-sach" element={<BudgetPage />} />
             <Route path="tai-chinh/khoan-chi" element={<ExpensesPage />} />
             <Route path="tai-chinh/cong-no" element={<DebtsPage />} />
-            <Route path="tai-chinh/phung-vieng" element={<LedgerPage />} />
+            <Route path="tai-chinh/phung-vieng" element={<GuestListPage />} />
             <Route path="tai-chinh/doi-soat" element={<ReconcilePage />} />
             <Route path="khach-vieng" element={<GuestsPage />} />
             <Route path="khach-vieng/trang-tin" element={<ComposePage />} />
             <Route path="khach-vieng/danh-sach" element={<GuestListPage />} />
-            <Route path="so-phung-vieng" element={<GuestListPage />} />
+            <Route path="so-phung-vieng" element={<LedgerPage />} />
             <Route path="so-tang" element={<LedgerPage />} />
             <Route path="khach-vieng/ban-giao" element={<ShiftPage />} />
             <Route path="hau-tang" element={<AfterPage />} />

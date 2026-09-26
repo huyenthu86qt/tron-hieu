@@ -383,7 +383,7 @@ function SearchSheet() {
       {people.length > 0 && <section className="card"><div className="eyebrow card-pad" style={{ paddingBottom: 0 }}>Đội</div><div className="list">{people.map(m =>
         <button key={m.id} className="row" onClick={() => openSheet({ type: 'member', id: m.id })}><div className="grow"><div className="title">{m.name}</div><div className="meta"><span>{m.rel}</span></div></div></button>)}</div></section>}
       {guests.length > 0 && <section className="card"><div className="eyebrow card-pad" style={{ paddingBottom: 0 }}>Khách viếng</div><div className="list">{guests.map(g =>
-        <button key={g.id} className="row" onClick={() => go('so-phung-vieng')}><div className="grow"><div className="title">{g.name}</div><div className="meta"><span>{g.group ?? 'Khác'}</span></div></div></button>)}</div></section>}
+        <button key={g.id} className="row" onClick={() => go('tai-chinh/phung-vieng')}><div className="grow"><div className="title">{g.name}</div><div className="meta"><span>{g.group ?? 'Khác'}</span></div></div></button>)}</div></section>}
       {none && <div className="empty"><span>Không thấy kết quả cho “{q}”.</span></div>}
       {!k && <p className="muted">Mẹo: trên máy tính bấm Ctrl + K (⌘ + K trên Mac) để mở nhanh.</p>}
     </Sheet>

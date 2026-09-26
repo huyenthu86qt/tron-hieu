@@ -97,7 +97,7 @@ function Guests() {
       <div className="actions"><button className="btn primary" onClick={() => setAdd(true)}><Icon n="plus" c="sm" />Ghi khách viếng</button></div></div>
       <div className="grid-2"><div className="stack">
         <section className="card"><div className="sec-h card-pad" style={{ margin: 0, paddingBottom: 4 }}><h3>Sổ phúng viếng · mới ghi gần đây</h3><span className="muted">{L.length} lượt</span>
-          <button className="btn sm ghost" style={{ marginLeft: 'auto' }} onClick={() => nav(`${base}/so-phung-vieng`)}>Mở Sổ phúng viếng</button></div>
+          <button className="btn sm ghost" style={{ marginLeft: 'auto' }} onClick={() => nav(`${base}/tai-chinh/phung-vieng`)}>Mở Sổ phúng viếng</button></div>
           {L.length ? <div className="list">{L.slice(0, 10).map(x => <div key={x.id} className="row"><div className="grow"><div className="title">{x.name}</div>
             <div className="meta"><span>{groupLabel(c, x)}</span>{x.gifts.length > 0 && <span>{x.gifts.join(', ')}</span>}<span><Icon n="lock" c="sm" /> Phúng viếng ghi vào sổ riêng</span><span>{x.by} · {fmtAt(x.at)}</span></div></div></div>)}</div>
             : <div className="empty"><span>Chưa ghi khách nào. Bấm “Ghi khách viếng” khi có người đến.</span></div>}
@@ -196,7 +196,7 @@ export function PublicPage() {
 export function GuestListPage() { return <PaidGate module="Sổ phúng viếng"><GuestList /></PaidGate>; }
 const escH = (t: string) => t.replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]!));
 /** Sổ phúng viếng in được: chia theo “khách của ai”; mặc định không có số tiền, người giữ Tài chính tải được bản kèm số tiền */
-function downloadSoTang(c: CaseData, withMoney = false) {
+function soHtml(c: CaseData, withMoney: boolean, print = false) {
   const L = c.ledger ?? [];
   const vnd = (n: number) => n.toLocaleString('vi-VN') + ' đ';
   const parts = hostsOf(c).filter(h => L.some(x => hostOf(x) === h.id)).map(h => {
@@ -205,16 +205,27 @@ function downloadSoTang(c: CaseData, withMoney = false) {
     return `<h2>${escH(hostPhrase(c, h.id))} <small>(${mine.length} lượt${withMoney ? ' · ' + vnd(sub) : ''})</small></h2><table><thead><tr><th>STT</th><th>Người / đoàn đến viếng</th><th>Nhóm</th><th>Lễ vật</th>${withMoney ? '<th>Phúng viếng</th>' : ''}<th>Thời gian</th></tr></thead><tbody>${rows}</tbody></table>`;
   }).join('');
   const html = `<!doctype html><html lang="vi"><head><meta charset="utf-8"><title>Sổ phúng viếng ${escH(DN_TEXT(c))}</title><style>body{font-family:Georgia,serif;max-width:860px;margin:32px auto;padding:0 16px;color:#2b241d}h1{text-align:center}h2{margin-top:28px;font-size:18px}small{color:#7a6c5d;font-weight:normal}table{width:100%;border-collapse:collapse;font-family:Arial,sans-serif;font-size:14px}th,td{border:1px solid #d9cfc2;padding:6px 8px;text-align:left}td.r{text-align:right;white-space:nowrap}th{background:#f3ece3}p.n{text-align:center;color:#7a6c5d}@media print{h2{break-after:avoid}}</style></head><body><h1>Sổ phúng viếng</h1><p class="n">${escH(DN_TEXT(c))} · ${L.length} lượt khách${withMoney ? ' · Tổng phúng viếng ' + vnd(L.reduce((a, x) => a + x.amount, 0)) : ''}</p>${parts || '<p>Chưa có khách nào.</p>'}<p class="n">In hoặc lưu PDF từ trình duyệt để giữ lâu dài.</p></body></html>`;
+  return print ? html.replace('</body>', '<script>window.onload=function(){window.print()}<\/script></body>') : html;
+}
+function downloadSoTang(c: CaseData, withMoney = false) {
+  const html = soHtml(c, withMoney);
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([html], { type: 'text/html;charset=utf-8' }));
   a.download = `So-phung-vieng-${withMoney ? 'kem-so-tien-' : ''}${slugifyName(DN_TEXT(c))}.html`; a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+}
+/** In sổ: mở bản in trong tab mới và gọi lệnh in (chọn máy in hoặc Lưu PDF) */
+function printSo(c: CaseData, withMoney = false) {
+  const w = window.open('', '_blank');
+  if (!w) { downloadSoTang(c, withMoney); return; }
+  w.document.open(); w.document.write(soHtml(c, withMoney, true)); w.document.close();
 }
 const slugifyName = (t: string) => t.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/gi, 'd').replace(/[^a-zA-Z0-9]+/g, '-').replace(/^-|-$/g, '');
 function GuestList() {
   const { c, update, canFin } = useCase();
   const [q, setQ] = useState('');
   const [host, setHost] = useState<string>('all');
+  const [withMoney, setWithMoney] = useState(false);
   const [add, setAdd] = useState(false);
   const all = c.ledger ?? [];
   const hosts = hostsOf(c).map(h => ({ ...h, n: all.filter(x => hostOf(x) === h.id).length })).filter(h => h.n > 0);
@@ -223,10 +234,11 @@ function GuestList() {
   const T = ledgerTotals(all);
   const sumOf = (id: string) => all.filter(x => hostOf(x) === id).reduce((a, x) => a + x.amount, 0);
   return (
-    <div className="page"><div className="page-title"><div><div className="eyebrow">Khách viếng</div><h1 style={{ marginTop: 4 }}>Sổ phúng viếng</h1><p>{all.length} lượt khách · chia theo khách của từng người để sau này đáp lễ</p></div>
+    <div className="page"><div className="page-title"><div><div className="eyebrow">Tài chính</div><h1 style={{ marginTop: 4 }}>Sổ phúng viếng</h1><p>{all.length} lượt khách · chia theo khách của từng người để sau này đáp lễ</p></div>
       <div className="actions"><button className="btn primary" onClick={() => setAdd(true)}><Icon n="plus" c="sm" />Ghi khách viếng</button>
-        <button className="btn" disabled={!all.length} onClick={() => downloadSoTang(c)}><Icon n="doc" c="sm" />Tải / in Sổ phúng viếng</button>
-        {canFin && <button className="btn ghost" disabled={!all.length} onClick={() => downloadSoTang(c, true)}><Icon n="doc" c="sm" />Tải kèm số tiền</button>}</div></div>
+        <button className="btn" disabled={!all.length} onClick={() => printSo(c, withMoney)}><Icon n="doc" c="sm" />In sổ</button>
+        <button className="btn" disabled={!all.length} onClick={() => downloadSoTang(c, withMoney)}><Icon n="doc" c="sm" />Tải sổ</button></div></div>
+      {canFin && all.length > 0 && <label className="check"><input type="checkbox" checked={withMoney} onChange={e => setWithMoney(e.target.checked)} /><span>In / tải kèm số tiền phúng viếng</span></label>}
       {canFin && all.length > 0 && <section className="card card-pad stack" style={{ gap: 10 }}>
         <div><div className="eyebrow">Tổng phúng viếng cả gia đình</div><div style={{ fontFamily: 'var(--serif)', fontSize: 28, fontWeight: 600 }} className="num">{money(T.total)}</div>
           <div className="muted num">Tiền mặt {money(T.cash)} · Chuyển khoản {money(T.bank)}</div></div>
