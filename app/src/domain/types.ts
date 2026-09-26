@@ -164,6 +164,8 @@ export interface Decision {
 export interface HistoryEntry {
   at: string;
   text: string;
+  /** Mở màn nào khi bấm thông báo (ví dụ so-tuong-nho) */
+  path?: string;
   taskId?: string;
 }
 

@@ -1,6 +1,7 @@
 // Sổ tưởng nhớ — miễn phí cho mọi gia đình. Kỷ niệm của người trong đội và lời tưởng nhớ khách gửi (người đại diện duyệt).
 // Giọng trầm, ấm: không “thích”, không bình luận, không bài viết của app ở đây.
 import { useCallback, useEffect, useState } from 'react';
+import type { CaseData } from '../../domain/types';
 import { U1_ID } from '../../domain/model';
 import { lifeSpan } from '../../domain/person';
 import { useUser } from '../../repo/platformStore';
@@ -49,6 +50,7 @@ export function MemoryPage() {
   const [err, setErr] = useState<string | null>(null);
   const [f, setF] = useState({ body: '', visibility: 'family' as MemoryVisibility, prompt: '' as string, photoPath: undefined as string | undefined, photoName: '' });
   const [edit, setEdit] = useState<{ id: string; body: string } | null>(null);
+  const [dl, setDl] = useState(false);
   const [prompts] = useState(() => [...PROMPTS].sort(() => Math.random() - 0.5).slice(0, 4));
 
   const load = useCallback(() => listMemories(c.id).then(setL).catch(e => setErr((e as Error).message)), [c.id]);
@@ -70,6 +72,7 @@ export function MemoryPage() {
           : <div className="portrait"><Icon n="candle" c="lg" /></div>}
         <div style={{ flex: 1 }}><div className="eyebrow">Sổ tưởng nhớ</div><h2>{DN(c)}</h2><div className="sub num">{lifeSpan(c.person)}</div>
           <p className="muted" style={{ marginTop: 6 }}>Nơi con cháu và người thân lưu lại kỷ niệm, lời dặn, những điều muốn nói. Cuốn sổ này ở lại với gia đình.</p></div>
+        {shown.length > 0 && <button className="btn sm" style={{ alignSelf: 'flex-start' }} disabled={dl} onClick={async () => { setDl(true); await downloadMemoryBook(c, L ?? []); setDl(false); }}><Icon n="doc" c="sm" />{dl ? 'Đang chuẩn bị…' : 'Tải Sổ tưởng nhớ'}</button>}
       </section>
 
       <section className="card card-pad stack">
@@ -131,4 +134,36 @@ export function MemoryPage() {
       {shown.some(m => m.visibility === 'public') && <Banner kind="info" icon="lotus">Những dòng “Công khai” hiện trên trang thông tin (cáo phó) khi trang đang mở.</Banner>}
     </div>
   );
+}
+
+/** Tải Sổ tưởng nhớ: các dòng “Gia đình” + “Công khai” (không có dòng “Chỉ mình tôi”), ảnh nhúng sẵn để giữ lâu dài */
+async function downloadMemoryBook(c: CaseData, entries: Memory[]) {
+  const esc = (s: string) => s.replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[ch]!);
+  const list = entries.filter(m => m.status === 'approved' && m.visibility !== 'private').sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+  const photo = async (path?: string) => {
+    if (!path) return '';
+    try {
+      const url = await signedPhotoUrl(path);
+      if (!url) return '';
+      const blob = await (await fetch(url)).blob();
+      const data = await new Promise<string>(res => { const r = new FileReader(); r.onload = () => res(String(r.result)); r.readAsDataURL(blob); });
+      return `<img src="${data}" alt="">`;
+    } catch { return ''; }
+  };
+  const items = await Promise.all(list.map(async m => `<article>${m.prompt ? `<div class="q">${esc(m.prompt)}</div>` : ''}<p>${esc(m.body).replace(/\n/g, '<br>')}</p>${await photo(m.photoPath)}
+    <div class="by">— ${esc(m.kind === 'guest' ? `${m.authorName} (khách viếng)` : m.authorName)} · ${new Date(m.createdAt).toLocaleDateString('vi-VN')}</div></article>`));
+  const html = `<!doctype html><html lang="vi"><head><meta charset="utf-8"><title>Sổ tưởng nhớ ${esc(DN(c))}</title>
+<style>body{font-family:"Noto Serif",Georgia,serif;color:#2B2622;max-width:720px;margin:32px auto;padding:0 18px;line-height:1.7;background:#FFFDF9}
+h1{text-align:center;font-size:30px;margin:8px 0 0}.sub{text-align:center;color:#6E655C;font-family:system-ui,sans-serif}
+.orn{text-align:center;color:#B8893E;font-size:22px;margin:18px 0}article{border-top:1px solid #E3DBD0;padding:18px 0;break-inside:avoid}
+.q{font-family:system-ui,sans-serif;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:#B8893E}p{font-size:18px;margin:6px 0}
+img{max-width:100%;border-radius:8px;margin:8px 0}.by{color:#6E655C;font-family:system-ui,sans-serif;font-size:14px}</style></head><body>
+<div class="orn">❦</div><h1>Sổ tưởng nhớ</h1><p class="sub">${esc(DN(c))} · ${esc(lifeSpan(c.person))}</p><div class="orn">❦</div>
+${items.join('\n') || '<p class="sub">Sổ còn trống.</p>'}
+<p class="sub" style="margin-top:32px">Trọn Hiếu · Chu toàn việc hiếu – Trọn vẹn nghĩa tình</p></body></html>`;
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([html], { type: 'text/html;charset=utf-8' }));
+  a.download = `so-tuong-nho-${c.id}.html`;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 }

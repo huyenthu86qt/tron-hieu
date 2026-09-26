@@ -1,6 +1,7 @@
 // Phase 3d “Nghĩa tình”: Sổ tưởng nhớ (từng gia đình, miễn phí) và Góc bình an (bài viết của Admin).
 // Máy chủ: bảng memories / articles (0006_nghia_tinh.sql). Bản chạy thử trên máy: lưu localStorage.
 import { friendlyError, REMOTE, sb } from './backend';
+import { repo } from './repo';
 
 export type MemoryVisibility = 'private' | 'family' | 'public';
 export interface Memory {
@@ -43,6 +44,7 @@ export async function addMemory(caseId: string, authorId: string, authorName: st
     return error ? friendlyError(error) : null;
   }
   writeL(MK, [...readL<Memory>(MK), { id: rid('mm'), caseId, authorId, authorName, kind: 'family', body, visibility: f.visibility, prompt: f.prompt, photoPath: f.photoPath, status: 'approved', createdAt: new Date().toISOString() }]);
+  if (f.visibility !== 'private') await notifyLocal(caseId, `${authorName} vừa viết vào Sổ tưởng nhớ`);
   return null;
 }
 
@@ -85,6 +87,7 @@ export async function submitGuestMemory(slug: string, caseId: string, name: stri
     return error ? friendlyError(error) : null;
   }
   writeL(MK, [...readL<Memory>(MK), { id: rid('mm'), caseId, authorId: null, authorName: name.trim(), kind: 'guest', body: body.trim(), visibility: 'public', status: 'pending', createdAt: new Date().toISOString() }]);
+  await notifyLocal(caseId, 'Có lời tưởng nhớ mới từ khách viếng, chờ gia đình xem');
   return null;
 }
 
@@ -166,3 +169,11 @@ export async function uploadArticleCover(file: File): Promise<{ url?: string; er
 }
 
 export const newArticle = (): Article => ({ id: rid('a-'), slug: '', title: '', summary: '', body: '', topics: [], status: 'draft', updatedAt: new Date().toISOString() });
+
+/** Bản chạy thử: ghi thông báo vào lịch sử đám hiếu (bản thật do máy chủ tự ghi) */
+async function notifyLocal(caseId: string, text: string) {
+  const c = await repo.get(caseId);
+  if (!c) return;
+  c.history.push({ at: new Date().toISOString(), text, path: 'so-tuong-nho' });
+  await repo.save(c);
+}

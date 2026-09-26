@@ -65,7 +65,7 @@ export function NotificationsPage() {
       <div className="page" style={{ maxWidth: 820 }}>
         <div className="page-title"><div><h1>Thông báo</h1><p>Việc mới giao, quyết định đã chốt, thay đổi trong các đám hiếu của anh/chị</p></div></div>
         <section className="card">{items.length ? <div className="list">{items.map(({ c, h }, i) => (
-          <button key={i} className="row" onClick={() => nav(h.taskId ? `/dh/${c.id}/viec/${h.taskId}` : `/dh/${c.id}`)}>
+          <button key={i} className="row" onClick={() => nav(h.taskId ? `/dh/${c.id}/viec/${h.taskId}` : h.path ? `/dh/${c.id}/${h.path}` : `/dh/${c.id}`)}>
             <span className="num-badge" style={!readUntil || h.at > readUntil ? { background: 'var(--accent-soft)', color: 'var(--warning)' } : undefined}><Icon n="bell" c="sm" /></span>
             <div className="grow"><div className="title">{h.text}</div><div className="meta"><span>Đám hiếu {DN_TEXT(c)}</span><span>{fmtAt(h.at)}</span></div></div></button>
         ))}</div> : <div className="empty"><Icon n="bell" c="lg" /><span>Chưa có thông báo.</span></div>}</section>

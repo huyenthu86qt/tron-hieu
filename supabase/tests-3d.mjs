@@ -48,12 +48,16 @@ await expectErr('người lạ không viết vào sổ được', () => add(U.la
 await expectErr('không viết thay tên người khác', () => as(U.lan, () => q(`insert into public.memories (case_id, author_id, author_name, body) values ('dh1', $1, 'Tuấn', 'giả')`, [U.tuan])), /row-level security/);
 await expectErr('Tuấn không sửa được bài của Lan', async () => { const r = await as(U.tuan, () => q(`update public.memories set body = 'sửa' where author_name = 'Lan' and visibility = 'family' returning id`)); if (!r.rows.length) throw new Error('không sửa được'); }, /không sửa được/);
 
+const hist = (await q(`select data->'history' h from public.cases where id = 'dh1'`)).rows[0].h.map(x => x.text);
+ok('chuông: báo khi viết dòng Gia đình / Công khai, không báo dòng Chỉ mình tôi', hist.filter(t => t.includes('vừa viết vào Sổ tưởng nhớ')).length === 2);
+
 console.log('Lời tưởng nhớ của khách:');
 await as(null, () => q(`select public.submit_guest_memory('cu-hoa', 'Bác Tư hàng xóm', 'Cụ hiền lành, tốt bụng với cả xóm.')`));
 await expectErr('trang không công khai / sai tên trang thì không gửi được', () => as(null, () => q(`select public.submit_guest_memory('khong-co', 'X', 'abc')`)), /không còn nhận/);
 ok('lời của khách chưa hiện công khai trước khi gia đình duyệt', (await as(null, () => q(`select * from public.public_memories('cu-hoa')`))).rows.map(r => r.body).join() === 'Bố là người thầy đầu tiên của con.');
 ok('Lan (không phải người đại diện) không thấy lời khách chờ duyệt', (await as(U.lan, () => q(`select id from public.memories where kind = 'guest'`))).rows.length === 0);
 const g = (await as(U.tuan, () => q(`select id, status from public.memories where kind = 'guest'`))).rows;
+ok('chuông: báo có lời khách chờ xem (không lộ nội dung)', (await q(`select data->'history' h from public.cases where id = 'dh1'`)).rows[0].h.some(x => x.text.startsWith('Có lời tưởng nhớ mới') && !x.text.includes('hiền lành')));
 ok('người đại diện thấy lời khách chờ duyệt', g.length === 1 && g[0].status === 'pending');
 await expectErr('Lan không duyệt được', () => as(U.lan, () => q(`select public.moderate_memory($1, 'approved')`, [g[0].id])), /người đại diện/);
 await as(U.tuan, () => q(`select public.moderate_memory($1, 'approved')`, [g[0].id]));
