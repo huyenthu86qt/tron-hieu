@@ -96,12 +96,12 @@ function Guests() {
     <div className="page"><div className="page-title"><div><h1>Khách viếng và truyền tin</h1><p>Một nguồn thông tin đúng cho khách · ghi nhận nhanh cho gia đình</p></div>
       <div className="actions"><button className="btn primary" onClick={() => setAdd(true)}><Icon n="plus" c="sm" />Ghi khách viếng</button></div></div>
       <div className="grid-2"><div className="stack">
-        <section className="card"><div className="sec-h card-pad" style={{ margin: 0, paddingBottom: 4 }}><h3>Sổ tang · mới ghi gần đây</h3><span className="muted">{L.length} lượt</span>
-          <button className="btn sm ghost" style={{ marginLeft: 'auto' }} onClick={() => nav(`${base}/so-tang`)}>Mở Sổ tang</button></div>
+        <section className="card"><div className="sec-h card-pad" style={{ margin: 0, paddingBottom: 4 }}><h3>Sổ phúng viếng · mới ghi gần đây</h3><span className="muted">{L.length} lượt</span>
+          <button className="btn sm ghost" style={{ marginLeft: 'auto' }} onClick={() => nav(`${base}/so-phung-vieng`)}>Mở Sổ phúng viếng</button></div>
           {L.length ? <div className="list">{L.slice(0, 10).map(x => <div key={x.id} className="row"><div className="grow"><div className="title">{x.name}</div>
             <div className="meta"><span>{groupLabel(c, x)}</span>{x.gifts.length > 0 && <span>{x.gifts.join(', ')}</span>}<span><Icon n="lock" c="sm" /> Phúng viếng ghi vào sổ riêng</span><span>{x.by} · {fmtAt(x.at)}</span></div></div></div>)}</div>
             : <div className="empty"><span>Chưa ghi khách nào. Bấm “Ghi khách viếng” khi có người đến.</span></div>}
-          <p className="note" style={{ padding: '0 16px 12px' }}>Ghi ở đây hay ở Sổ tang đều vào cùng một sổ — không bị trùng.</p></section>
+          <p className="note" style={{ padding: '0 16px 12px' }}>Ghi ở đây hay ở Sổ phúng viếng đều vào cùng một sổ — không bị trùng.</p></section>
         <AccountCard />
       </div><div className="stack">
         <section className="card card-pad stack" style={{ gap: 10 }}><div style={{ display: 'flex', gap: 8, alignItems: 'center' }}><h3 style={{ flex: 1 }}>Trang thông tin cho khách</h3>{p?.published ? <span className="pill done">Đã công bố</span> : <span className="pill soft">Nháp</span>}</div>
@@ -193,9 +193,9 @@ export function PublicPage() {
 }
 
 /* ---------- S-GST-06 ---------- */
-export function GuestListPage() { return <PaidGate module="Sổ tang"><GuestList /></PaidGate>; }
+export function GuestListPage() { return <PaidGate module="Sổ phúng viếng"><GuestList /></PaidGate>; }
 const escH = (t: string) => t.replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]!));
-/** Sổ tang in được: chia theo “khách của ai”, không có số tiền (tiền nằm ở Sổ phúng viếng) */
+/** Sổ phúng viếng in được: chia theo “khách của ai”; mặc định không có số tiền, người giữ Tài chính tải được bản kèm số tiền */
 function downloadSoTang(c: CaseData, withMoney = false) {
   const L = c.ledger ?? [];
   const vnd = (n: number) => n.toLocaleString('vi-VN') + ' đ';
@@ -204,10 +204,10 @@ function downloadSoTang(c: CaseData, withMoney = false) {
     const rows = mine.map((x, i) => `<tr><td>${i + 1}</td><td>${escH(x.name)}</td><td>${escH(x.group ?? 'Khác')}</td><td>${escH(x.gifts.join(', ') || '—')}</td>${withMoney ? `<td class="r">${x.amount ? vnd(x.amount) + ' · ' + escH(METHOD_LABEL[x.method]) : '—'}</td>` : ''}<td>${escH(fmtAt(x.at))}</td></tr>`).join('');
     return `<h2>${escH(hostPhrase(c, h.id))} <small>(${mine.length} lượt${withMoney ? ' · ' + vnd(sub) : ''})</small></h2><table><thead><tr><th>STT</th><th>Người / đoàn đến viếng</th><th>Nhóm</th><th>Lễ vật</th>${withMoney ? '<th>Phúng viếng</th>' : ''}<th>Thời gian</th></tr></thead><tbody>${rows}</tbody></table>`;
   }).join('');
-  const html = `<!doctype html><html lang="vi"><head><meta charset="utf-8"><title>Sổ tang ${escH(DN_TEXT(c))}</title><style>body{font-family:Georgia,serif;max-width:860px;margin:32px auto;padding:0 16px;color:#2b241d}h1{text-align:center}h2{margin-top:28px;font-size:18px}small{color:#7a6c5d;font-weight:normal}table{width:100%;border-collapse:collapse;font-family:Arial,sans-serif;font-size:14px}th,td{border:1px solid #d9cfc2;padding:6px 8px;text-align:left}td.r{text-align:right;white-space:nowrap}th{background:#f3ece3}p.n{text-align:center;color:#7a6c5d}@media print{h2{break-after:avoid}}</style></head><body><h1>Sổ tang</h1><p class="n">${escH(DN_TEXT(c))} · ${L.length} lượt khách${withMoney ? ' · Tổng phúng viếng ' + vnd(L.reduce((a, x) => a + x.amount, 0)) : ''}</p>${parts || '<p>Chưa có khách nào.</p>'}<p class="n">In hoặc lưu PDF từ trình duyệt để giữ lâu dài.</p></body></html>`;
+  const html = `<!doctype html><html lang="vi"><head><meta charset="utf-8"><title>Sổ phúng viếng ${escH(DN_TEXT(c))}</title><style>body{font-family:Georgia,serif;max-width:860px;margin:32px auto;padding:0 16px;color:#2b241d}h1{text-align:center}h2{margin-top:28px;font-size:18px}small{color:#7a6c5d;font-weight:normal}table{width:100%;border-collapse:collapse;font-family:Arial,sans-serif;font-size:14px}th,td{border:1px solid #d9cfc2;padding:6px 8px;text-align:left}td.r{text-align:right;white-space:nowrap}th{background:#f3ece3}p.n{text-align:center;color:#7a6c5d}@media print{h2{break-after:avoid}}</style></head><body><h1>Sổ phúng viếng</h1><p class="n">${escH(DN_TEXT(c))} · ${L.length} lượt khách${withMoney ? ' · Tổng phúng viếng ' + vnd(L.reduce((a, x) => a + x.amount, 0)) : ''}</p>${parts || '<p>Chưa có khách nào.</p>'}<p class="n">In hoặc lưu PDF từ trình duyệt để giữ lâu dài.</p></body></html>`;
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([html], { type: 'text/html;charset=utf-8' }));
-  a.download = `So-tang-${withMoney ? 'kem-so-tien-' : ''}${slugifyName(DN_TEXT(c))}.html`; a.click();
+  a.download = `So-phung-vieng-${withMoney ? 'kem-so-tien-' : ''}${slugifyName(DN_TEXT(c))}.html`; a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 2000);
 }
 const slugifyName = (t: string) => t.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/gi, 'd').replace(/[^a-zA-Z0-9]+/g, '-').replace(/^-|-$/g, '');
@@ -223,9 +223,9 @@ function GuestList() {
   const T = ledgerTotals(all);
   const sumOf = (id: string) => all.filter(x => hostOf(x) === id).reduce((a, x) => a + x.amount, 0);
   return (
-    <div className="page"><div className="page-title"><div><div className="eyebrow">Khách viếng</div><h1 style={{ marginTop: 4 }}>Sổ tang</h1><p>{all.length} lượt khách · chia theo khách của từng người để sau này đáp lễ</p></div>
+    <div className="page"><div className="page-title"><div><div className="eyebrow">Khách viếng</div><h1 style={{ marginTop: 4 }}>Sổ phúng viếng</h1><p>{all.length} lượt khách · chia theo khách của từng người để sau này đáp lễ</p></div>
       <div className="actions"><button className="btn primary" onClick={() => setAdd(true)}><Icon n="plus" c="sm" />Ghi khách viếng</button>
-        <button className="btn" disabled={!all.length} onClick={() => downloadSoTang(c)}><Icon n="doc" c="sm" />Tải / in Sổ tang</button>
+        <button className="btn" disabled={!all.length} onClick={() => downloadSoTang(c)}><Icon n="doc" c="sm" />Tải / in Sổ phúng viếng</button>
         {canFin && <button className="btn ghost" disabled={!all.length} onClick={() => downloadSoTang(c, true)}><Icon n="doc" c="sm" />Tải kèm số tiền</button>}</div></div>
       {canFin && all.length > 0 && <section className="card card-pad stack" style={{ gap: 10 }}>
         <div><div className="eyebrow">Tổng phúng viếng cả gia đình</div><div style={{ fontFamily: 'var(--serif)', fontSize: 28, fontWeight: 600 }} className="num">{money(T.total)}</div>
@@ -243,7 +243,7 @@ function GuestList() {
       <section className="card">{L.length ? <div className="list">{L.map(x => (
         <div key={x.id} className="row"><div className="grow"><div className="title">{x.name}</div><div className="meta"><span>{groupLabel(c, x)}</span>{x.gifts.length > 0 && <span>{x.gifts.join(', ')}</span>}<span>{x.by} · {fmtAt(x.at)}</span>{canFin && x.amount > 0 && <span className="num">{x.amount.toLocaleString('vi-VN')} đ · {METHOD_LABEL[x.method]}</span>}</div></div>
           {canFin && !c.finance?.locked && <button className="icon-btn" aria-label="Xóa lượt ghi" onClick={() => { if (window.confirm(`Xóa lượt ghi “${x.name}”?`)) update(d => removeGuest(d, x.id)); }}><Icon n="x" c="sm" /></button>}</div>
-      ))}</div> : <div className="empty"><span>{all.length ? 'Không có lượt ghi nào khớp.' : 'Sổ tang còn trống. Bấm “Ghi khách viếng” khi có người đến.'}</span></div>}</section>
+      ))}</div> : <div className="empty"><span>{all.length ? 'Không có lượt ghi nào khớp.' : 'Sổ phúng viếng còn trống. Bấm “Ghi khách viếng” khi có người đến.'}</span></div>}</section>
       {canFin && host !== 'all' && <p className="muted">{hostPhrase(c, host)} · tổng phúng viếng: <b className="num" style={{ color: 'var(--text)' }}>{money(sumOf(host))}</b></p>}
       {!canFin && <p className="note">Số tiền phúng viếng chỉ người đại diện và người giữ Tài chính xem. Bản tải về không có số tiền.</p>}
       {add && <GuestSheet onClose={() => setAdd(false)} />}

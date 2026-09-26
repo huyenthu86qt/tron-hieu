@@ -182,7 +182,7 @@ function Thanks() {
   const txt = after.thankText || defaultThanks(dn);
   const copy = async () => { try { await navigator.clipboard.writeText(L.map(x => `- ${x.name} (${x.group ?? 'Khác'})`).join('\n')); toast('Đã sao chép danh sách'); } catch { toast('Không sao chép được'); } };
   return (
-    <div className="page"><div className="page-title"><div><div className="eyebrow">Hậu tang</div><h1 style={{ marginTop: 4 }}>Danh sách cảm ơn</h1><p>Lấy từ Sổ tang · mỗi người đáp lễ khách của mình</p></div>
+    <div className="page"><div className="page-title"><div><div className="eyebrow">Hậu tang</div><h1 style={{ marginTop: 4 }}>Danh sách cảm ơn</h1><p>Lấy từ Sổ phúng viếng · mỗi người đáp lễ khách của mình</p></div>
       <div className="actions"><button className="btn" onClick={copy}><Icon n="copy" c="sm" />Sao chép danh sách</button></div></div>
       <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}><div className="segin" role="group" aria-label="Lọc theo người">
         {[['all', 'Tất cả'], ...hosts.filter(h => (c.ledger ?? []).some(x => who(x) === h.id)).map(h => [h.id, h.label])].map(([k, l]) => <button key={k} aria-pressed={F === k} onClick={() => setF(k)}>{l}</button>)}</div>

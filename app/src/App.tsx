@@ -105,7 +105,8 @@ export default function App() {
             <Route path="khach-vieng" element={<GuestsPage />} />
             <Route path="khach-vieng/trang-tin" element={<ComposePage />} />
             <Route path="khach-vieng/danh-sach" element={<GuestListPage />} />
-            <Route path="so-tang" element={<GuestListPage />} />
+            <Route path="so-phung-vieng" element={<GuestListPage />} />
+            <Route path="so-tang" element={<LedgerPage />} />
             <Route path="khach-vieng/ban-giao" element={<ShiftPage />} />
             <Route path="hau-tang" element={<AfterPage />} />
             <Route path="so-tuong-nho" element={<MemoryPage />} />
