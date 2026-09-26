@@ -5,7 +5,7 @@ import { xung } from '../../domain/text';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import type { CaseData, Condolence, GuestGroup, Method } from '../../domain/types';
 import { addGuest, addGuestHost, announcer, hostOf, hostPhrase, hostsOf, defaultNotice, draftNotice, emptyPage, GIFTS, GROUPS, organizerLine, publish, removeGuest, schedule, tangChu } from '../../domain/guests';
-import { fmtMoneyInput, METHOD_LABEL, parseMoney } from '../../domain/finance';
+import { fmtMoneyInput, ledgerTotals, METHOD_LABEL, money, parseMoney } from '../../domain/finance';
 import { lifeLine } from '../../domain/person';
 import { portraitIcon } from '../../domain/model';
 import { defaultVenues, siteOf, venueLabel } from '../../domain/vendors';
@@ -196,16 +196,18 @@ export function PublicPage() {
 export function GuestListPage() { return <PaidGate module="Sổ tang"><GuestList /></PaidGate>; }
 const escH = (t: string) => t.replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]!));
 /** Sổ tang in được: chia theo “khách của ai”, không có số tiền (tiền nằm ở Sổ phúng viếng) */
-function downloadSoTang(c: CaseData) {
+function downloadSoTang(c: CaseData, withMoney = false) {
   const L = c.ledger ?? [];
+  const vnd = (n: number) => n.toLocaleString('vi-VN') + ' đ';
   const parts = hostsOf(c).filter(h => L.some(x => hostOf(x) === h.id)).map(h => {
-    const rows = L.filter(x => hostOf(x) === h.id).map((x, i) => `<tr><td>${i + 1}</td><td>${escH(x.name)}</td><td>${escH(x.group ?? 'Khác')}</td><td>${escH(x.gifts.join(', ') || '—')}</td><td>${escH(fmtAt(x.at))}</td></tr>`).join('');
-    return `<h2>${escH(hostPhrase(c, h.id))} <small>(${L.filter(x => hostOf(x) === h.id).length} lượt)</small></h2><table><thead><tr><th>STT</th><th>Người / đoàn đến viếng</th><th>Nhóm</th><th>Lễ vật</th><th>Thời gian</th></tr></thead><tbody>${rows}</tbody></table>`;
+    const mine = L.filter(x => hostOf(x) === h.id), sub = mine.reduce((a, x) => a + x.amount, 0);
+    const rows = mine.map((x, i) => `<tr><td>${i + 1}</td><td>${escH(x.name)}</td><td>${escH(x.group ?? 'Khác')}</td><td>${escH(x.gifts.join(', ') || '—')}</td>${withMoney ? `<td class="r">${x.amount ? vnd(x.amount) + ' · ' + escH(METHOD_LABEL[x.method]) : '—'}</td>` : ''}<td>${escH(fmtAt(x.at))}</td></tr>`).join('');
+    return `<h2>${escH(hostPhrase(c, h.id))} <small>(${mine.length} lượt${withMoney ? ' · ' + vnd(sub) : ''})</small></h2><table><thead><tr><th>STT</th><th>Người / đoàn đến viếng</th><th>Nhóm</th><th>Lễ vật</th>${withMoney ? '<th>Phúng viếng</th>' : ''}<th>Thời gian</th></tr></thead><tbody>${rows}</tbody></table>`;
   }).join('');
-  const html = `<!doctype html><html lang="vi"><head><meta charset="utf-8"><title>Sổ tang ${escH(DN_TEXT(c))}</title><style>body{font-family:Georgia,serif;max-width:860px;margin:32px auto;padding:0 16px;color:#2b241d}h1{text-align:center}h2{margin-top:28px;font-size:18px}small{color:#7a6c5d;font-weight:normal}table{width:100%;border-collapse:collapse;font-family:Arial,sans-serif;font-size:14px}th,td{border:1px solid #d9cfc2;padding:6px 8px;text-align:left}th{background:#f3ece3}p.n{text-align:center;color:#7a6c5d}@media print{h2{break-after:avoid}}</style></head><body><h1>Sổ tang</h1><p class="n">${escH(DN_TEXT(c))} · ${L.length} lượt khách</p>${parts || '<p>Chưa có khách nào.</p>'}<p class="n">In hoặc lưu PDF từ trình duyệt để giữ lâu dài.</p></body></html>`;
+  const html = `<!doctype html><html lang="vi"><head><meta charset="utf-8"><title>Sổ tang ${escH(DN_TEXT(c))}</title><style>body{font-family:Georgia,serif;max-width:860px;margin:32px auto;padding:0 16px;color:#2b241d}h1{text-align:center}h2{margin-top:28px;font-size:18px}small{color:#7a6c5d;font-weight:normal}table{width:100%;border-collapse:collapse;font-family:Arial,sans-serif;font-size:14px}th,td{border:1px solid #d9cfc2;padding:6px 8px;text-align:left}td.r{text-align:right;white-space:nowrap}th{background:#f3ece3}p.n{text-align:center;color:#7a6c5d}@media print{h2{break-after:avoid}}</style></head><body><h1>Sổ tang</h1><p class="n">${escH(DN_TEXT(c))} · ${L.length} lượt khách${withMoney ? ' · Tổng phúng viếng ' + vnd(L.reduce((a, x) => a + x.amount, 0)) : ''}</p>${parts || '<p>Chưa có khách nào.</p>'}<p class="n">In hoặc lưu PDF từ trình duyệt để giữ lâu dài.</p></body></html>`;
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([html], { type: 'text/html;charset=utf-8' }));
-  a.download = `So-tang-${slugifyName(DN_TEXT(c))}.html`; a.click();
+  a.download = `So-tang-${withMoney ? 'kem-so-tien-' : ''}${slugifyName(DN_TEXT(c))}.html`; a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 2000);
 }
 const slugifyName = (t: string) => t.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/gi, 'd').replace(/[^a-zA-Z0-9]+/g, '-').replace(/^-|-$/g, '');
@@ -217,10 +219,23 @@ function GuestList() {
   const all = c.ledger ?? [];
   const hosts = hostsOf(c).map(h => ({ ...h, n: all.filter(x => hostOf(x) === h.id).length })).filter(h => h.n > 0);
   const L = all.filter(x => (host === 'all' || hostOf(x) === host) && x.name.toLowerCase().includes(q.trim().toLowerCase())).slice().reverse();
+  // Tổng phúng viếng: chỉ người đại diện / người giữ Tài chính thấy
+  const T = ledgerTotals(all);
+  const sumOf = (id: string) => all.filter(x => hostOf(x) === id).reduce((a, x) => a + x.amount, 0);
   return (
     <div className="page"><div className="page-title"><div><div className="eyebrow">Khách viếng</div><h1 style={{ marginTop: 4 }}>Sổ tang</h1><p>{all.length} lượt khách · chia theo khách của từng người để sau này đáp lễ</p></div>
       <div className="actions"><button className="btn primary" onClick={() => setAdd(true)}><Icon n="plus" c="sm" />Ghi khách viếng</button>
-        <button className="btn" disabled={!all.length} onClick={() => downloadSoTang(c)}><Icon n="doc" c="sm" />Tải / in Sổ tang</button></div></div>
+        <button className="btn" disabled={!all.length} onClick={() => downloadSoTang(c)}><Icon n="doc" c="sm" />Tải / in Sổ tang</button>
+        {canFin && <button className="btn ghost" disabled={!all.length} onClick={() => downloadSoTang(c, true)}><Icon n="doc" c="sm" />Tải kèm số tiền</button>}</div></div>
+      {canFin && all.length > 0 && <section className="card card-pad stack" style={{ gap: 10 }}>
+        <div><div className="eyebrow">Tổng phúng viếng cả gia đình</div><div style={{ fontFamily: 'var(--serif)', fontSize: 28, fontWeight: 600 }} className="num">{money(T.total)}</div>
+          <div className="muted num">Tiền mặt {money(T.cash)} · Chuyển khoản {money(T.bank)}</div></div>
+        <div className="list">{hosts.map(h => (
+          <button key={h.id} className="row" style={{ padding: '10px 0', textAlign: 'left' }} onClick={() => setHost(host === h.id ? 'all' : h.id)} aria-pressed={host === h.id}>
+            <div className="grow"><div className="title">{hostPhrase(c, h.id)}</div><div className="meta"><span>{h.n} lượt</span></div></div>
+            <b className="num">{money(sumOf(h.id))}</b></button>))}</div>
+        <p className="note">Chỉ người đại diện và người giữ Tài chính thấy số tiền. Bấm từng dòng để xem danh sách khách của người đó.</p>
+      </section>}
       {hosts.length > 0 && <div className="chips">
         <button className="chip" aria-pressed={host === 'all'} onClick={() => setHost('all')}>Tất cả · {all.length}</button>
         {hosts.map(h => <button key={h.id} className="chip" aria-pressed={host === h.id} onClick={() => setHost(h.id)}>{h.label} · {h.n}</button>)}</div>}
@@ -229,7 +244,8 @@ function GuestList() {
         <div key={x.id} className="row"><div className="grow"><div className="title">{x.name}</div><div className="meta"><span>{groupLabel(c, x)}</span>{x.gifts.length > 0 && <span>{x.gifts.join(', ')}</span>}<span>{x.by} · {fmtAt(x.at)}</span>{canFin && x.amount > 0 && <span className="num">{x.amount.toLocaleString('vi-VN')} đ · {METHOD_LABEL[x.method]}</span>}</div></div>
           {canFin && !c.finance?.locked && <button className="icon-btn" aria-label="Xóa lượt ghi" onClick={() => { if (window.confirm(`Xóa lượt ghi “${x.name}”?`)) update(d => removeGuest(d, x.id)); }}><Icon n="x" c="sm" /></button>}</div>
       ))}</div> : <div className="empty"><span>{all.length ? 'Không có lượt ghi nào khớp.' : 'Sổ tang còn trống. Bấm “Ghi khách viếng” khi có người đến.'}</span></div>}</section>
-      {!canFin && <p className="note">Số tiền phúng viếng chỉ người giữ Tài chính xem. Bản tải về không có số tiền.</p>}
+      {canFin && host !== 'all' && <p className="muted">{hostPhrase(c, host)} · tổng phúng viếng: <b className="num" style={{ color: 'var(--text)' }}>{money(sumOf(host))}</b></p>}
+      {!canFin && <p className="note">Số tiền phúng viếng chỉ người đại diện và người giữ Tài chính xem. Bản tải về không có số tiền.</p>}
       {add && <GuestSheet onClose={() => setAdd(false)} />}
     </div>
   );
