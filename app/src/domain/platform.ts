@@ -1,6 +1,6 @@
 // Nền vận hành: tài khoản, gói & giá, đơn hàng, khớp giao dịch SePay, quyền dùng, nhật ký.
 // Phase 2 chạy trên máy (giả lập); Phase 3–4 chuyển phần này lên máy chủ — luật khớp giữ nguyên.
-import type { CaseAccess, CaseData, VendorCat } from './types';
+import type { CaseAccess, CaseData, OrgModel, OrgType, VendorCat } from './types';
 import { lunarAnniversary } from './lunar';
 import { parseISODate } from './person';
 
@@ -186,7 +186,8 @@ export interface PreNeed {
   rep: { name: string; phone: string; rel: string };
   contacts: { name: string; phone: string; rel: string }[];
   docs: { id: string; name: string; at: string; path?: string }[];
-  wish: { form: 'cremation' | 'burial' | 'family'; venue: 'home' | 'hall' | 'family'; rite: string; items: string; scale: 'small' | 'medium' | 'large'; msg: string; milestones: string[] };
+  /** org/orgType: hình thức tổ chức lễ tang ('' = để gia đình quyết); rite: 'traditional' | 'catholic' | 'other' | '' (hồ sơ cũ có thể là chữ, xem RITE_OF) */
+  wish: { form: 'cremation' | 'burial' | 'family'; venue: 'home' | 'hall' | 'family'; org?: OrgModel | ''; orgType?: OrgType; rite: string; items: string; scale: 'small' | 'medium' | 'large'; msg: string; milestones: string[] };
   budget: { amount: number; vendors: Partial<Record<VendorCat, string>> };
   special: string;
   shares: { id: string; name: string; phone: string; role: 'view' | 'edit' | 'activate'; inviteToken?: string; userId?: string }[];
@@ -201,7 +202,7 @@ export function preGroups(p: PreNeed) {
     { k: 'info', n: 'Thông tin cá nhân', path: 'thong-tin', st: st(!!(s.name && s.birthYear), !!s.name), note: s.name ? `${[s.title, s.name].filter(Boolean).join(' ')}${s.birthYear ? ' · ' + s.birthYear : ''}` : '' },
     { k: 'rep', n: 'Người đại diện và người liên hệ', path: 'lien-he', st: st(!!p.rep.name && p.contacts.length > 0, !!p.rep.name || p.contacts.length > 0), note: p.rep.name ? `${p.rep.name} · ${p.contacts.length} người liên hệ` : '' },
     { k: 'docs', n: 'Giấy tờ', path: 'giay-to', st: st(p.docs.length >= 2, p.docs.length > 0), note: p.docs.length ? `${p.docs.length} tệp đã ghi` : '', paid: true },
-    { k: 'wish', n: 'Nguyện vọng hậu sự', path: 'nguyen-vong', st: st(!!w.rite && !!w.msg.trim(), !!w.rite || w.form !== 'family'), note: w.rite && !w.msg.trim() ? 'Còn thiếu: lời nhắn cho con cháu' : '' },
+    { k: 'wish', n: 'Nguyện vọng hậu sự', path: 'nguyen-vong', st: st((!!w.rite || w.org === 'official') && !!w.msg.trim(), !!w.rite || !!w.org || w.form !== 'family'), note: (w.rite || w.org) && !w.msg.trim() ? 'Còn thiếu: lời nhắn cho con cháu' : '' },
     { k: 'budget', n: 'Ngân sách và nhà cung cấp mong muốn', path: 'ngan-sach', st: st(p.budget.amount > 0, Object.keys(p.budget.vendors).length > 0), note: p.budget.amount ? p.budget.amount.toLocaleString('vi-VN') + ' đ' : '' },
     { k: 'special', n: 'Mong muốn đặc biệt', path: 'nguyen-vong', st: st(!!p.special.trim(), false), note: '' },
   ];
@@ -216,7 +217,7 @@ export function newPreNeed(ownerId: string, forSelf: boolean, now = new Date()):
     id: 'cb' + Math.random().toString(36).slice(2, 9), ownerId, createdAt: now.toISOString(), forSelf,
     subject: { title: '', name: '', birthYear: '', hometown: '', idNote: '' },
     rep: { name: '', phone: '', rel: '' }, contacts: [], docs: [],
-    wish: { form: 'family', venue: 'family', rite: '', items: '', scale: 'medium', msg: '', milestones: [] },
+    wish: { form: 'family', venue: 'family', org: '', rite: '', items: '', scale: 'medium', msg: '', milestones: [] },
     budget: { amount: 0, vendors: {} }, special: '', shares: [], paid: false,
   };
 }

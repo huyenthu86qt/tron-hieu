@@ -381,3 +381,18 @@ describe('Danh xưng không chọn sẵn', () => {
     expect(newPreNeed('u1', true).subject.title).toBe('');
   });
 });
+
+describe('Nguyện vọng: hình thức tổ chức và nghi lễ chuyển đúng sang đám hiếu', () => {
+  it('4 hình thức + đối tượng nghi lễ tang + nghi lễ tôn giáo; hồ sơ cũ ghi chữ vẫn hiểu đúng', async () => {
+    const { newPreNeed } = await import('./platform');
+    const { activatePreNeed } = await import('./normalize');
+    const p = newPreNeed('u1', false);
+    p.subject.name = 'Trần Văn Hòa';
+    p.wish = { ...p.wish, org: 'official_rel', orgType: 'military', rite: 'catholic' };
+    const c = activatePreNeed(p, { death: '2026-09-24', place: 'hospital', org: 'official_rel' }, 'u1', 'Tuấn');
+    expect(c.situation).toMatchObject({ org: 'official_rel', orgType: 'military', rite: 'catholic' });
+    const old = newPreNeed('u1', false);
+    old.wish = { ...old.wish, rite: 'Phật giáo' };
+    expect(activatePreNeed(old, { death: '2026-09-24', place: 'home', org: 'family' }, 'u1', 'Tuấn').situation.rite).toBe('traditional');
+  });
+});

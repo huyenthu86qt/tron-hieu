@@ -1,6 +1,6 @@
 // Điền mặc định cho các phần mới — đám hiếu tạo ở Phase 1 vẫn mở được.
 // Kích hoạt hồ sơ chuẩn bị thành đám hiếu.
-import type { Answers, CaseData, Form, OrgModel, Place, Venue } from './types';
+import type { Answers, CaseData, Form, OrgModel, OrgType, Place, Venue } from './types';
 import { emptyFinance } from './finance';
 import { emptyAfter, emptyMilestones } from './aftercare';
 import { defaultVenues } from './vendors';
@@ -23,9 +23,13 @@ export function normalizeCase(c: CaseData): CaseData {
   return c;
 }
 
-const RITE_OF: Record<string, 'traditional' | 'catholic' | 'other'> = { 'Phật giáo': 'traditional', 'Công giáo': 'catholic', 'Truyền thống gia đình': 'traditional', 'Đơn giản, không nghi lễ': 'other' };
+// Nghi lễ trong nguyện vọng: mã mới (giống câu hỏi khi có tang) + chữ ở hồ sơ tạo trước 26/09/2026
+export const RITE_OF: Record<string, 'traditional' | 'catholic' | 'other'> = {
+  traditional: 'traditional', catholic: 'catholic', other: 'other',
+  'Phật giáo': 'traditional', 'Công giáo': 'catholic', 'Truyền thống gia đình': 'traditional', 'Đơn giản, không nghi lễ': 'other',
+};
 
-export interface ActivateInput { death: string; place: Place; org: OrgModel }
+export interface ActivateInput { death: string; place: Place; org: OrgModel; orgType?: OrgType }
 
 /** Kích hoạt: hồ sơ thành đám hiếu mở đầy đủ (không thu lần hai); nguyện vọng hiện là đề xuất, người đại diện vẫn xác nhận */
 export function activatePreNeed(p: PreNeed, x: ActivateInput, byUserId: string, byName: string, now = new Date()): CaseData {
@@ -36,7 +40,7 @@ export function activatePreNeed(p: PreNeed, x: ActivateInput, byUserId: string, 
     place: x.place,
     venue: (w.venue === 'family' ? 'undecided' : w.venue) as Venue | 'undecided',
     form: (w.form === 'family' ? 'undecided' : w.form) as Form | 'undecided',
-    org: x.org, orgType: 'cadre', rite: RITE_OF[w.rite] ?? 'traditional', scale: w.scale,
+    org: x.org, orgType: x.orgType ?? w.orgType ?? 'cadre', rite: RITE_OF[w.rite] ?? 'traditional', scale: w.scale,
   };
   const c = normalizeCase(createCase({ answers, now }));
   // Nguyện vọng là đề xuất: quyết định hình thức / nơi làm lễ để chờ người đại diện xác nhận

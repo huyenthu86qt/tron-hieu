@@ -2,9 +2,10 @@
 // S-PRE-06 Giấy tờ · S-PRE-07 Ngân sách & NCC mong muốn · S-PRE-08 Chia sẻ · S-PRE-09 Kích hoạt · (S-ENT-07 ở case/pages/IntakePage)
 import { useState, type ReactNode } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import type { OrgModel, Place, Title } from '../domain/types';
+import type { OrgModel, OrgType, Place, Title } from '../domain/types';
+import { QUESTIONS } from '../domain/entry';
+import { activatePreNeed, RITE_OF } from '../domain/normalize';
 import { fmtMoneyInput, money, parseMoney } from '../domain/finance';
-import { activatePreNeed } from '../domain/normalize';
 import { shareToken } from '../domain/actions';
 import { normalizePhone, preGroups, readiness, type PreNeed } from '../domain/platform';
 import { CATS, USE_DIRECTORY } from '../domain/vendors';
@@ -18,6 +19,10 @@ import { removeStored, uploadPreFile } from '../repo/files';
 import { REMOTE } from '../repo/backend';
 
 const STP = { done: ['done', 'Đã xong'], partial: ['doing', 'Còn thiếu'], todo: ['todo', 'Chưa bắt đầu'] } as const;
+// Dùng đúng lựa chọn của bộ câu hỏi khi có tang, để nguyện vọng chuyển sang đám hiếu không lệch
+const qOpts = (k: 'org' | 'orgType' | 'rite') => QUESTIONS.find(q => q.k === k)!.o.map(([key, title]) => ({ k: key, title }));
+const isOfficial = (o?: string) => o === 'official_rel' || o === 'official';
+
 const subjectName = (p: PreNeed) => (p.subject.name ? `${[p.subject.title, p.subject.name].filter(Boolean).join(' ')}` : 'Hồ sơ chưa đặt tên');
 
 /** Hồ sơ theo id + quyền của người đang xem */
@@ -163,7 +168,14 @@ export function PreWishPage() {
         <p className="muted" style={{ marginTop: 6 }}>Không cần điền hết một lần. Mỗi nhóm lưu riêng. Khi kích hoạt, nguyện vọng hiện là đề xuất — người đại diện vẫn xác nhận.</p></div>
       <section className="card card-pad stack"><h3>Hình thức</h3>{o('form', [{ k: 'cremation', title: 'Hỏa táng' }, { k: 'burial', title: 'Mai táng (địa táng)' }, { k: 'family', title: 'Để gia đình quyết' }])}</section>
       <section className="card card-pad stack"><h3>Nơi làm lễ mong muốn</h3>{o('venue', [{ k: 'home', title: 'Tại nhà' }, { k: 'hall', title: 'Tại nhà tang lễ' }, { k: 'family', title: 'Để gia đình quyết' }])}</section>
-      <section className="card card-pad stack"><h3>Nghi lễ</h3><Chips items={['Phật giáo', 'Công giáo', 'Truyền thống gia đình', 'Đơn giản, không nghi lễ']} isOn={x => w.rite === x} onToggle={x => !ro && setW({ ...w, rite: w.rite === x ? '' : x })} />
+      <section className="card card-pad stack"><h3>Hình thức tổ chức lễ tang</h3>
+        <Opts value={w.org ?? ''} disabled={ro} onChange={v => setW({ ...w, org: v as OrgModel | '', orgType: isOfficial(v) ? (w.orgType ?? 'cadre') : undefined, rite: v === 'official' ? '' : w.rite })}
+          items={[...qOpts('org'), { k: '', title: 'Để gia đình quyết' }]} />
+        {isOfficial(w.org) && <div className="field"><label>Nghi lễ tang của đối tượng nào?</label>
+          <Opts value={w.orgType ?? 'cadre'} disabled={ro} onChange={v => setW({ ...w, orgType: v as OrgType })} items={qOpts('orgType')} /></div>}</section>
+      {w.org !== 'official' && <section className="card card-pad stack"><h3>Nghi lễ</h3>
+        <Opts value={(RITE_OF[w.rite] ?? '') as string} disabled={ro} onChange={v => setW({ ...w, rite: v })} items={[...qOpts('rite'), { k: '', title: 'Để gia đình quyết' }]} /></section>}
+      <section className="card card-pad stack"><h3>Đồ tùy táng</h3>
         <div className="field"><label htmlFor="pItems">Đồ tùy táng mong muốn</label><input className="input" id="pItems" disabled={ro} value={w.items} onChange={e => setW({ ...w, items: e.target.value })} placeholder="Ví dụ: tràng hạt, bộ áo the" /></div></section>
       <section className="card card-pad stack"><h3>Quy mô</h3><div className="chips">{([['small', 'Nhỏ — gia đình, họ hàng gần'], ['medium', 'Vừa'], ['large', 'Lớn']] as const).map(([k, l]) => <button key={k} className="chip" disabled={ro} aria-pressed={w.scale === k} onClick={() => setW({ ...w, scale: k })}>{l}</button>)}</div></section>
       <section className="card card-pad stack"><h3>Mốc tưởng niệm mong muốn</h3><Chips items={['49 ngày', '100 ngày', 'Giỗ đầu']} isOn={x => w.milestones.includes({ '49 ngày': 'd49', '100 ngày': 'd100', 'Giỗ đầu': 'gio' }[x]!)} onToggle={x => { if (ro) return; const k = { '49 ngày': 'd49', '100 ngày': 'd100', 'Giỗ đầu': 'gio' }[x]!; setW({ ...w, milestones: w.milestones.includes(k) ? w.milestones.filter(y => y !== k) : [...w.milestones, k] }); }} /></section>
@@ -303,7 +315,8 @@ export function PreActivatePage() {
   const { p, canActivate, locked } = usePre();
   const user = useUser()!;
   const nav = useNavigate();
-  const [x, setX] = useState({ death: '', place: 'hospital' as Place, org: 'family' as OrgModel });
+  // Điền sẵn theo nguyện vọng đã chuẩn bị (nếu có)
+  const [x, setX] = useState({ death: '', place: 'hospital' as Place, org: (p?.wish.org || 'family') as OrgModel, orgType: (p?.wish.orgType ?? 'cadre') as OrgType });
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   if (!p) return <NotFoundPre />;
@@ -335,7 +348,9 @@ export function PreActivatePage() {
         <section className="card card-pad stack"><h3>Vài thông tin cần ngay</h3>
           <div className="field"><label htmlFor="acDeath">Ngày mất</label><input className="input" type="date" id="acDeath" value={x.death} onChange={e => setX({ ...x, death: e.target.value })} /></div>
           <div className="field"><label>Người thân mất ở đâu?</label><Opts value={x.place} onChange={v => setX({ ...x, place: v })} items={[{ k: 'hospital', title: 'Tại bệnh viện' }, { k: 'home', title: 'Tại nhà' }, { k: 'other', title: 'Nơi khác' }]} /></div>
-          <div className="field"><label>Lễ tang được tổ chức theo hình thức nào?</label><Opts value={x.org} onChange={v => setX({ ...x, org: v })} items={[{ k: 'family', title: 'Gia đình tự tổ chức' }, { k: 'community', title: 'Gia đình chủ trì, phối hợp địa phương' }, { k: 'official_rel', title: 'Nghi lễ tôn giáo + nghi lễ tang cán bộ / quân nhân' }, { k: 'official', title: 'Chỉ theo nghi lễ tang cán bộ / quân nhân' }]} /></div></section>
+          <div className="field"><label>Lễ tang được tổ chức theo hình thức nào?</label><Opts value={x.org} onChange={v => setX({ ...x, org: v as OrgModel })} items={qOpts('org')} />
+            {p.wish.org && <p className="muted">Điền sẵn theo nguyện vọng đã chuẩn bị — có thể đổi.</p>}</div>
+          {isOfficial(x.org) && <div className="field"><label>Nghi lễ tang của đối tượng nào?</label><Opts value={x.orgType} onChange={v => setX({ ...x, orgType: v as OrgType })} items={qOpts('orgType')} /></div>}</section>
         <section className="card"><div className="sec-h card-pad" style={{ margin: 0, paddingBottom: 4 }}><h3>Những gì sẽ được chuyển sang</h3></div>
           <div className="list">{moves.map(([a, b]) => <div key={a} className="row"><span className="num-badge"><Icon n="check" c="sm" /></span><div className="grow"><div className="title">{a}</div><div className="meta">{b}</div></div></div>)}</div></section>
         <section className="card card-pad"><dl className="kv"><dt>Người kích hoạt</dt><dd>{user.name}</dd><dt>Sẽ báo cho</dt><dd>{p.shares.map(s => s.name).join(', ') || 'Không có người được chia sẻ'}</dd><dt>Lưu vết</dt><dd>Thời điểm và người kích hoạt được ghi vào lịch sử</dd><dt>Gói</dt><dd>Đám hiếu được mở đầy đủ, không thu lần hai</dd></dl></section>
