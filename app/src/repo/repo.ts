@@ -84,7 +84,7 @@ export class LocalRepo implements CaseRepo {
 export const repo: CaseRepo = REMOTE ? new SupabaseRepo() : new LocalRepo();
 
 /* ---------- Bản nháp bước đầu (chưa tạo đám hiếu) ---------- */
-export interface EntryDraft { answers: Answers; step: number; mine: string[]; notified: string[] }
+export interface EntryDraft { answers: Answers; step: number; mine: string[]; notified: string[]; /** Câu khách đã tự chọn (không chọn sẵn thay khách) */ picked?: string[] }
 const DKEY = 'damhieu.entry-draft.v1';
 
 export function loadDraft(): EntryDraft | null {

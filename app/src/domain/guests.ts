@@ -1,10 +1,8 @@
 // Khách viếng & truyền tin: sổ ghi nhanh, trang thông tin công khai, ca trực.
 import type { CaseData, Condolence, GuestGroup, Method, PublicPage } from './types';
 import { chosenLabel, findDecision, hasBLT, ORGT, U1_ID } from './model';
-import { addDays, fmtDM, fmtDMY, longevityWord, lunarAge, parseISODate } from './person';
-import { toLunar, canChi } from './lunar';
+import { addDays, fmtDM, fmtDMY, parseISODate } from './person';
 import { siteOf, venueLabel } from './vendors';
-import { DN_TEXT } from './text';
 
 export const GROUPS: GuestGroup[] = ['Họ nội', 'Họ ngoại', 'Cơ quan, đoàn thể', 'Tổ dân phố, lối xóm', 'Bạn bè', 'Khác'];
 export const GIFTS = ['Hương', 'Hoa', 'Vòng hoa', 'Trái cây', 'Nến', 'Khác'];
@@ -38,17 +36,16 @@ export function makeSlug(c: CaseData) {
   return `${base}-${c.id.slice(-4)}`;
 }
 
-export function defaultNotice(c: CaseData) {
-  const P = c.person, d = parseISODate(P.death), a = lunarAge(P);
-  return 'Gia đình chúng tôi vô cùng thương tiếc báo tin: ' + DN_TEXT(c) + (d ? ` đã từ trần ngày ${fmtDMY(d)}` : '') + (a ? `, ${longevityWord(a)} ${a} tuổi` : '') + '.';
+export function defaultNotice(_c: CaseData) {
+  // Tên, ngày mất (dương & âm), tuổi đã in ở đầu trang cáo phó — lời báo tin không nhắc lại
+  return 'Gia đình xin kính báo tới họ hàng nội ngoại, bạn bè, cơ quan, đoàn thể và bà con lối xóm được biết.';
 }
 
-/** Nháp lời báo tin đầy đủ (mẫu có sẵn; gia đình đọc lại trước khi công bố) */
+/** Nháp lời báo tin đầy đủ hơn (gia đình đọc lại trước khi công bố); không lặp phần đầu trang */
 export function draftNotice(c: CaseData) {
-  const P = c.person, d = parseISODate(P.death), a = lunarAge(P), L = d ? toLunar(d) : null;
-  return 'Gia đình chúng tôi vô cùng thương tiếc báo tin: ' + DN_TEXT(c) + (P.birthYear ? `, sinh năm ${P.birthYear}` : '')
-    + (d ? `, đã từ trần${P.time ? ' hồi ' + P.time.replace(':', ' giờ ') + ' phút' : ''} ngày ${d.getDate()} tháng ${d.getMonth() + 1} năm ${d.getFullYear()} (tức ngày ${L!.day} tháng ${L!.month} năm ${canChi(L!.year)})` : '')
-    + (a ? `, ${longevityWord(a)} ${a} tuổi` : '') + '. Gia đình xin kính báo tới họ hàng nội ngoại, bạn bè, cơ quan, đoàn thể và bà con lối xóm.';
+  const site = siteOf(c);
+  return defaultNotice(c) + ` Lễ tang được cử hành tại ${venueLabel(c).toLowerCase()}${site.address ? ' (' + site.address + ')' : ''}.`
+    + ' Gia đình xin chân thành cảm ơn tấm lòng của quý vị.';
 }
 
 /** Lịch lễ: lấy từ quyết định đã chốt; các dòng khác gia đình ghi (mặc định theo ngày mất) */
@@ -79,8 +76,9 @@ export const snapshotOf = (c: CaseData) => JSON.stringify({ v: venueLabel(c), a:
 
 export function publish(c: CaseData, page: Partial<PublicPage>, now = new Date()) {
   const cur = c.publicPage ?? emptyPage();
-  const next: PublicPage = { ...cur, ...page, slug: cur.slug || makeSlug(c), published: true, publishedAt: now.toISOString(), snapshot: snapshotOf(c), changedAt: undefined };
+  const next: PublicPage = { ...cur, ...page, slug: cur.slug || makeSlug(c), published: true, publishedAt: now.toISOString(), changedAt: undefined };
   c.publicPage = next;
+  next.snapshot = snapshotOf(c); // chụp SAU khi gắn lịch mới, để lần công bố đầu không bị coi là “đã thay đổi”
   c.history.push({ at: now.toISOString(), text: cur.published ? 'Cập nhật trang thông tin cho khách' : 'Công bố trang thông tin cho khách' });
 }
 

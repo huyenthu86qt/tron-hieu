@@ -6,7 +6,7 @@ import { addGuest, announcer, defaultNotice, draftNotice, emptyPage, GIFTS, GROU
 import { children, fmtMoneyInput, METHOD_LABEL, parseMoney } from '../../domain/finance';
 import { lifeLine } from '../../domain/person';
 import { portraitIcon } from '../../domain/model';
-import { siteOf, venueLabel } from '../../domain/vendors';
+import { defaultVenues, siteOf, venueLabel } from '../../domain/vendors';
 import { DN_TEXT } from '../../domain/text';
 import { fmtPhone } from '../../domain/platform';
 import { repo } from '../../repo/repo';
@@ -123,7 +123,7 @@ export function ObitBody({ c, preview }: { c: CaseData; preview?: boolean }) {
       <p className="muted num">{lifeLine(c.person)}</p>{c.person.hometown && <p className="muted">Quê quán: {c.person.hometown}</p>}
       <p style={{ maxWidth: '56ch' }}>{p.text || defaultNotice(c)}</p>
       <section className="card card-pad sched"><dl className="kv">{schedule(c).map(([a, b]) => <Fragment key={a}><dt>{a}</dt><dd>{b}</dd></Fragment>)}
-        <dt>Địa điểm</dt><dd><b>{venueLabel(c)}</b>{site.address && <><br />{site.address}</>}{site.geo && <><br /><a href={`https://www.google.com/maps/search/?api=1&query=${site.geo.lat},${site.geo.lng}`} target="_blank" rel="noreferrer">Chỉ đường</a></>}</dd></dl></section>
+        <dt>Địa điểm</dt><dd><b>{venueLabel(c)}</b>{site.address && <><br />{site.address}</>}{(site.geo || site.address) && <><br /><a className="btn sm" style={{ marginTop: 6 }} href={`https://www.google.com/maps/search/?api=1&query=${site.geo ? `${site.geo.lat},${site.geo.lng}` : encodeURIComponent(site.address)}`} target="_blank" rel="noreferrer"><Icon n="map" c="sm" />Chỉ đường</a></>}</dd></dl></section>
       <p className="muted">Tang chủ: {u1.name} ({u1.rel.toLowerCase()}){p.showPhone && p.phone ? <> · <span className="num">{fmtPhone(p.phone)}</span></> : null}</p>
       <p className="muted" style={{ fontSize: 12 }}>Trang do gia đình đăng qua {BRAND}</p>
     </div>
@@ -136,23 +136,24 @@ function Compose() {
   const { c, update, isU1, me } = useCase();
   const { mobile, toast } = useApp();
   const p = c.publicPage ?? emptyPage();
-  const [f, setF] = useState({ text: p.text || defaultNotice(c), auto: p.auto, showPhone: p.showPhone, phone: p.phone || me.phone || '', nq: p.sched?.nq ?? '', vieng: p.sched?.vieng ?? '', dua: p.sched?.dua ?? '' });
+  const [f, setF] = useState({ text: p.text || defaultNotice(c), auto: p.auto, showPhone: p.showPhone, phone: p.phone || me.phone || '', addr: siteOf(c).address, nq: p.sched?.nq ?? '', vieng: p.sched?.vieng ?? '', dua: p.sched?.dua ?? '' });
   const [share, setShare] = useState(false);
-  const draft = { ...c, publicPage: { ...p, text: f.text, showPhone: f.showPhone, phone: f.phone, sched: { nq: f.nq, vieng: f.vieng, dua: f.dua } } };
-  const go = () => { update(d => publish(d, { text: f.text, auto: f.auto, showPhone: f.showPhone, phone: f.phone, sched: { nq: f.nq.trim(), vieng: f.vieng.trim(), dua: f.dua.trim() } })); toast('Đã công bố. Khi gia đình đổi lịch hoặc nơi tổ chức, trang tự cập nhật.'); };
+  const draft = { ...c, venues: { ...(c.venues ?? defaultVenues()), [c.situation.venue]: { ...siteOf(c), address: f.addr } }, publicPage: { ...p, text: f.text, showPhone: f.showPhone, phone: f.phone, sched: { nq: f.nq, vieng: f.vieng, dua: f.dua } } };
+  const go = () => { update(d => { const v = d.venues ?? defaultVenues(); v[d.situation.venue] = { ...v[d.situation.venue], address: f.addr.trim() }; d.venues = v; publish(d, { text: f.text, auto: f.auto, showPhone: f.showPhone, phone: f.phone, sched: { nq: f.nq.trim(), vieng: f.vieng.trim(), dua: f.dua.trim() } }); }); toast('Đã công bố. Khi gia đình đổi lịch hoặc nơi tổ chức, trang tự cập nhật.'); };
   const sch = schedule(c);
   const form = (
     <section className="card card-pad stack">
       <div className="field"><label htmlFor="infoText">Lời báo tin</label><textarea className="input" id="infoText" value={f.text} onChange={e => setF({ ...f, text: e.target.value })} style={{ minHeight: 140 }} />
         {f.auto && <p className="muted" style={{ color: 'var(--warning)' }}><Icon n="alert" c="sm" /> Bản nháp soạn tự động — anh đọc lại, sửa tên tuổi, giờ trước khi công bố.</p>}
-        <div><button className="btn sm" onClick={() => setF({ ...f, text: draftNotice(c), auto: true })}>Soạn nháp tự động</button></div></div>
+        <div><button className="btn sm" onClick={() => setF({ ...f, text: draftNotice(draft), auto: true })}>Soạn nháp tự động</button></div></div>
       <div><div className="eyebrow" style={{ marginBottom: 6 }}>Lịch lễ · giờ an táng lấy từ quyết định đã chốt</div>
         <div className="stack" style={{ gap: 8 }}>
           <div className="field"><label htmlFor="sNq">{sch[0]?.[0]}</label><input className="input" id="sNq" value={f.nq} onChange={e => setF({ ...f, nq: e.target.value })} placeholder={sch[0]?.[1]} /></div>
           {sch.length > 1 && <div className="field"><label htmlFor="sVieng">Lễ viếng</label><input className="input" id="sVieng" value={f.vieng} onChange={e => setF({ ...f, vieng: e.target.value })} placeholder={sch[1][1]} /></div>}
           {sch.length > 2 && <div className="field"><label htmlFor="sDua">{sch[2][0]}</label><input className="input" id="sDua" value={f.dua} onChange={e => setF({ ...f, dua: e.target.value })} placeholder={sch[2][1]} /></div>}
           {sch.length > 3 && <p className="muted">{sch[3][0]}: <b style={{ color: 'var(--text)' }}>{sch[3][1]}</b></p>}
-          <p className="muted">Nơi tổ chức: <b style={{ color: 'var(--text)' }}>{venueLabel(c)}</b>{siteOf(c).address ? ' · ' + siteOf(c).address : ''}</p></div></div>
+          <div className="field"><label htmlFor="sAddr">Địa chỉ {venueLabel(c).toLowerCase()}</label><input className="input" id="sAddr" value={f.addr} onChange={e => setF({ ...f, addr: e.target.value })} placeholder="Số nhà, ngõ/xóm, phường/xã, tỉnh" />
+            {!f.addr.trim() && <p className="muted" style={{ color: 'var(--warning)' }}><Icon n="alert" c="sm" /> Khách cần địa chỉ để đến viếng — trang sẽ có nút “Chỉ đường”.</p>}</div></div></div>
       <label className="check"><input type="checkbox" checked={f.showPhone} onChange={e => setF({ ...f, showPhone: e.target.checked })} /><span>Hiện số điện thoại của tang chủ</span></label>
       {f.showPhone && <input className="input num" value={f.phone} onChange={e => setF({ ...f, phone: e.target.value })} placeholder="Số điện thoại" aria-label="Số điện thoại tang chủ" />}
       {isU1 ? <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}><button className="btn primary" onClick={go} style={{ flex: 1 }}>{p.published ? 'Cập nhật trang' : 'Công bố trang thông tin'}</button>

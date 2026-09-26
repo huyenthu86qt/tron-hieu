@@ -43,7 +43,7 @@ export function TaskRow({ t, why, acts = true, from }: { t: TaskView; why?: bool
         {why && (
           <div className="meta">
             <KindPill k={t.kind} />{t.why && <span>Vì: {t.why}</span>}{t.area && <span><Icon n="team" c="sm" /> {t.area}</span>}
-            {t.unverified && <span className="pill soft">Thủ tục chờ nguồn kiểm chứng</span>}
+            {t.unverified && <span className="pill soft">Hướng dẫn chi tiết đang bổ sung</span>}
           </div>
         )}
         {t.status === 'issue' && t.issue && <div className="meta" style={{ color: 'var(--danger)' }}><Icon n="alert" c="sm" /> {t.issue}</div>}

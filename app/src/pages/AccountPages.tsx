@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import type { CaseData } from '../domain/types';
-import { visibleTasks, STATUS_LABEL } from '../domain/model';
+import { findTask, visibleTasks, STATUS_LABEL } from '../domain/model';
 import { money, METHOD_LABEL, EXP_STATUS } from '../domain/finance';
 import { fmtPhone, isFull, ORDER_STATUS_LABEL, readiness } from '../domain/platform';
 import { DN_TEXT } from '../domain/text';
@@ -70,7 +70,7 @@ export function NotificationsPage() {
         <section className="card">{items.length ? <div className="list">{items.map(({ c, h }, i) => (
           <button key={i} className={isMindful(h) ? 'row mindful' : 'row'} onClick={() => nav(h.taskId ? `/dh/${c.id}/viec/${h.taskId}` : h.path ? `/dh/${c.id}/${h.path}${isMindful(h) ? '?lang=1' : ''}` : `/dh/${c.id}`)}>
             <span className="num-badge" style={!readUntil || h.at > readUntil ? { background: 'var(--accent-soft)', color: 'var(--warning)' } : undefined}><Icon n={isMindful(h) ? 'candle' : 'bell'} c="sm" /></span>
-            <div className="grow"><div className="title">{h.text}</div><div className="meta"><span>Đám hiếu {DN_TEXT(c)}</span><span>{fmtAt(h.at)}</span></div></div></button>
+            <div className="grow"><div className="title">{h.text}</div>{h.taskId && findTask(c, h.taskId) && <div className="meta"><span>Việc: {findTask(c, h.taskId)!.title}</span></div>}<div className="meta"><span>Đám hiếu {DN_TEXT(c)}</span><span>{fmtAt(h.at)}</span></div></div></button>
         ))}</div> : <div className="empty"><Icon n="bell" c="lg" /><span>Chưa có thông báo.</span></div>}</section>
         <p className="note">Giai đoạn này thông báo hiện trong app. Gửi qua tin nhắn / Zalo mở ở giai đoạn sau.</p>
       </div>

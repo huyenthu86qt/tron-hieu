@@ -16,8 +16,8 @@ export const QUESTIONS: Question[] = [
   { k: 'org', q: 'Lễ tang được tổ chức theo hình thức nào?', hint: 'Quyết định ai chủ trì, ai hỗ trợ và nghi lễ nào được dùng.', o: [
     ['family', 'Gia đình tự tổ chức theo nghi lễ tôn giáo / truyền thống'],
     ['community', 'Gia đình chủ trì, phối hợp Ban công tác Mặt trận, UBND xã, hội đoàn thể địa phương'],
-    ['official_rel', 'Nghi lễ tôn giáo + nghi lễ tang cán bộ, CCVC hoặc quân nhân'],
-    ['official', 'Chỉ theo nghi lễ tang cán bộ, CCVC hoặc quân nhân']] },
+    ['official_rel', 'Nghi lễ tôn giáo + nghi lễ tang cán bộ, công chức, viên chức hoặc quân nhân'],
+    ['official', 'Chỉ theo nghi lễ tang cán bộ, công chức, viên chức hoặc quân nhân']] },
   { k: 'orgType', q: 'Nghi lễ tang của đối tượng nào?', hint: 'Cơ quan hoặc đơn vị sẽ lập Ban lễ tang.', o: [['cadre', 'Cán bộ, công chức, viên chức'], ['military', 'Quân nhân'], ['police', 'Công an nhân dân']], when: a => a.org === 'official_rel' || a.org === 'official' },
   { k: 'rite', q: 'Gia đình làm lễ theo nghi thức nào?', hint: 'Các việc, người cần mời và lịch lễ sẽ theo nghi thức này.', o: [['traditional', 'Truyền thống thờ cúng tổ tiên / Phật giáo'], ['catholic', 'Công giáo'], ['other', 'Khác (Tin Lành, Cao Đài, Hòa Hảo…)']], when: a => a.org !== 'official' },
   { k: 'scale', q: 'Quy mô dự kiến?', hint: 'Giúp ước lượng hậu cần và khách.', o: [['small', 'Nhỏ — gia đình, họ hàng gần'], ['medium', 'Vừa — thêm bạn bè, hàng xóm'], ['large', 'Lớn — nhiều đoàn cơ quan']] },
@@ -44,9 +44,9 @@ export function entryItems(a: Answers): EntryItem[] {
     L.push({ key: 'hosp', title: 'Nhận giấy báo tử và làm thủ tục tại bệnh viện', hint: 'Cần có trước khi đưa người thân về', taskIds: ['t0'] },
       { key: 'car', title: 'Liên hệ xe đưa người thân về nơi làm lễ', hint: 'Bệnh viện thường có danh sách xe; app sẽ gợi ý bên gần nhất sau khi lưu', taskIds: ['m1b'] });
   } else if (a.place === 'home') {
-    L.push({ key: 'home', title: 'Báo cho trạm y tế hoặc chính quyền địa phương để được hướng dẫn giấy báo tử', hint: 'Nội dung thủ tục đang chờ nguồn kiểm chứng', taskIds: ['p1a'] });
+    L.push({ key: 'home', title: 'Báo cho trạm y tế hoặc chính quyền địa phương để được hướng dẫn giấy báo tử', hint: 'Cán bộ địa phương sẽ hướng dẫn giấy tờ cần mang theo', taskIds: ['p1a'] });
   } else {
-    L.push({ key: 'other', title: 'Liên hệ nơi người thân mất để được hướng dẫn thủ tục', hint: 'Nội dung thủ tục đang chờ nguồn kiểm chứng', taskIds: ['p1b'] });
+    L.push({ key: 'other', title: 'Liên hệ nơi người thân mất để được hướng dẫn thủ tục', hint: 'Nơi đó sẽ hướng dẫn giấy tờ cần làm', taskIds: ['p1b'] });
   }
   const groups = [
     { label: 'Họ hàng bên nội', taskId: 't3' }, { label: 'Họ hàng bên ngoại', taskId: 't11' },

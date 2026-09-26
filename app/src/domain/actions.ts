@@ -51,7 +51,7 @@ export function startTask(c: CaseData, id: string, now?: Date) {
  * Đánh dấu xong. Việc khóa: cần mọi việc phía trước đã xong, và
  * hoặc đủ mục kiểm, hoặc ghi lý do chấp nhận rủi ro.
  */
-export function completeTask(c: CaseData, id: string, opts: { checksOk?: boolean; riskNote?: string } = {}, now?: Date) {
+export function completeTask(c: CaseData, id: string, opts: { checksOk?: boolean; riskNote?: string; by?: string } = {}, now?: Date) {
   const t = inst(c, id), v = findTask(c, id);
   if (!t || !v) return;
   if (v.lock) {
@@ -60,7 +60,7 @@ export function completeTask(c: CaseData, id: string, opts: { checksOk?: boolean
   }
   t.status = 'done';
   t.issue = undefined;
-  log(c, `Đánh dấu đã xong${v.lock ? ' · việc đã khóa' : ''}${opts.riskNote?.trim() ? ' · Chấp nhận rủi ro: ' + opts.riskNote.trim() : ''}${t.evidence ? ' · đính kèm ' + t.evidence : ''}`, id, now);
+  log(c, `${opts.by ? opts.by + ' báo đã xong' : 'Đánh dấu đã xong'}${v.lock ? ' · việc đã khóa' : ''}${opts.riskNote?.trim() ? ' · Chấp nhận rủi ro: ' + opts.riskNote.trim() : ''}${t.evidence ? ' · đính kèm ' + t.evidence : ''}`, id, now);
 }
 
 export function reportIssue(c: CaseData, id: string, text: string, by?: string, now?: Date) {
@@ -174,6 +174,9 @@ export function savePerson(c: CaseData, f: PersonForm, now?: Date) {
   };
   const u = c.members.find(m => m.id === U1_ID);
   if (u) { if (f.u1name.trim()) u.name = f.u1name.trim(); if (f.u1rel) u.rel = f.u1rel; }
+  // Đã khai người đại diện (tên + quan hệ) → việc “Xác lập người đại diện gia đình” coi như xong
+  const rep = inst(c, 'm2a');
+  if (u && u.name.trim() && u.rel && rep && rep.status !== 'done') { rep.status = 'done'; rep.owner = rep.owner ?? U1_ID; }
   // Tên Ban lễ tang có xưng hô theo người mất
   const sys = systemMembers(c.situation, c.person);
   c.members.forEach(m => { const s = sys.find(x => x.id === m.id); if (s && m.system === 'blt') m.name = s.name; });

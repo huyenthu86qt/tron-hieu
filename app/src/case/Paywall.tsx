@@ -1,6 +1,6 @@
 // S-CHK-00 · Mở đầy đủ — lời lẽ nhẹ nhàng, không đếm ngược, nói rõ gồm gì; phần miễn phí vẫn dùng bình thường.
 import type { ReactNode } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { money } from '../domain/finance';
 import { usePlatform } from '../repo/platformStore';
 import { Icon } from '../ui/Icon';
@@ -15,10 +15,12 @@ const INCLUDES = [
 ] as const;
 
 export function Paywall({ module }: { module: string }) {
-  const { c, isU1, me } = useCase();
+  const { c, isU1, me, full } = useCase();
   const nav = useNavigate();
   const loc = useLocation();
   const p = usePlatform(s => s.products.find(x => x.id === 'full'));
+  // Đã mở đầy đủ (vd. vừa thanh toán xong quay về): đưa thẳng tới phần đang cần, không mời mua lần nữa
+  if (full && loc.pathname.endsWith('/mo-day-du')) return <Navigate to={loc.pathname.replace(/\/mo-day-du$/, '')} replace />;
   const canPay = isU1 || me.access === 'full';
   return (
     <div className="page" style={{ maxWidth: 760 }}>

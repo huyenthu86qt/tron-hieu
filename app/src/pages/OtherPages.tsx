@@ -61,13 +61,14 @@ export function LinkPage() {
             <div className="stack" style={{ gap: 8 }}>
               <div className="field"><label htmlFor="issueTxt">Gặp vấn đề gì?</label><textarea className="input" id="issueTxt" value={issue} onChange={e => setIssue(e.target.value)} placeholder="Ví dụ: Nhà văn hóa chỉ còn 12 ghế." /></div>
               <button className="btn primary" disabled={!issue.trim()} onClick={() => { void act(d => reportIssue(d, t.id, issue, member.name), 'Đã gửi cho ' + u1.name); setIssueFor(null); setIssue(''); }}>Gửi cho {u1.name}</button>
+              <button className="btn ghost" onClick={() => { setIssueFor(null); setIssue(''); }}>Thôi, quay lại</button>
             </div>
           ) : t.status === 'done'
             ? <Banner kind="info" icon="check">Đã báo xong. Cảm ơn {member.name}.</Banner>
             : <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {t.status === 'todo'
                   ? <button className="btn primary block" onClick={() => void act(d => startTask(d, t.id), 'Đã báo gia đình: đã nhận việc')}>Nhận việc</button>
-                  : <button className="btn primary block" onClick={() => void act(d => completeTask(d, t.id, { checksOk: true }), 'Đã báo gia đình: việc đã xong')} disabled={t.lock}><Icon n="check" c="sm" />Đã xong</button>}
+                  : <button className="btn primary block" onClick={() => void act(d => completeTask(d, t.id, { checksOk: true, by: member.name }), 'Đã báo gia đình: việc đã xong')} disabled={t.lock}><Icon n="check" c="sm" />Đã xong</button>}
                 {t.lock && t.status !== 'todo' && <p className="muted">Việc không thể quay lại — người đại diện gia đình xác nhận.</p>}
                 {t.status !== 'issue' && <button className="btn block" onClick={() => setIssueFor(t.id)}>Báo vấn đề</button>}
               </div>}

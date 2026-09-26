@@ -54,7 +54,7 @@ function After() {
               <div key={t.id} className="row">
                 <input type="checkbox" checked={t.status === 'done'} disabled={closed || t.lock} onChange={e => toggle(t.id, e.target.checked)} style={{ width: 20, height: 20, accentColor: 'var(--primary)', marginTop: 2 }} aria-label={`Đánh dấu xong: ${t.title}`} />
                 <div className="grow"><Link className="title" to={`${base}/viec/${t.id}`} state={{ from: 'hau-tang' }} style={{ color: 'inherit', textDecoration: 'none' }}>{t.title}</Link>
-                  <div className="meta">{t.kind === 'opt' ? <span>Tùy chọn</span> : <span>Cần xong để khép vòng</span>}{t.status === 'skip' && <span className="pill skip">Không áp dụng</span>}{t.why && <span>Vì: {t.why}</span>}{t.unverified && <span className="pill soft">Chưa có hướng dẫn đã kiểm chứng</span>}</div></div>
+                  <div className="meta">{t.kind === 'opt' ? <span>Tùy chọn</span> : <span>Cần xong để khép vòng</span>}{t.status === 'skip' && <span className="pill skip">Không áp dụng</span>}{t.why && <span>Vì: {t.why}</span>}{t.unverified && <span className="pill soft">Hướng dẫn chi tiết đang bổ sung</span>}</div></div>
                 {t.go && <button className="btn sm ghost" onClick={() => nav(`${base}/${t.go}`)}>Mở</button>}</div>
             ))}</div></section>
         ))}
@@ -91,7 +91,7 @@ function Procedures() {
       <Banner kind="info">Hướng dẫn chi tiết cho thủ tục chỉ hiện khi có nguồn hiện hành đã kiểm chứng. Hiện app giúp gia đình theo dõi ai làm, đã xong chưa và lưu kết quả.</Banner>
       <section className="card"><div className="list">{L.map(t => (
         <button key={t.id} className="row" onClick={() => nav(`${base}/viec/${t.id}`, { state: { from: 'hau-tang/thu-tuc' } })}><div className="grow"><div className="title">{t.title}</div>
-          <div className="meta"><span className={'pill ' + t.status}>{t.status === 'done' ? 'Đã xong' : t.status === 'skip' ? 'Không áp dụng' : t.status === 'doing' ? 'Đang làm' : 'Cần làm'}</span>{t.unverified && <span className="pill soft">Chưa có hướng dẫn đã kiểm chứng</span>}{t.evidence && <span><Icon n="doc" c="sm" /> {t.evidence}</span>}<span>{c.members.find(m => m.id === t.owner)?.name ?? 'Chưa có người nhận'}</span></div></div>
+          <div className="meta"><span className={'pill ' + t.status}>{t.status === 'done' ? 'Đã xong' : t.status === 'skip' ? 'Không áp dụng' : t.status === 'doing' ? 'Đang làm' : 'Cần làm'}</span>{t.unverified && <span className="pill soft">Hướng dẫn chi tiết đang bổ sung</span>}{t.evidence && <span><Icon n="doc" c="sm" /> {t.evidence}</span>}<span>{c.members.find(m => m.id === t.owner)?.name ?? 'Chưa có người nhận'}</span></div></div>
           <Icon n="chev" c="chev" /></button>
       ))}</div></section></div>
   );

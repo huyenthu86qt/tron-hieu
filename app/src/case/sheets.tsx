@@ -9,7 +9,7 @@ import { dependencies, findTask, U1_ID, visibleTasks } from '../domain/model';
 import { PHASES } from '../domain/templates';
 import { Icon } from '../ui/Icon';
 import { Banner, Chips, ErrorBanner, Opts, Sheet, toggleIn, useApp } from '../ui/common';
-import { ACCESS_LABEL, memberOf, useCase } from './CaseContext';
+import { ACCESS_LABEL, DN, memberOf, useCase } from './CaseContext';
 import { NAV } from './nav';
 import { useBackToList } from './rows';
 import { REMOTE } from '../repo/backend';
@@ -220,8 +220,8 @@ function TaskFormSheet() {
 
 /* ---------- S-TEAM-02 · Mời người hỗ trợ ---------- */
 const ACCESS_OPTS: { k: Access; title: string; note: string }[] = [
-  { k: 'full', title: 'Đầy đủ (Full)', note: 'Thấy toàn bộ đám hiếu, cần tài khoản' },
-  { k: 'limited', title: 'Giới hạn (Limited)', note: 'Chỉ thấy các vùng trách nhiệm được giao' },
+  { k: 'full', title: 'Đầy đủ', note: 'Thấy toàn bộ đám hiếu, cần tài khoản' },
+  { k: 'limited', title: 'Giới hạn', note: 'Chỉ thấy các vùng trách nhiệm được giao' },
   { k: 'link', title: 'Chỉ qua link', note: 'Không cần cài app — chỉ thấy việc được nhờ' },
 ];
 const RELS = ['Con trai trưởng', 'Con trai', 'Con gái', 'Con dâu', 'Con rể', 'Cháu', 'Họ hàng', 'Hàng xóm', 'Bạn của gia đình'];
@@ -256,6 +256,7 @@ function InviteSheet() {
         {made.access === 'link' ? <>
           <Banner kind="info" icon="check">Đã tạo link cho <b>{made.name}</b>. Người nhận mở link là thấy đúng việc của mình, không cần cài app.</Banner>
           <div className="link-box"><span>{url}</span><button className="btn sm" onClick={async () => toast(await copyText(url) ? 'Đã sao chép link' : 'Không sao chép được — chọn và sao chép thủ công')}><Icon n="copy" c="sm" />Sao chép</button></div>
+          {typeof navigator.share === 'function' && <button className="btn primary" onClick={() => { void navigator.share({ title: `Nhờ ${made.name} giúp việc`, text: `Nhờ ${made.name} giúp việc đám hiếu ${DN(c)}. Mở link để xem việc được nhờ:`, url }).catch(() => undefined); }}><Icon n="link" c="sm" />Gửi link qua Zalo / tin nhắn</button>}
           {!REMOTE && <p className="note">Bản chạy thử: link chỉ mở được trên thiết bị này. Bản thật mở được trên mọi máy.</p>}
           <a className="btn" href={url} target="_blank" rel="noreferrer"><Icon n="user" />Xem như người nhận</a>
         </> : <>

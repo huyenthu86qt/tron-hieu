@@ -45,8 +45,15 @@ export function Ent02() {
   const [d, setD] = useDraft();
   const QX = visibleQuestions(d.answers);
   const step = Math.min(d.step, QX.length - 1);
-  const q = QX[step], a = d.answers[q.k];
-  const setAns = (v: string) => setD({ ...d, answers: { ...d.answers, [q.k]: v } as Answers });
+  const q = QX[step], picked = (d.picked ?? []).includes(q.k), a = picked ? d.answers[q.k] : undefined;
+  // Không chọn sẵn đáp án: người đang rối dễ bấm “Tiếp tục” mà không đọc. Chạm đáp án là tự sang câu sau.
+  const setAns = (v: string) => {
+    const answers = { ...d.answers, [q.k]: v } as Answers, p = [...new Set([...(d.picked ?? []), q.k])];
+    const QN = visibleQuestions(answers), last = step >= QN.length - 1;
+    setD({ ...d, answers, picked: p });
+    // Dừng một nhịp ngắn để khách thấy mình đã chọn gì
+    window.setTimeout(() => { if (last) nav('/bat-dau/viec-ngay'); else setD(x => ({ ...x, step: step + 1 })); }, 350);
+  };
   const next = () => {
     if (step < QX.length - 1) setD({ ...d, step: step + 1 });
     else nav('/bat-dau/viec-ngay');
@@ -62,7 +69,7 @@ export function Ent02() {
         <button key={k} className="opt" role="radio" aria-checked={a === k} onClick={() => setAns(k)}><span className="radio" /><span className="title">{l}</span></button>
       ))}</div>
     </div>
-    <div className="bare-foot"><button className="btn primary block" onClick={next}>{step < QX.length - 1 ? 'Tiếp tục' : 'Xem việc cần làm ngay'}</button></div></div>
+    <div className="bare-foot"><button className="btn primary block" onClick={next} disabled={!picked}>{step < QX.length - 1 ? 'Tiếp tục' : 'Xem việc cần làm ngay'}</button></div></div>
   );
 }
 
@@ -87,7 +94,7 @@ export function Ent03() {
       <p style={{ fontFamily: 'var(--serif)', fontSize: 18, color: 'var(--primary)' }}>Xin chia buồn cùng gia đình.</p>
       <h1 style={{ fontSize: 26 }}>Đây là những việc cần làm ngay</h1>
       <div className="card card-pad" style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
-        <span className="muted" style={{ flex: 1, minWidth: 200 }}>{answerLabel('place', a.place)} · {answerLabel('venue', a.venue)} · {answerLabel('form', a.form)}</span>
+        <span className="muted" style={{ flex: 1, minWidth: 200 }}>Mất {answerLabel('place', a.place).toLowerCase()} · Làm lễ {answerLabel('venue', a.venue).toLowerCase()} · {answerLabel('form', a.form)}</span>
         <button className="btn sm ghost" onClick={() => { setD({ ...d, step: 0 }); nav('/bat-dau/hoan-canh'); }}>Sửa</button></div>
       <section className="card"><div className="list">{items.map((t, i) => (
         <div key={t.key} className="row"><span className="num-badge">{i + 1}</span>
