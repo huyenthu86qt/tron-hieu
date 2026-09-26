@@ -96,11 +96,12 @@ function Guests() {
     <div className="page"><div className="page-title"><div><h1>Khách viếng và truyền tin</h1><p>Một nguồn thông tin đúng cho khách · ghi nhận nhanh cho gia đình</p></div>
       <div className="actions"><button className="btn primary" onClick={() => setAdd(true)}><Icon n="plus" c="sm" />Ghi khách viếng</button></div></div>
       <div className="grid-2"><div className="stack">
-        <section className="card"><div className="sec-h card-pad" style={{ margin: 0, paddingBottom: 4 }}><h3>Khách đã ghi</h3><span className="muted">{L.length} lượt</span>
+        <section className="card"><div className="sec-h card-pad" style={{ margin: 0, paddingBottom: 4 }}><h3>Sổ tang · mới ghi gần đây</h3><span className="muted">{L.length} lượt</span>
           <button className="btn sm ghost" style={{ marginLeft: 'auto' }} onClick={() => nav(`${base}/so-tang`)}>Mở Sổ tang</button></div>
           {L.length ? <div className="list">{L.slice(0, 10).map(x => <div key={x.id} className="row"><div className="grow"><div className="title">{x.name}</div>
             <div className="meta"><span>{groupLabel(c, x)}</span>{x.gifts.length > 0 && <span>{x.gifts.join(', ')}</span>}<span><Icon n="lock" c="sm" /> Phúng viếng ghi vào sổ riêng</span><span>{x.by} · {fmtAt(x.at)}</span></div></div></div>)}</div>
-            : <div className="empty"><span>Chưa ghi khách nào. Bấm “Ghi khách viếng” khi có người đến.</span></div>}</section>
+            : <div className="empty"><span>Chưa ghi khách nào. Bấm “Ghi khách viếng” khi có người đến.</span></div>}
+          <p className="note" style={{ padding: '0 16px 12px' }}>Ghi ở đây hay ở Sổ tang đều vào cùng một sổ — không bị trùng.</p></section>
         <AccountCard />
       </div><div className="stack">
         <section className="card card-pad stack" style={{ gap: 10 }}><div style={{ display: 'flex', gap: 8, alignItems: 'center' }}><h3 style={{ flex: 1 }}>Trang thông tin cho khách</h3>{p?.published ? <span className="pill done">Đã công bố</span> : <span className="pill soft">Nháp</span>}</div>
