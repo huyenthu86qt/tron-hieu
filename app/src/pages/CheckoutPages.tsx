@@ -14,10 +14,11 @@ import { Banner, ErrorBanner, useApp } from '../ui/common';
 import { BrandLine } from '../ui/brand';
 
 function Frame({ children, foot }: { children: ReactNode; foot?: ReactNode }) {
+  const testMode = usePlatform(s => s.settings.sepay.env) !== 'live';
   return (
     <div className="bare"><div className="bare-inner" style={{ maxWidth: 560 }}>
       <BrandLine extra="Thanh toán" />
-      <Banner kind="upd" icon="alert"><b>Bản chạy thử — chưa thanh toán thật.</b> Đơn và trạng thái thanh toán đang giả lập; không chuyển tiền thật ở giai đoạn này.</Banner>
+      {testMode && <Banner kind="upd" icon="alert"><b>Bản chạy thử — chưa thanh toán thật.</b> Đơn và trạng thái thanh toán đang giả lập; không chuyển tiền thật ở giai đoạn này.</Banner>}
       {children}
     </div>{foot && <div className="bare-foot">{foot}</div>}</div>
   );
@@ -129,7 +130,7 @@ export function OrderPage() {
         <CopyLine label="Chủ tài khoản" value={acct.holder} />
       </section>
       <Banner kind="warn">Ghi <b>đúng nội dung {content}</b> và <b>đúng số tiền</b> để app tự mở gói. Đơn giữ trong {Math.floor(left / 3600000)} giờ {Math.floor(left % 3600000 / 60000)} phút.</Banner>
-      <SimPanel code={o.code} amount={o.amount} />
+      {testMode && <SimPanel code={o.code} amount={o.amount} />}
     </Frame>
   );
 }

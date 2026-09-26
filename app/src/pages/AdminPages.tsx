@@ -9,9 +9,9 @@ import { fmtMoneyInput, money, parseMoney } from '../domain/finance';
 import { fmtPhone, isFull, ORDER_STATUS_LABEL, type OrderStatus, type Product } from '../domain/platform';
 import { DN_TEXT } from '../domain/text';
 import { repo } from '../repo/repo';
-import { REMOTE } from '../repo/backend';
+import { REMOTE, SEPAY_WEBHOOK_URL } from '../repo/backend';
 import {
-  adminSetTempPassword, assignTx, cleanupOrphanFiles, loadPendingDeletions, orphanFiles, type PendingDeletion, createAdmin, dismissCandidate, loadVendorCandidates, login, logout, refundOrder, refundTx, saveProduct, saveSettings, saveVendor, setCaseAccess, setSupportNote,
+  goLiveSepay, adminSetTempPassword, assignTx, cleanupOrphanFiles, loadPendingDeletions, orphanFiles, type PendingDeletion, createAdmin, dismissCandidate, loadVendorCandidates, login, logout, refundOrder, refundTx, saveProduct, saveSettings, saveVendor, setCaseAccess, setSupportNote,
   setUserLocked, setVendorActive, simulateBankTx, usePlatform, useUser,
 } from '../repo/platformStore';
 import { Icon, type IconName } from '../ui/Icon';
@@ -259,14 +259,22 @@ export function AdminSepayPage() {
   return (
     <AdminShell title="SePay"><div className="page" style={{ maxWidth: 820 }}>
       <div className="page-title"><div><div className="eyebrow">Cài đặt → Thanh toán</div><h1 style={{ marginTop: 4 }}>SePay</h1><p>Tài khoản nhận, quy tắc khớp, kiểm tra kết nối</p></div></div>
-      <Banner kind="upd" icon="lock"><b>Khóa bí mật (API key, khóa webhook) không nhập ở đây.</b> Chúng chỉ nằm trong kho bí mật của máy chủ (giai đoạn 4); màn này chỉ hiện 4 ký tự cuối khi đã cài.</Banner>
-      <section className="card card-pad stack"><h3>Môi trường</h3><Opts value={s.sepay.env} onChange={v => setS({ ...s, sepay: { ...s.sepay, env: v } })} items={[{ k: 'test', title: 'Thử nghiệm', note: 'Giao dịch thử, không mở quyền thật' }, { k: 'live', title: 'Thật', note: 'Chỉ bật khi đã chốt giá và kiểm thử xong' }]} /></section>
+      <Banner kind="upd" icon="lock"><b>Khóa bí mật không nhập ở đây.</b> Khóa API của webhook SePay chỉ nằm trong kho bí mật của máy chủ (Supabase → Edge Functions → Secrets, tên <span className="num">SEPAY_WEBHOOK_KEY</span>).</Banner>
+      <section className="card card-pad stack"><h3>Môi trường</h3>
+        {settings.sepay.env === 'live'
+          ? <p><span className="pill done">Đang chạy thật</span> Giao dịch thật từ SePay tự mở gói cho khách. Không giả lập được nữa.</p>
+          : <><p><span className="pill wait">Đang thử nghiệm</span> Có nút giả lập giao dịch ở màn thanh toán. Giao dịch thật từ SePay vẫn được ghi nhận.</p>
+            <button className="btn primary" style={{ alignSelf: 'flex-start' }} onClick={async () => {
+              if (!window.confirm('Chuyển sang chạy thật?\n\nApp sẽ XÓA các đơn hàng và giao dịch thử (giữ giao dịch thật), tắt nút giả lập. Không quay lại được.')) return;
+              const r = await goLiveSepay(); if (r.error) { toast(r.error); return; }
+              setS(x => ({ ...x, sepay: { ...x.sepay, env: 'live' } })); toast(`Đã chuyển sang chạy thật · dọn ${r.orders ?? 0} đơn thử, ${r.txs ?? 0} giao dịch thử`);
+            }}>Chuyển sang chạy thật</button></>}</section>
       <section className="card card-pad stack"><h3>Tài khoản ngân hàng nhận</h3>
         <div className="field"><label htmlFor="sB">Ngân hàng (mã theo SePay, ví dụ MBBank, Vietcombank, BIDV)</label><input className="input" id="sB" value={a.bank} onChange={e => setS({ ...s, sepay: { ...s.sepay, account: { ...a, bank: e.target.value } } })} /></div>
         <div className="field"><label htmlFor="sN">Số tài khoản</label><input className="input num" id="sN" value={a.number} onChange={e => setS({ ...s, sepay: { ...s.sepay, account: { ...a, number: e.target.value.replace(/\s/g, '') } } })} /></div>
         <div className="field"><label htmlFor="sH">Chủ tài khoản</label><input className="input" id="sH" style={{ textTransform: 'uppercase' }} value={a.holder} onChange={e => setS({ ...s, sepay: { ...s.sepay, account: { ...a, holder: e.target.value.toUpperCase() } } })} /></div>
         <label className="check"><input type="checkbox" checked={a.active} onChange={e => setS({ ...s, sepay: { ...s.sepay, account: { ...a, active: e.target.checked } } })} /><span>Đang nhận tiền (tắt để tạm dừng nhận)</span></label></section>
-      <section className="card card-pad stack"><h3>Webhook & quy tắc khớp</h3><dl className="kv"><dt>Webhook URL</dt><dd className="num">{`${window.location.origin}/api/webhooks/sepay`} <span className="muted">(máy chủ, giai đoạn 4)</span></dd><dt>Quy tắc khớp</dt><dd>{s.sepay.matchRule}</dd><dt>Khóa webhook</dt><dd className="muted">Chưa cài — nằm ở kho bí mật máy chủ</dd>
+      <section className="card card-pad stack"><h3>Webhook & quy tắc khớp</h3><dl className="kv"><dt>Webhook URL</dt><dd className="num" style={{ wordBreak: 'break-all' }}>{SEPAY_WEBHOOK_URL || '(bản chạy thử trên máy — không có)'} {SEPAY_WEBHOOK_URL && <button className="btn sm ghost" onClick={async () => { try { await navigator.clipboard.writeText(SEPAY_WEBHOOK_URL); toast('Đã sao chép'); } catch { toast(SEPAY_WEBHOOK_URL); } }}>Sao chép</button>}</dd><dt>Xác thực</dt><dd>API Key (SePay gửi header <span className="num">Authorization: Apikey …</span>)</dd><dt>Quy tắc khớp</dt><dd>{s.sepay.matchRule}</dd><dt>Khóa webhook</dt><dd className="muted">Chưa cài — nằm ở kho bí mật máy chủ</dd>
         <dt>Kiểm tra gần nhất</dt><dd>{s.sepay.lastCheck ? `${fmtAt(s.sepay.lastCheck.at)} · ${s.sepay.lastCheck.note}` : 'Chưa kiểm tra'}</dd></dl></section>
       <section className="card card-pad stack"><h3>Hỗ trợ khách</h3>
         <div className="field"><label htmlFor="spP">Số điện thoại hỗ trợ</label><input className="input num" id="spP" value={s.support.phone} onChange={e => setS({ ...s, support: { ...s.support, phone: e.target.value } })} /></div>

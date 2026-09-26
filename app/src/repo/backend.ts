@@ -15,6 +15,9 @@ export function setLocalDemoMode(on: boolean) {
   try { if (on) localStorage.setItem(MODE_KEY, 'local'); else localStorage.removeItem(MODE_KEY); } catch { /* bỏ qua */ }
 }
 
+/** Địa chỉ nhận webhook SePay (Edge Function sepay-webhook) — dán vào cấu hình webhook trên SePay */
+export const SEPAY_WEBHOOK_URL = URL ? `${URL.replace(/\/$/, '')}/functions/v1/sepay-webhook` : '';
+
 /** Dữ liệu đang lưu trên máy chủ */
 export const REMOTE = HAS_SERVER && !FORCED_LOCAL;
 

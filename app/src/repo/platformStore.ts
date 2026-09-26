@@ -485,6 +485,25 @@ export async function simulateBankTx(input: { providerTxId: string; amount: numb
   return r;
 }
 
+/** Admin chuyển SePay sang chạy thật: dọn đơn & giao dịch thử (giữ giao dịch thật), tắt giả lập */
+export async function goLiveSepay(): Promise<{ error?: string; orders?: number; txs?: number }> {
+  if (REMOTE) {
+    const { data, error } = await sb!.rpc('admin_sepay_go_live');
+    if (error) return { error: friendlyError(error) };
+    await refreshAdmin();
+    return data as { orders: number; txs: number };
+  }
+  let orders = 0, txs = 0;
+  mut(d => {
+    const real = new Set(d.txs.filter(t => t.providerTxId.startsWith('sepay:') && t.status === 'matched').map(t => t.orderId));
+    const keep = d.orders.filter(o => real.has(o.code)); orders = d.orders.length - keep.length; d.orders = keep;
+    const kt = d.txs.filter(t => t.providerTxId.startsWith('sepay:')); txs = d.txs.length - kt.length; d.txs = kt;
+    d.settings.sepay.env = 'live';
+    log(d, currentUser()?.name ?? 'Admin', 'Chuyển SePay sang chạy thật', 'SePay', `Dọn ${orders} đơn thử, ${txs} giao dịch thử`);
+  });
+  return { orders, txs };
+}
+
 /** Admin gán giao dịch chưa khớp vào đơn đúng (có nhật ký) */
 export async function assignTx(txId: string, orderCode: string, reason: string): Promise<string | null> {
   if (REMOTE) {

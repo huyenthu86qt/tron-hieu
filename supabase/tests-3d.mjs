@@ -8,7 +8,7 @@ const ok = (n, c, x = '') => { if (c) { pass++; console.log('  ✓', n); } else 
 const expectErr = async (n, fn, re) => { try { await fn(); ok(n, false, '(không báo lỗi)'); } catch (e) { ok(n, re ? re.test(e.message) : true, e.message); } };
 
 await db.exec(`
-  create role anon nologin; create role authenticated nologin; create schema auth; create schema extensions; create schema storage;
+  create role anon nologin; create role authenticated nologin; create role service_role nologin; create schema auth; create schema extensions; create schema storage;
   create table auth.users (id uuid primary key, email text, raw_user_meta_data jsonb default '{}', encrypted_password text, updated_at timestamptz);
   create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid $$;
   create function extensions.gen_salt(text) returns text language sql as $$ select 's' $$;
