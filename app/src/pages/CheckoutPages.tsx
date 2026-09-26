@@ -85,6 +85,7 @@ export function OrderPage() {
   const nav = useNavigate();
   const user = useUser()!;
   const o = usePlatform(s => s.orders.find(x => x.code === code));
+  const testMode = usePlatform(s => s.settings.sepay.env) !== 'live';
   const acct = usePlatform(s => s.settings.sepay.account);
   const [waiting, setWaiting] = useState(false);
   useEffect(() => { expireOrders(); const t = setInterval(() => expireOrders(), 30000); return () => clearInterval(t); }, []);
