@@ -49,8 +49,9 @@
 - ✓ **Xây app — Phase 2: Giao diện phần còn lại** — APPROVE 25/09/2026 (mốc f13fb1f, gồm thanh bên tone nâu, tên Trọn Hiếu, trang /mau)
 - ✓ **Bản xem thử online** — https://tron-hieu.vercel.app (xem như khách trả phí: /mau) · code: https://github.com/huyenthu86qt/tron-hieu (riêng tư) · mỗi lần đẩy code lên GitHub, Vercel tự cập nhật
 - ✓ **Xây app — Phase 3a: Tài khoản thật + dữ liệu trên máy chủ** — APPROVE 25/09/2026 (mốc dbc7b3f). Supabase (Singapore) đã cài, bản online dùng máy chủ; đăng nhập bằng số điện thoại; Admin: 0784869988. Kèm sửa theo góp ý: lọc Việc của tôi, việc của mình nổi màu, xong việc tự về danh sách, trả lại việc kèm lý do, nhãn Chưa có người nhận màu cam đất
-- ● **Phase 3b** — đã lên bản online: lưu tệp thật, link nhờ việc trên máy khác, tìm vị trí từ địa chỉ, nút Google Maps khi danh bạ trống, danh bạ tự lớn lên từ gia đình, **mời vào đội bằng link**, **đăng nhập Google** (Google Cloud dự án tron-hieu, In production), tự đổi số, Admin cấp mật khẩu tạm (514c973, 26/09/2026). OTP SMS/Zalo để sau khi có hộ kinh doanh. Chờ Chủ dự án thử và duyệt
-- ○ 3b · ○ 3c · ○ Phase 4 · ○ Working App · ○ Sales Page · ○ Kiểm chứng thị trường
+- ✓ **Xây app — Phase 3b: Tệp, link mời, bản đồ, đăng nhập Google** — APPROVE 26/09/2026 (mốc 19fade9). Lưu tệp riêng tư; link nhờ việc trên máy khác; tìm vị trí từ địa chỉ + Google Maps khi danh bạ trống; danh bạ tự lớn lên từ gia đình; mời vào đội bằng link; đăng nhập Google; tự đổi số; Admin cấp mật khẩu tạm. OTP SMS/Zalo hoãn tới khi có hộ kinh doanh
+- ● **Phase 3c** — tiếp theo: kích hoạt hồ sơ trên máy chủ, nhật ký, xuất / xóa dữ liệu
+- ○ 3c · ○ Phase 4 · ○ Working App · ○ Sales Page · ○ Kiểm chứng thị trường
 
 ## Mốc các phase
 | Phase | Trạng thái | Mốc (commit / snapshot) |
@@ -59,7 +60,7 @@
 | 2 Giao diện phần còn lại | APPROVE 25/09/2026 | f13fb1f |
 | Bản xem thử online (GitHub + Vercel) | Đã chạy 25/09/2026 — https://tron-hieu.vercel.app | — |
 | 3a Tài khoản thật + dữ liệu trên máy chủ | APPROVE 25/09/2026 | dbc7b3f |
-| 3b Tệp, link mời, bản đồ, đăng nhập Google | Chờ duyệt — OTP để sau khi có hộ kinh doanh | cc2d422, 0c8f49e, 28b43d6, 514c973 |
+| 3b Tệp, link mời, bản đồ, đăng nhập Google | APPROVE 26/09/2026 (OTP hoãn tới khi có hộ kinh doanh) | 19fade9 |
 | 3c Kích hoạt, nhật ký, xuất / xóa dữ liệu | Chưa bắt đầu | — |
 | 4 Thanh toán, vận hành & Working App | Chưa bắt đầu | — |
 
