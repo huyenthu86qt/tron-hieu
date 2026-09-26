@@ -46,7 +46,7 @@ export class LocalRepo implements CaseRepo {
   async list() {
     return Object.values(readAll())
       .map(c => ({
-        id: c.id, name: c.person.name ? `${c.person.title} ${c.person.name}` : 'Người đã khuất (chưa nhập tên)', createdAt: c.createdAt,
+        id: c.id, name: c.person.name ? `${[c.person.title, c.person.name].filter(Boolean).join(' ')}` : 'Người đã khuất (chưa nhập tên)', createdAt: c.createdAt,
         ownerId: c.ownerId, full: c.access?.plan === 'full', closed: !!c.after?.closed,
       }))
       .sort((a, b) => b.createdAt.localeCompare(a.createdAt));

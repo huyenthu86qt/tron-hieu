@@ -154,7 +154,7 @@ describe('Khách viếng — trang thông tin', () => {
   it('đổi quyết định sau khi công bố thì trang gắn nhãn “đã thay đổi”', () => {
     const c = mk();
     publish(c, { text: 'Báo tin' });
-    expect(c.publicPage!.slug).toMatch(/^cu-ong-nguyen-van-hoa-/);
+    expect(c.publicPage!.slug).toMatch(/^nguyen-van-hoa-/);
     syncPublicPage(c);
     expect(c.publicPage!.changedAt).toBeUndefined();
     decide(c, 'time', 'a');
@@ -367,5 +367,17 @@ describe('Hạng mục dịch vụ', () => {
     expect(() => addCustomCat(c, 'xe tang')).toThrow('Đã có');
     c.vendors = { 'x-Sư thầy tụng kinh': { vendorId: 'f1', family: true, status: 'confirmed', incidents: [] } };
     expect(() => removeCustomCat(c, 'Sư thầy tụng kinh')).toThrow('bỏ chọn');
+  });
+});
+
+describe('Danh xưng không chọn sẵn', () => {
+  it('hồ sơ mới không gắn “Cụ ông”; chưa chọn thì chỉ hiện họ tên, xưng “người thân”', async () => {
+    const { emptyPerson } = await import('./model');
+    const { displayName, pronoun } = await import('./person');
+    const { newPreNeed } = await import('./platform');
+    expect(emptyPerson().title).toBe('');
+    expect(displayName({ ...emptyPerson(), name: 'Nguyễn Thu Huyền' }, false)).toBe('Nguyễn Thu Huyền');
+    expect(pronoun('')).toBe('người thân');
+    expect(newPreNeed('u1', true).subject.title).toBe('');
   });
 });

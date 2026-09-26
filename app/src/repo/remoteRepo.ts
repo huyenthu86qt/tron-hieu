@@ -62,7 +62,7 @@ async function loadExtras(c: CaseData) {
 export class SupabaseRepo implements CaseRepo {
   async list(): Promise<CaseSummary[]> {
     return (await this.listAll()).map(c => ({
-      id: c.id, name: c.person.name ? `${c.person.title} ${c.person.name}` : 'Người đã khuất (chưa nhập tên)', createdAt: c.createdAt,
+      id: c.id, name: c.person.name ? `${[c.person.title, c.person.name].filter(Boolean).join(' ')}` : 'Người đã khuất (chưa nhập tên)', createdAt: c.createdAt,
       ownerId: c.ownerId, full: c.access?.plan === 'full', closed: !!c.after?.closed,
     }));
   }

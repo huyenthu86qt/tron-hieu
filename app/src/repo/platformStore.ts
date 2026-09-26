@@ -651,7 +651,7 @@ export async function invitePreview(token: string): Promise<InvitePreview | null
   const m = c?.members.find(x => x.inviteToken === token);
   if (!c || !m) return null;
   const u1 = c.members.find(x => x.id === 'u1');
-  return { caseId: c.id, caseName: `${c.person.title} ${c.person.name}`.trim(), inviter: u1?.name ?? '', memberName: m.name, memberRel: m.rel, access: m.access, joined: false };
+  return { caseId: c.id, caseName: `${[c.person.title, c.person.name].filter(Boolean).join(' ')}`.trim(), inviter: u1?.name ?? '', memberName: m.name, memberRel: m.rel, access: m.access, joined: false };
 }
 
 /** Nhận lời mời: gắn tài khoản đang đăng nhập vào đúng vị trí trong đội; trả mã đám hiếu */
@@ -771,7 +771,7 @@ export async function loadPendingDeletions(): Promise<PendingDeletion[]> {
   }
   const week = 7 * 86400000;
   const cases = (await repo.listAll()).filter(c => c.deleteRequestedAt)
-    .map(c => ({ kind: 'case' as const, id: c.id, name: `${c.person.title} ${c.person.name}`.trim(), requested_at: c.deleteRequestedAt!, delete_at: new Date(Date.parse(c.deleteRequestedAt!) + week).toISOString() }));
+    .map(c => ({ kind: 'case' as const, id: c.id, name: `${[c.person.title, c.person.name].filter(Boolean).join(' ')}`.trim(), requested_at: c.deleteRequestedAt!, delete_at: new Date(Date.parse(c.deleteRequestedAt!) + week).toISOString() }));
   const users = state.users.filter(u => u.deleteRequestedAt)
     .map(u => ({ kind: 'user' as const, id: u.id, name: `${u.name} · ${u.phone}`, requested_at: u.deleteRequestedAt!, delete_at: new Date(Date.parse(u.deleteRequestedAt!) + week).toISOString() }));
   return [...cases, ...users].sort((a, b) => a.delete_at.localeCompare(b.delete_at));

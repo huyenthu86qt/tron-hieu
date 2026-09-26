@@ -18,7 +18,7 @@ import { removeStored, uploadPreFile } from '../repo/files';
 import { REMOTE } from '../repo/backend';
 
 const STP = { done: ['done', 'Đã xong'], partial: ['doing', 'Còn thiếu'], todo: ['todo', 'Chưa bắt đầu'] } as const;
-const subjectName = (p: PreNeed) => (p.subject.name ? `${p.subject.title} ${p.subject.name}` : 'Hồ sơ chưa đặt tên');
+const subjectName = (p: PreNeed) => (p.subject.name ? `${[p.subject.title, p.subject.name].filter(Boolean).join(' ')}` : 'Hồ sơ chưa đặt tên');
 
 /** Hồ sơ theo id + quyền của người đang xem */
 function usePre() {

@@ -198,7 +198,7 @@ export function preGroups(p: PreNeed) {
   const st = (done: boolean, partial: boolean) => (done ? 'done' : partial ? 'partial' : 'todo') as 'done' | 'partial' | 'todo';
   const s = p.subject, w = p.wish;
   return [
-    { k: 'info', n: 'Thông tin cá nhân', path: 'thong-tin', st: st(!!(s.name && s.birthYear), !!s.name), note: s.name ? `${s.title} ${s.name}${s.birthYear ? ' · ' + s.birthYear : ''}` : '' },
+    { k: 'info', n: 'Thông tin cá nhân', path: 'thong-tin', st: st(!!(s.name && s.birthYear), !!s.name), note: s.name ? `${[s.title, s.name].filter(Boolean).join(' ')}${s.birthYear ? ' · ' + s.birthYear : ''}` : '' },
     { k: 'rep', n: 'Người đại diện và người liên hệ', path: 'lien-he', st: st(!!p.rep.name && p.contacts.length > 0, !!p.rep.name || p.contacts.length > 0), note: p.rep.name ? `${p.rep.name} · ${p.contacts.length} người liên hệ` : '' },
     { k: 'docs', n: 'Giấy tờ', path: 'giay-to', st: st(p.docs.length >= 2, p.docs.length > 0), note: p.docs.length ? `${p.docs.length} tệp đã ghi` : '', paid: true },
     { k: 'wish', n: 'Nguyện vọng hậu sự', path: 'nguyen-vong', st: st(!!w.rite && !!w.msg.trim(), !!w.rite || w.form !== 'family'), note: w.rite && !w.msg.trim() ? 'Còn thiếu: lời nhắn cho con cháu' : '' },
@@ -214,7 +214,7 @@ export function readiness(p: PreNeed) {
 export function newPreNeed(ownerId: string, forSelf: boolean, now = new Date()): PreNeed {
   return {
     id: 'cb' + Math.random().toString(36).slice(2, 9), ownerId, createdAt: now.toISOString(), forSelf,
-    subject: { title: 'Cụ ông', name: '', birthYear: '', hometown: '', idNote: '' },
+    subject: { title: '', name: '', birthYear: '', hometown: '', idNote: '' },
     rep: { name: '', phone: '', rel: '' }, contacts: [], docs: [],
     wish: { form: 'family', venue: 'family', rite: '', items: '', scale: 'medium', msg: '', milestones: [] },
     budget: { amount: 0, vendors: {} }, special: '', shares: [], paid: false,

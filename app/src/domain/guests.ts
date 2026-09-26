@@ -32,7 +32,7 @@ const slugify = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').replac
 export const emptyPage = (): PublicPage => ({ slug: '', published: false, text: '', auto: false, showPhone: false, phone: '', sched: {} });
 
 export function makeSlug(c: CaseData) {
-  const base = slugify(c.person.name ? `${c.person.title} ${c.person.name}` : 'dam-hieu') || 'dam-hieu';
+  const base = slugify(c.person.name ? `${[c.person.title, c.person.name].filter(Boolean).join(' ')}` : 'dam-hieu') || 'dam-hieu';
   return `${base}-${c.id.slice(-4)}`;
 }
 

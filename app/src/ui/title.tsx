@@ -15,6 +15,7 @@ export function TitlePicker({ value, onChange, disabled }: { value: Title; onCha
         ))}
         <button type="button" className="chip" disabled={disabled} aria-pressed={other} onClick={() => { setOther(true); if (isPreset(value)) onChange(''); }}>Khác</button>
       </div>
+      {!other && !value && !disabled && <p className="muted" style={{ fontSize: 13 }}>Chưa chọn danh xưng — cáo phó và các trang sẽ chỉ ghi họ tên.</p>}
       {other && (
         <input className="input" value={isPreset(value) ? '' : value} maxLength={20} disabled={disabled} autoFocus
           onChange={e => onChange(e.target.value.replace(/^\s+/, ''))} placeholder="Gia đình tự viết, ví dụ: Thầy, Cô, Bác, Chú, Sơ" aria-label="Danh xưng tự viết" />

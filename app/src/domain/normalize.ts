@@ -48,7 +48,7 @@ export function activatePreNeed(p: PreNeed, x: ActivateInput, byUserId: string, 
   c.situation.hasPre = true;
   c.ownerId = byUserId;
   c.preNeedId = p.id;
-  c.person = { ...c.person, title: (p.subject.title as CaseData['person']['title']) || 'Cụ ông', name: p.subject.name, birthYear: p.subject.birthYear, hometown: p.subject.hometown, death: x.death };
+  c.person = { ...c.person, title: (p.subject.title as CaseData['person']['title']) || '', name: p.subject.name, birthYear: p.subject.birthYear, hometown: p.subject.hometown, death: x.death };
   const u1 = c.members.find(m => m.id === U1_ID)!;
   u1.name = byName; u1.userId = byUserId;
   c.pendingContacts = p.contacts.map(k => ({ ...k }));

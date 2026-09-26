@@ -49,7 +49,7 @@ export function HomePage() {
         {(pres.length > 0 || !(cases ?? []).some(c => !c.after?.closed)) && <section className="card"><div className="sec-h card-pad" style={{ margin: 0, paddingBottom: 4 }}><h3>Hồ sơ chuẩn bị</h3><button className="btn sm" style={{ marginLeft: 'auto' }} onClick={() => nav('/chuan-bi/moi')}><Icon n="plus" c="sm" />Tạo hồ sơ</button></div>
           {pres.length ? <div className="list">{pres.map(p => (
             <button key={p.id} className="row" onClick={() => nav(`/chuan-bi/${p.id}`)}><span className="num-badge"><Icon n="doc" c="sm" /></span>
-              <div className="grow"><div className="title">{p.subject.name ? `${p.subject.title} ${p.subject.name}` : 'Hồ sơ chưa đặt tên'}</div>
+              <div className="grow"><div className="title">{p.subject.name ? `${[p.subject.title, p.subject.name].filter(Boolean).join(' ')}` : 'Hồ sơ chưa đặt tên'}</div>
                 <div className="meta"><span>Sẵn sàng {readiness(p)}%</span>{p.caseId ? <span className="pill done">Đã kích hoạt</span> : p.paid ? <span className="pill doing">Đã mở gói</span> : <span className="pill soft">Miễn phí</span>}</div></div>
               <Icon n="chev" c="chev" /></button>
           ))}</div> : <p className="muted" style={{ padding: '0 16px 14px' }}>Chuẩn bị dần khi còn thời gian — để lúc cần, gia đình không phải quyết lại từ đầu.</p>}</section>}
@@ -130,7 +130,7 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{border:1px solid 
 <h1>Đám hiếu ${esc(DN_TEXT(c))}</h1>
 <h2>Người đã khuất</h2>
 <table class="kv"><tbody>
-<tr><td>Họ tên</td><td>${esc(`${p.title} ${p.name}`)}${p.saint ? ` (${esc(p.saint)})` : ''}</td></tr>
+<tr><td>Họ tên</td><td>${esc(`${[p.title, p.name].filter(Boolean).join(' ')}`)}${p.saint ? ` (${esc(p.saint)})` : ''}</td></tr>
 <tr><td>Năm sinh</td><td>${esc(p.birthYear)}</td></tr><tr><td>Ngày mất</td><td>${esc(p.death)} ${esc(p.time)}</td></tr><tr><td>Quê quán</td><td>${esc(p.hometown)}</td></tr>
 </tbody></table>
 <h2>Đội đám hiếu</h2>

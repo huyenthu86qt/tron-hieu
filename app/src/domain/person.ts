@@ -18,7 +18,7 @@ export const fmtWeekday = (d: Date) => `${WEEKDAY[d.getDay()]}, ${fmtDMY(d)}`;
 export const TITLES = ['Cụ ông', 'Cụ bà', 'Ông', 'Bà', 'Anh', 'Chị'] as const;
 const PRONOUN: Record<string, string> = { 'Cụ ông': 'cụ', 'Cụ bà': 'cụ', 'Ông': 'ông', 'Bà': 'bà', 'Anh': 'anh', 'Chị': 'chị', 'Em': 'em', 'Bé': 'bé' };
 /** Xưng hô người mất; danh xưng tự viết thì lấy chữ đầu viết thường (“Cô giáo” → “cô”) */
-export const pronoun = (title: Title) => PRONOUN[title] ?? (title.trim() ? title.trim().split(/\s+/)[0].toLowerCase() : 'cụ');
+export const pronoun = (title: Title) => PRONOUN[title] ?? (title.trim() ? title.trim().split(/\s+/)[0].toLowerCase() : 'người thân');
 
 /** Lứa tuổi để chọn lời lẽ phù hợp (Sổ tưởng nhớ): theo tuổi khi mất, không có tuổi thì theo danh xưng */
 export type AgeGroup = 'old' | 'mid' | 'young' | 'child';

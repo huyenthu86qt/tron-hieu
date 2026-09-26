@@ -168,7 +168,8 @@ export function situationFromAnswers(a: Answers, hasPre = false): Situation {
   };
 }
 
-export const emptyPerson = (): Person => ({ title: 'Cụ ông', name: '', saint: '', birthYear: '', death: '', time: '', hometown: '', photo: null });
+// Không chọn sẵn danh xưng: gia đình tự chọn (tránh ghi “Cụ ông” cho người là nữ, người trẻ)
+export const emptyPerson = (): Person => ({ title: '', name: '', saint: '', birthYear: '', death: '', time: '', hometown: '', photo: null });
 
 export const newId = (prefix: string) => prefix + Math.random().toString(36).slice(2, 9);
 
