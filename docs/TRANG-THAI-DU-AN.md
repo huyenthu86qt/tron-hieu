@@ -38,7 +38,7 @@
 - [x] Tài khoản **GitHub** (huyenthu86qt) — kho riêng tư tron-hieu
 - [x] Tài khoản **Vercel** (nhóm Auto365, gói Hobby) — dự án tron-hieu, Root Directory = app, biến VITE_DEMO=1
 - [x] Tài khoản **Supabase** — dự án tron-hieu (Singapore); đã chạy tệp tạo bảng + phân quyền, đã tắt “Confirm email” (25/09/2026)
-- [ ] Chọn **bên gửi OTP** (SMS / Zalo) và **dịch vụ bản đồ** — trước Phase 3b (em so sánh lựa chọn khi tới đó)
+- [x] **Bản đồ**: Photon / OpenStreetMap (miễn phí) + mở Google Maps. **OTP SMS / Zalo**: hoãn tới khi có hộ kinh doanh (phương án: Zalo ZNS chính + SMS dự phòng); thay bằng đăng nhập Google + mời bằng link
 - [ ] Tài khoản **SePay** (thử + thật) và tài khoản ngân hàng nhận — trước Phase 4
 - [ ] Chốt giá bán — trước khi mở bán
 
