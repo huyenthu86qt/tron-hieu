@@ -1,7 +1,7 @@
 // S-AFT-01 Hậu tang tổng quan · S-AFT-02 Thủ tục · S-AFT-03 Chọn mốc · S-AFT-04 Chi tiết mốc · S-AFT-05 Cảm ơn · S-AFT-06 Khép vòng
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import type { Milestones } from '../../domain/types';
+import type { CaseData, Milestones } from '../../domain/types';
 import { closeCase, closeConds, defaultThanks, draftThanks, emptyMilestones, milestoneDates, milestoneList, saveMilestones, toggleMilestone, burialDate } from '../../domain/aftercare';
 import { completeTask, restoreTask } from '../../domain/actions';
 import { canClose, visibleTasks } from '../../domain/model';
@@ -17,6 +17,16 @@ import { OwnerPill } from '../rows';
 import { FileName, useUploader } from '../../ui/files';
 import { uploadCaseFile } from '../../repo/files';
 import { REMOTE } from '../../repo/backend';
+import { ArticleSuggestion } from '../../pages/BinhAnPages';
+import type { Milestone } from '../../repo/nghiaTinh';
+
+/** Mốc tưởng niệm sắp tới để gợi ý đúng bài ở Góc bình an; không có thì gợi ý bài sau tang lễ */
+function nextMilestone(c: CaseData): Milestone {
+  if (c.situation.rite === 'catholic') return 'sau-tang';
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const next = milestoneList(c).find(m => m.date && m.date >= today && (m.key === 'd49' || m.key === 'd100' || m.key === 'gio'));
+  return (next?.key as Milestone | undefined) ?? 'sau-tang';
+}
 import { PaidGate } from '../Paywall';
 
 const fmtAt = (iso?: string) => (iso ? new Date(iso).toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' }) : '');
@@ -49,6 +59,7 @@ function After() {
             ))}</div></section>
         ))}
         <p className="note">Cùng một danh sách với chặng 13–15 trên Bản đồ: đánh dấu ở đây thì Bản đồ cập nhật theo.</p>
+        <ArticleSuggestion milestone={nextMilestone(c)} />
         <section className="card card-pad stack" style={{ gap: 8 }}><h3>Tài liệu kết quả</h3><p className="muted">Lưu bản chụp giấy tờ sau khi làm thủ tục (trích lục khai tử, quyết định chế độ…) để gia đình tìm lại khi cần.</p>
           {docs.map(d => <span key={d.id} className="pill done" style={{ alignSelf: 'flex-start' }}><Icon n="doc" c="sm" /><FileName name={d.name} path={d.path} /></span>)}
           <label className="btn file-btn" style={{ alignSelf: 'flex-start' }} aria-disabled={up.busy}><Icon n="doc" c="sm" />{up.busy ? 'Đang tải lên…' : 'Tải tệp lên'}<input type="file" disabled={up.busy} onChange={async e => { const f = e.target.files?.[0]; e.target.value = ''; if (!f) return; const s = await up.run(() => uploadCaseFile(c.id, 'after', f)); if (s) { update(d => { (d.docs ??= []).push({ id: 'doc' + Date.now(), name: s.name, path: s.path, at: new Date().toISOString(), source: 'after' }); d.history.push({ at: new Date().toISOString(), text: `${me.name} lưu tài liệu kết quả: ${s.name}` }); }); toast('Đã lưu tài liệu'); } }} /></label>

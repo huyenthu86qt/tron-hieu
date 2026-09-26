@@ -6,6 +6,7 @@ import { Ent01, Ent02, Ent03 } from './pages/EntryPages';
 import { LinkPage, NotFound } from './pages/OtherPages';
 import { CompleteProfilePage, ForgotPage, LoginPage, RegisterPage, RequireAuth } from './pages/AuthPages';
 import { InvitePage, PreInvitePage } from './pages/InvitePages';
+import { AdminArticleEditPage, AdminArticlesPage, ArticlePage, BinhAnListPage } from './pages/BinhAnPages';
 import { AccountPage, HomePage, NotificationsPage } from './pages/AccountPages';
 import { CheckoutPage, OrderPage } from './pages/CheckoutPages';
 import { PrivacyPage, TermsPage } from './pages/LegalPages';
@@ -29,6 +30,7 @@ import { BudgetPage, DebtsPage, ExpensesPage, FinancePage, LedgerPage, Reconcile
 import { ComposePage, GuestListPage, GuestsPage, PublicPage, ShiftPage } from './case/pages/GuestPages';
 import { AfterPage, ClosePage, MilestonePage, MilestonesPage, ProceduresPage, ThanksPage } from './case/pages/AfterPages';
 import { DocsPage, HistoryPage, IntakePage, MyTasksPage, SettingsPage } from './case/pages/MiscPages';
+import { MemoryPage } from './case/pages/MemoryPage';
 
 // Trang dựng dữ liệu mẫu: có khi chạy thử trên máy, hoặc bản xem thử online bật VITE_DEMO=1. Bản thật cho khách không có.
 const DemoPage = import.meta.env.DEV || import.meta.env.VITE_DEMO === '1' ? lazy(() => import('./dev/DemoPage')) : null;
@@ -55,6 +57,8 @@ export default function App() {
           <Route path="/moi/:token" element={<InvitePage />} />
           <Route path="/moi-cb/:token" element={<PreInvitePage />} />
           <Route path="/hoan-tat" element={<CompleteProfilePage />} />
+          <Route path="/goc-binh-an" element={<BinhAnListPage />} />
+          <Route path="/goc-binh-an/:slug" element={<ArticlePage />} />
           <Route path="/t/:slug" element={<PublicPage />} />
           {DemoPage && <Route path="/mau" element={<Suspense fallback={null}><DemoPage /></Suspense>} />}
 
@@ -103,6 +107,7 @@ export default function App() {
             <Route path="khach-vieng/danh-sach" element={<GuestListPage />} />
             <Route path="khach-vieng/ban-giao" element={<ShiftPage />} />
             <Route path="hau-tang" element={<AfterPage />} />
+            <Route path="so-tuong-nho" element={<MemoryPage />} />
             <Route path="hau-tang/thu-tuc" element={<ProceduresPage />} />
             <Route path="hau-tang/moc" element={<MilestonesPage />} />
             <Route path="hau-tang/moc/:mid" element={<MilestonePage />} />
@@ -124,6 +129,8 @@ export default function App() {
           <Route path="/admin/goi-gia" element={AD(<AdminProductsPage />)} />
           <Route path="/admin/sepay" element={AD(<AdminSepayPage />)} />
           <Route path="/admin/chua-khop" element={AD(<AdminUnmatchedPage />)} />
+          <Route path="/admin/goc-binh-an" element={AD(<AdminArticlesPage />)} />
+          <Route path="/admin/goc-binh-an/:id" element={AD(<AdminArticleEditPage />)} />
           <Route path="/admin/nha-cung-cap" element={AD(<AdminVendorsPage />)} />
           <Route path="/admin/nha-cung-cap/de-xuat" element={AD(<AdminVendorCandidatesPage />)} />
           <Route path="/admin/nha-cung-cap/:vid" element={AD(<AdminVendorEditPage />)} />

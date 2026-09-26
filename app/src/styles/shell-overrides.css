@@ -53,3 +53,13 @@
 .google-btn:hover{background:#f7f8f8}
 .or-line{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:13px}
 .or-line::before,.or-line::after{content:"";flex:1;height:1px;background:var(--border)}
+
+/* Góc bình an: nội dung bài viết dễ đọc */
+.article-body{font-size:17px;line-height:1.75;color:var(--text)}
+.article-body p{margin:0 0 14px}
+.article-body h2{font-family:var(--serif);font-size:21px;margin:26px 0 10px}
+.article-body h3{font-size:18px;margin:20px 0 8px}
+.article-body ul{margin:0 0 14px;padding-left:22px}
+.article-body li{margin:4px 0}
+.article-card:hover{border-color:var(--accent)}
+.memory-entry{border-left:3px solid var(--accent-soft)}

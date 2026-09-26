@@ -1,6 +1,6 @@
 import type { IconName } from '../ui/Icon';
 
-export type NavKey = 'now' | 'map' | 'dec' | 'team' | 'ven' | 'fin' | 'gst' | 'aft' | 'doc';
+export type NavKey = 'now' | 'map' | 'dec' | 'team' | 'ven' | 'fin' | 'gst' | 'aft' | 'mem' | 'doc';
 export const NAV: { k: NavKey; label: string; short?: string; icon: IconName; to: string; paid?: boolean }[] = [
   { k: 'now', label: 'Bây giờ', icon: 'now', to: '' },
   { k: 'map', label: 'Bản đồ', icon: 'map', to: 'ban-do' },
@@ -10,6 +10,7 @@ export const NAV: { k: NavKey; label: string; short?: string; icon: IconName; to
   { k: 'fin', label: 'Tài chính', icon: 'wallet', to: 'tai-chinh', paid: true },
   { k: 'gst', label: 'Khách viếng', icon: 'guest', to: 'khach-vieng', paid: true },
   { k: 'aft', label: 'Hậu tang', icon: 'after', to: 'hau-tang', paid: true },
+  { k: 'mem', label: 'Sổ tưởng nhớ', short: 'Tưởng nhớ', icon: 'candle', to: 'so-tuong-nho' },
   { k: 'doc', label: 'Tài liệu', icon: 'doc', to: 'tai-lieu' },
 ];
 
@@ -41,6 +42,7 @@ export function metaOf(rest: string, from?: string): RouteMeta {
       const t: Record<string, string> = { 'trang-tin': 'Trang thông tin', 'danh-sach': 'Danh sách khách', 'ban-giao': 'Bàn giao ca' };
       return p[1] ? { nav: 'gst', title: t[p[1]] ?? 'Khách viếng', back: 'khach-vieng' } : { nav: 'gst', title: 'Khách viếng' };
     }
+    case 'so-tuong-nho': return { nav: 'mem', title: 'Sổ tưởng nhớ' };
     case 'hau-tang': {
       const t: Record<string, string> = { moc: 'Mốc tưởng niệm', 'cam-on': 'Danh sách cảm ơn', 'khep-vong': 'Khép vòng', 'thu-tuc': 'Thủ tục & quyền lợi' };
       if (p[1] === 'moc' && p[2]) return { nav: 'aft', title: 'Chi tiết mốc', back: 'hau-tang' };

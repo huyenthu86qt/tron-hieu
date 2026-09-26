@@ -4,7 +4,7 @@
 import { friendlyError, REMOTE, sb } from './backend';
 
 export type Bucket = 'case-files' | 'pre-files';
-export type CaseFileKind = 'doc' | 'task' | 'fin' | 'after';
+export type CaseFileKind = 'doc' | 'task' | 'fin' | 'after' | 'memory';
 export interface Stored { name: string; path?: string }
 
 export const MAX_FILE_MB = 15;

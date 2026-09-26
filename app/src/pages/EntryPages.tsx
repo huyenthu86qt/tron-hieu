@@ -35,6 +35,7 @@ export function Ent01() {
       <button className="entry-card" onClick={() => nav('/chuan-bi/moi')}><span className="eyebrow">Chưa xảy ra</span><h3>Muốn chuẩn bị trước</h3>
         <span className="muted">Cho bản thân hoặc người thân: nguyện vọng, giấy tờ, người liên hệ, ngân sách.</span></button>
       <p className="muted" style={{ textAlign: 'center' }}>Đã có hồ sơ? {user ? <Link className="btn ghost sm" to="/app">Mở trang của tôi</Link> : <Link className="btn ghost sm" to="/dang-nhap">Đăng nhập</Link>}</p>
+      <p style={{ textAlign: 'center' }}><Link className="btn ghost sm" to="/goc-binh-an">Góc bình an · bài viết về phong tục và người ở lại</Link></p>
     </div></div>
   );
 }

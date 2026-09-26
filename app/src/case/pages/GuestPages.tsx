@@ -13,6 +13,7 @@ import { repo } from '../../repo/repo';
 import { Icon } from '../../ui/Icon';
 import { Banner, Chips, ErrorBanner, Sheet, toggleIn, useApp } from '../../ui/common';
 import { REMOTE } from '../../repo/backend';
+import { publicMemories, submitGuestMemory } from '../../repo/nghiaTinh';
 import { useCase } from '../CaseContext';
 import { PaidGate } from '../Paywall';
 import { BRAND } from '../../ui/brand';
@@ -177,7 +178,7 @@ export function PublicPage() {
   useEffect(() => { repo.findBySlug(slug).then(setC); }, [slug]);
   if (c === undefined) return <div className="bare"><p className="muted" style={{ textAlign: 'center', padding: 40 }}>Đang mở…</p></div>;
   if (!c || !c.publicPage?.published) return <div className="bare"><div className="bare-inner" style={{ justifyContent: 'center' }}><div className="empty"><Icon n="lotus" c="lg" /><h2 style={{ color: 'var(--text)' }}>Trang chưa được công bố hoặc không còn</h2><p>Liên hệ gia đình để có đường dẫn đúng.</p></div></div></div>;
-  return <div className="bare" style={{ maxWidth: 720, margin: '0 auto' }}><ObitBody c={c} /></div>;
+  return <div className="bare" style={{ maxWidth: 720, margin: '0 auto' }}><ObitBody c={c} /><PublicMemories slug={slug} caseId={c.id} /></div>;
 }
 
 /* ---------- S-GST-06 ---------- */
@@ -233,5 +234,43 @@ function Shifts() {
       ))}</div></section>}
       <p className="muted"><Link to={base + '/khach-vieng'}>Về Khách viếng</Link></p>
     </div>
+  );
+}
+
+/** Trang thông tin công khai: lời tưởng nhớ đã được gia đình duyệt + ô để khách gửi lời tưởng nhớ */
+function PublicMemories({ slug, caseId }: { slug: string; caseId: string }) {
+  const [L, setL] = useState<{ authorName: string; body: string; createdAt: string }[]>([]);
+  const [f, setF] = useState({ name: '', body: '' });
+  const [err, setErr] = useState<string | null>(null);
+  const [sent, setSent] = useState(false);
+  const [busy, setBusy] = useState(false);
+  useEffect(() => { void publicMemories(slug, caseId).then(setL); }, [slug, caseId]);
+  const send = async () => {
+    setBusy(true);
+    const e = await submitGuestMemory(slug, caseId, f.name, f.body);
+    setBusy(false);
+    if (e) { setErr(e); return; }
+    setSent(true); setErr(null);
+  };
+  return (
+    <section className="stack" style={{ gap: 12, padding: '8px 16px 32px' }}>
+      <h2 style={{ fontFamily: 'var(--serif)', fontSize: 22, textAlign: 'center' }}>Lời tưởng nhớ</h2>
+      {L.map((m, i) => (
+        <article key={i} className="card card-pad" style={{ gap: 6 }}>
+          <p style={{ whiteSpace: 'pre-wrap', fontFamily: 'var(--serif)', fontSize: 17, lineHeight: 1.6 }}>{m.body}</p>
+          <p className="muted" style={{ marginTop: 6 }}>— {m.authorName}</p>
+        </article>
+      ))}
+      {sent ? <Banner kind="info" icon="check">Cảm ơn anh/chị. Lời tưởng nhớ đã được gửi tới gia đình; gia đình sẽ xem trước khi hiển thị.</Banner> : (
+        <section className="card card-pad stack">
+          <h3>Gửi lời tưởng nhớ</h3>
+          <p className="muted">Một lời chia buồn, một kỷ niệm với người đã khuất. Gia đình sẽ xem trước khi hiển thị ở đây.</p>
+          <div className="field"><label htmlFor="gmName">Tên của anh/chị</label><input className="input" id="gmName" value={f.name} maxLength={80} onChange={e => setF({ ...f, name: e.target.value })} placeholder="Ví dụ: Bác Tư, hàng xóm" /></div>
+          <div className="field"><label htmlFor="gmBody">Lời tưởng nhớ</label><textarea className="input" id="gmBody" rows={4} value={f.body} maxLength={1000} onChange={e => setF({ ...f, body: e.target.value })} /></div>
+          <ErrorBanner err={err} />
+          <button className="btn primary" style={{ alignSelf: 'flex-start' }} disabled={busy || !f.name.trim() || !f.body.trim()} onClick={() => void send()}>{busy ? 'Đang gửi…' : 'Gửi tới gia đình'}</button>
+        </section>
+      )}
+    </section>
   );
 }

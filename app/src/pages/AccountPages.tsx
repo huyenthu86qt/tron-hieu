@@ -8,6 +8,7 @@ import { fmtPhone, isFull, ORDER_STATUS_LABEL, readiness } from '../domain/platf
 import { DN_TEXT } from '../domain/text';
 import { repo } from '../repo/repo';
 import { REMOTE } from '../repo/backend';
+import { BinhAnHomeCard } from './BinhAnPages';
 import {
   changePassword, changePhoneSelf, linkGoogle, logout, logoutAll, markRead, myPreNeeds, requestDeleteAccount, updateProfile, usePlatform, useUser,
 } from '../repo/platformStore';
@@ -47,6 +48,7 @@ export function HomePage() {
                 <div className="meta"><span>Sẵn sàng {readiness(p)}%</span>{p.caseId ? <span className="pill done">Đã kích hoạt</span> : p.paid ? <span className="pill doing">Đã mở gói</span> : <span className="pill soft">Miễn phí</span>}</div></div>
               <Icon n="chev" c="chev" /></button>
           ))}</div> : <p className="muted" style={{ padding: '0 16px 14px' }}>Chuẩn bị dần khi còn thời gian — để lúc cần, gia đình không phải quyết lại từ đầu.</p>}</section>
+        <BinhAnHomeCard />
       </div>
     </AccountShell>
   );
