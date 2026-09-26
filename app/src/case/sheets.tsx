@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { Access, Member } from '../domain/types';
 import {
-  addCustomTask, areaUse, initials, assignTask, completeTask, returnTask, deleteCustomTask, editTask, inviteMember, inviteUrl, removeMember, renewInvite, renewLink,
+  addCustomTask, areaUse, initials, assignTask, completeTask, returnTask, deleteCustomTask, editTask, inviteMember, inviteUrl, removeMember, renewInvite, renewLink, transferRepresentative,
   restoreTask, saveAreas, saveMember, skipTask, type AreaEdit, type TaskForm,
 } from '../domain/actions';
 import { dependencies, findTask, U1_ID, visibleTasks } from '../domain/model';
@@ -13,6 +13,7 @@ import { ACCESS_LABEL, memberOf, useCase } from './CaseContext';
 import { NAV } from './nav';
 import { useBackToList } from './rows';
 import { REMOTE } from '../repo/backend';
+import { repo } from '../repo/repo';
 
 export function CaseSheets() {
   const { sheet } = useCase();
@@ -308,6 +309,7 @@ function MemberSheet({ id }: { id: string }) {
         <Opts value={f.access} onChange={a => setF({ ...f, access: a })} items={ACCESS_OPTS} disabled={isU1} />
         {isU1 && <p className="muted">Người đại diện gia đình luôn có quyền đầy đủ.</p>}
         {m.access !== 'link' && !isU1 && !isOrg && (m.userId ? <p className="muted"><Icon n="check" c="sm" /> Đã nhận lời mời, đang dùng tài khoản trong app.</p> : <InviteLinkBox id={id} />)}
+        {!isU1 && !isOrg && m.userId && m.access !== 'link' && <TransferBox id={id} />}
         {m.access === 'link' && m.linkToken && (
           <div className="link-box"><span>{linkUrl(m.linkToken)}</span>
             <button className="btn sm" onClick={async () => toast(await copyText(linkUrl(m.linkToken!)) ? 'Đã sao chép link' : 'Không sao chép được')}><Icon n="copy" c="sm" />Sao chép</button>
@@ -442,6 +444,38 @@ function InviteLinkBox({ id }: { id: string }) {
         <button className="btn sm ghost" onClick={() => { update(d => renewInvite(d, id)); toast('Đã hủy link cũ và tạo link mới'); }}><Icon n="refresh" c="sm" />Tạo link mới</button>
       </div>
       <p className="note">Link chỉ dùng được một lần: người đầu tiên mở và đăng nhập sẽ vào đội ở vị trí “{m.name}”. Gửi nhầm người thì bấm “Tạo link mới”.</p>
+    </div>
+  );
+}
+
+/** Người đại diện chuyển quyền cho một người trong đội (đã có tài khoản) */
+function TransferBox({ id }: { id: string }) {
+  const { c, me } = useCase();
+  const { toast } = useApp();
+  const [ask, setAsk] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const m = c.members.find(x => x.id === id);
+  if (!m || me.id !== U1_ID) return null;
+  const go = async () => {
+    setBusy(true); setErr(null);
+    try {
+      const next = structuredClone(c);
+      transferRepresentative(next, id);
+      if (repo.transferOwner) await repo.transferOwner(next, m.userId!);
+      else { next.ownerId = m.userId; next.history.push({ at: new Date().toISOString(), text: `${me.name} chuyển quyền người đại diện gia đình cho ${m.name}` }); await repo.save(next); }
+      toast(`Đã chuyển quyền người đại diện cho ${m.name}`);
+      window.location.reload();
+    } catch (e) { setErr((e as Error).message); setBusy(false); }
+  };
+  return (
+    <div className="stack" style={{ gap: 8, borderTop: '1px solid var(--border)', paddingTop: 12 }}>
+      <div className="eyebrow">Người đại diện gia đình</div>
+      {!ask ? <button className="btn sm" style={{ alignSelf: 'flex-start' }} onClick={() => setAsk(true)}>Chuyển quyền người đại diện cho {m.name}</button> : <>
+        <Banner kind="warn"><b>{m.name}</b> sẽ thành người đại diện: quyết định mọi việc, sửa đội, trả phí, yêu cầu xóa đám hiếu. Anh/chị vẫn ở trong đội với quyền Đầy đủ. Chỉ {m.name} mới chuyển lại được.</Banner>
+        <ErrorBanner err={err} />
+        <div style={{ display: 'flex', gap: 8 }}><button className="btn danger sm" disabled={busy} onClick={() => void go()}>{busy ? 'Đang chuyển…' : 'Xác nhận chuyển quyền'}</button><button className="btn sm ghost" onClick={() => setAsk(false)}>Thôi</button></div>
+      </>}
     </div>
   );
 }

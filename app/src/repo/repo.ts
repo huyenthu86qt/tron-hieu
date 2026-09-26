@@ -23,6 +23,8 @@ export interface CaseRepo {
   subscribe?(id: string, onChange: () => void): () => void;
   /** Người nhận việc qua link báo trạng thái một việc (máy chủ chỉ cho đổi trạng thái việc của người đó) */
   linkAct?(token: string, task: TaskInst, log: string): Promise<void>;
+  /** Chuyển quyền người đại diện: data đã tính sẵn bằng transferRepresentative, newUser là tài khoản người nhận */
+  transferOwner?(c: CaseData, newUser: string): Promise<void>;
 }
 
 const KEY = 'damhieu.cases.v1';

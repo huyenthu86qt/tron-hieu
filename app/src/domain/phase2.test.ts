@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Answers, CaseData, DirVendor, GeoPoint } from './types';
 import { createCase, decide, findDecision, U1_ID } from './model';
-import { savePerson, inviteMember, assignTask, returnTask } from './actions';
+import { savePerson, inviteMember, assignTask, returnTask, transferRepresentative } from './actions';
 import { DEFAULT_ANSWERS } from './entry';
 import { normalizeCase, activatePreNeed } from './normalize';
 import {
@@ -310,5 +310,23 @@ describe('Danh bạ tự lớn lên từ các gia đình', () => {
     expect(L).toHaveLength(1);
     expect(L[0]).toMatchObject({ families: 2, committed: 1, accepted: 1, cats: ['rap', 'xe'] });
     expect(L[0].names).toEqual(['Rạp Minh Anh', 'Rạp Minh Anh (Long Biên)']);
+  });
+});
+
+describe('Chuyển quyền người đại diện', () => {
+  it('người mới thành u1; người cũ ở lại đội; việc được giao đổi đúng người; chưa có tài khoản thì không chuyển được', () => {
+    const c = normalizeCase(createCase({ answers: DEFAULT_ANSWERS }));
+    c.members[0].userId = 'user-tuan'; c.members[0].name = 'Tuấn';
+    const lan = inviteMember(c, { name: 'Lan', rel: 'Con gái', access: 'limited', areas: [c.areas[0]] });
+    expect(() => transferRepresentative(c, lan.id)).toThrow('nhận lời mời');
+    lan.userId = 'user-lan'; lan.inviteToken = undefined;
+    const [t1, t2] = c.tasks.filter(x => x.status === 'todo');
+    assignTask(c, t1.id, U1_ID); assignTask(c, t2.id, lan.id);
+    transferRepresentative(c, lan.id);
+    const u1 = c.members.find(m => m.id === U1_ID)!, old = c.members.find(m => m.id === lan.id)!;
+    expect(u1).toMatchObject({ name: 'Lan', userId: 'user-lan', access: 'full', areas: ['Toàn bộ'] });
+    expect(old).toMatchObject({ name: 'Tuấn', userId: 'user-tuan', access: 'full', role: 'Thành viên' });
+    expect(t1.owner).toBe(lan.id); // việc của Tuấn vẫn là của Tuấn (nay ở mã cũ của Lan)
+    expect(t2.owner).toBe(U1_ID);  // việc của Lan vẫn là của Lan (nay là người đại diện)
   });
 });

@@ -10,7 +10,7 @@ import { DN_TEXT } from '../domain/text';
 import { repo } from '../repo/repo';
 import { REMOTE } from '../repo/backend';
 import {
-  adminSetTempPassword, assignTx, createAdmin, dismissCandidate, loadVendorCandidates, login, logout, refundOrder, refundTx, saveProduct, saveSettings, saveVendor, setCaseAccess, setSupportNote,
+  adminSetTempPassword, assignTx, cleanupOrphanFiles, loadPendingDeletions, orphanFiles, type PendingDeletion, createAdmin, dismissCandidate, loadVendorCandidates, login, logout, refundOrder, refundTx, saveProduct, saveSettings, saveVendor, setCaseAccess, setSupportNote,
   setUserLocked, setVendorActive, simulateBankTx, usePlatform, useUser,
 } from '../repo/platformStore';
 import { Icon, type IconName } from '../ui/Icon';
@@ -106,11 +106,12 @@ export function AdminHomePage() {
   ];
   return (
     <AdminShell title="Tổng quan"><div className="page">
-      <div className="page-title"><div><h1>Tổng quan</h1><p>Số liệu trên máy này (bản chạy thử)</p></div></div>
+      <div className="page-title"><div><h1>Tổng quan</h1><p>{REMOTE ? 'Số liệu trên máy chủ' : 'Số liệu trên máy này (bản chạy thử)'}</p></div></div>
       <div className="tiles">{tiles.map(([l, v]) => <div key={l} className="tile"><span className="muted">{l}</span><span className="v">{v}</span></div>)}</div>
       <section className="card"><div className="sec-h card-pad" style={{ margin: 0, paddingBottom: 4 }}><h3>Doanh thu theo ngày</h3></div>
         {byDay.size ? <div className="list">{[...byDay].map(([d, v]) => <div key={d} className="row"><div className="grow"><div className="title">{d}</div></div><span className="num">{money(v)}</span></div>)}</div> : <div className="empty"><span>Chưa có doanh thu.</span></div>}</section>
       <section className="card card-pad stack" style={{ gap: 6 }}><h3>Giao dịch lỗi / chưa khớp gần nhất</h3>{lastErr ? <p>{lastErr.providerTxId} · {money(lastErr.amount)} · {lastErr.reason} · {fmtAt(lastErr.at)}</p> : <p className="muted">Không có.</p>}</section>
+      <DeletionsCard />
     </div></AdminShell>
   );
 }
@@ -470,5 +471,37 @@ function TempPasswordSheet({ uid, name, phone, onClose }: { uid: string; name: s
         <ErrorBanner err={err} />
       </>}
     </Sheet>
+  );
+}
+
+/** Yêu cầu xóa đang chờ (khách tự yêu cầu; máy chủ tự xóa sau 7 ngày lúc 2 giờ sáng) + dọn tệp còn sót */
+function DeletionsCard() {
+  const { toast } = useApp();
+  const [L, setL] = useState<PendingDeletion[] | null>(null);
+  const [orph, setOrph] = useState<number | null>(null);
+  const [busy, setBusy] = useState(false);
+  useEffect(() => {
+    loadPendingDeletions().then(setL).catch(() => setL([]));
+    orphanFiles().then(x => setOrph(x.length)).catch(() => setOrph(null));
+  }, []);
+  const clean = async () => {
+    setBusy(true);
+    const r = await cleanupOrphanFiles();
+    setBusy(false);
+    toast(r.error ?? `Đã dọn ${r.removed} tệp`);
+    orphanFiles().then(x => setOrph(x.length)).catch(() => undefined);
+  };
+  return (
+    <section className="card card-pad stack" style={{ gap: 8 }}>
+      <h3>Yêu cầu xóa đang chờ</h3>
+      <p className="muted">Chỉ khách tự yêu cầu mới xóa. Máy chủ tự xóa sau 7 ngày (2 giờ sáng); trong 7 ngày khách hủy được. Admin không xóa thay khách.</p>
+      {L === null ? <p className="muted">Đang tải…</p> : L.length ? <div className="list">{L.map(x => (
+        <div key={x.kind + x.id} className="row"><div className="grow"><div className="title">{x.kind === 'case' ? 'Đám hiếu ' : 'Tài khoản '}{x.name}</div>
+          <div className="meta"><span>Yêu cầu lúc {fmtAt(x.requested_at)}</span><span className="pill wait">Xóa lúc {fmtAt(x.delete_at)}</span></div></div></div>
+      ))}</div> : <p className="muted">Không có yêu cầu nào.</p>}
+      {!!orph && <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+        <span className="muted">{orph} tệp còn sót của đám hiếu / hồ sơ đã xóa.</span>
+        <button className="btn sm" disabled={busy} onClick={() => void clean()}>{busy ? 'Đang dọn…' : 'Dọn tệp'}</button></div>}
+    </section>
   );
 }

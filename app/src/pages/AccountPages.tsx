@@ -77,7 +77,17 @@ export function NotificationsPage() {
 function csv(rows: (string | number)[][]) {
   return rows.map(r => r.map(x => `"${String(x ?? '').replace(/"/g, '""')}"`).join(',')).join('\r\n');
 }
-export function exportCase(c: CaseData) {
+function download(name: string, content: string, type: string) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([content], { type }));
+  a.download = name;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+
+/** Bảng tính (mở bằng Excel): việc, chi tiêu, sổ phúng viếng. Luôn lấy bản đầy đủ mới nhất. */
+export async function exportCase(summary: CaseData) {
+  const c = (await repo.get(summary.id)) ?? summary;
   const tasks = visibleTasks(c).map(t => [t.phase, t.title, t.due, STATUS_LABEL[t.status], c.members.find(m => m.id === t.owner)?.name ?? '', t.area]);
   const ex = (c.finance?.expenses ?? []).map(e => [e.name, e.amount, e.paid, EXP_STATUS[e.status][1], e.method ? METHOD_LABEL[e.method] : '', c.members.find(m => m.id === e.payer)?.name ?? '']);
   const led = (c.ledger ?? []).map(g => [g.name, g.group ?? '', g.amount, METHOD_LABEL[g.method], g.gifts.join('; '), g.by, fmtAt(g.at)]);
@@ -87,11 +97,50 @@ export function exportCase(c: CaseData) {
     'CHI TIÊU', csv([['Khoản', 'Số tiền', 'Đã trả', 'Trạng thái', 'Hình thức', 'Người chi'], ...ex]), '',
     'SỔ PHÚNG VIẾNG', csv([['Người / đoàn', 'Nhóm', 'Số tiền', 'Hình thức', 'Lễ vật', 'Người ghi', 'Lúc'], ...led]),
   ].join('\r\n');
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob([text], { type: 'text/csv;charset=utf-8' }));
-  a.download = `dam-hieu-${c.id}.csv`;
-  a.click();
-  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  download(`dam-hieu-${c.id}.csv`, text, 'text/csv;charset=utf-8');
+}
+
+const esc = (s: unknown) => String(s ?? '').replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[ch]!);
+const table = (head: string[], rows: unknown[][]) => rows.length
+  ? `<table><thead><tr>${head.map(h => `<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${rows.map(r => `<tr>${r.map(x => `<td>${esc(x)}</td>`).join('')}</tr>`).join('')}</tbody></table>`
+  : '<p class="muted">Không có.</p>';
+
+/** Bản lưu đọc được và in được (mở bằng trình duyệt → In → Lưu PDF): toàn bộ đám hiếu để gia đình giữ lại. */
+export async function exportCaseDoc(summary: CaseData) {
+  const c = (await repo.get(summary.id)) ?? summary;
+  const name = (id: string | null | undefined) => c.members.find(m => m.id === id)?.name ?? '';
+  const p = c.person;
+  const tasks = visibleTasks(c);
+  const exps = c.finance?.expenses ?? [];
+  const led = c.ledger ?? [];
+  const sum = (a: number[]) => a.reduce((x, y) => x + y, 0);
+  const html = `<!doctype html><html lang="vi"><head><meta charset="utf-8"><title>Đám hiếu ${esc(DN_TEXT(c))}</title>
+<style>body{font-family:"Be Vietnam Pro",system-ui,sans-serif;color:#2B2622;max-width:900px;margin:24px auto;padding:0 16px;line-height:1.5}
+h1{font-family:"Noto Serif",Georgia,serif;font-size:26px;margin:0}h2{font-family:"Noto Serif",Georgia,serif;font-size:19px;border-bottom:2px solid #B8893E;padding-bottom:4px;margin-top:28px}
+table{width:100%;border-collapse:collapse;font-size:13px}th,td{border:1px solid #E3DBD0;padding:5px 7px;text-align:left;vertical-align:top}th{background:#F1EBE1}
+.muted{color:#6E655C}.kv td:first-child{width:180px;color:#6E655C}@media print{h2{break-after:avoid}tr{break-inside:avoid}}</style></head><body>
+<p class="muted">TRỌN HIẾU · Bản lưu đám hiếu · xuất lúc ${esc(fmtAt(new Date().toISOString()))}</p>
+<h1>Đám hiếu ${esc(DN_TEXT(c))}</h1>
+<h2>Người đã khuất</h2>
+<table class="kv"><tbody>
+<tr><td>Họ tên</td><td>${esc(`${p.title} ${p.name}`)}${p.saint ? ` (${esc(p.saint)})` : ''}</td></tr>
+<tr><td>Năm sinh</td><td>${esc(p.birthYear)}</td></tr><tr><td>Ngày mất</td><td>${esc(p.death)} ${esc(p.time)}</td></tr><tr><td>Quê quán</td><td>${esc(p.hometown)}</td></tr>
+</tbody></table>
+<h2>Đội đám hiếu</h2>
+${table(['Họ tên', 'Quan hệ', 'Vai trò', 'Vùng trách nhiệm'], c.members.map(m => [m.name, m.rel, m.id === 'u1' ? 'Người đại diện gia đình' : m.role, m.areas.join(', ')]))}
+<h2>Việc (${tasks.filter(t => t.status === 'done').length}/${tasks.length} đã xong)</h2>
+${table(['Chặng', 'Việc', 'Hạn', 'Trạng thái', 'Người phụ trách'], tasks.map(t => [t.phase, t.title, t.due, STATUS_LABEL[t.status], name(t.owner)]))}
+<h2>Chi tiêu · tổng ${esc(money(sum(exps.map(e => e.amount))))}, đã trả ${esc(money(sum(exps.map(e => e.paid))))}</h2>
+${table(['Khoản', 'Số tiền', 'Đã trả', 'Trạng thái', 'Hình thức', 'Người chi', 'Chứng từ'], exps.map(e => [e.name, money(e.amount), money(e.paid), EXP_STATUS[e.status][1], e.method ? METHOD_LABEL[e.method] : '', name(e.payer), e.evidence ?? '']))}
+<h2>Sổ phúng viếng · ${led.length} lượt${led.some(g => g.amount) ? ` · tổng ${esc(money(sum(led.map(g => g.amount))))}` : ''}</h2>
+${table(['Người / đoàn', 'Số tiền', 'Hình thức', 'Lễ vật', 'Người ghi', 'Lúc'], led.map(g => [g.name, g.amount ? money(g.amount) : '', METHOD_LABEL[g.method], g.gifts.join('; '), g.by, fmtAt(g.at)]))}
+<h2>Tài liệu</h2>
+${table(['Tên tệp', 'Nguồn', 'Lúc'], (c.docs ?? []).map(d => [d.name, d.source === 'pre' ? 'Hồ sơ chuẩn bị' : d.source === 'after' ? 'Hậu tang' : 'Gia đình tải lên', fmtAt(d.at)]))}
+<p class="muted">Tệp gốc (ảnh, giấy tờ) mở và tải ở mục Tài liệu trong app.</p>
+<h2>Lịch sử</h2>
+${table(['Lúc', 'Nội dung'], [...c.history].reverse().map(h => [fmtAt(h.at), h.text]))}
+</body></html>`;
+  download(`ban-luu-dam-hieu-${c.id}.html`, html, 'text/html;charset=utf-8');
 }
 
 export function AccountPage() {
@@ -109,6 +158,7 @@ export function AccountPage() {
   const [err, setErr] = useState<Record<string, string | null>>({});
   const [phoneSheet, setPhoneSheet] = useState(false);
   const [delCase, setDelCase] = useState<string | null>(null);
+  const [delAcct, setDelAcct] = useState(false);
   const mine = orders.filter(o => o.userId === user.id);
   const owned = (cases ?? []).filter(c => c.ownerId === user.id);
 
@@ -154,13 +204,14 @@ export function AccountPage() {
         </section>
 
         <section className="card card-pad stack"><h3>Dữ liệu</h3>
-          <p className="muted">Xuất danh sách việc, chi tiêu và sổ phúng viếng của một đám hiếu (tệp CSV mở được bằng Excel).</p>
+          <p className="muted"><b>Bản lưu</b>: toàn bộ đám hiếu (người đã khuất, đội, việc, chi tiêu, sổ phúng viếng, tài liệu, lịch sử) — mở bằng trình duyệt, bấm In → Lưu PDF để giữ lâu dài. <b>Bảng tính</b>: mở bằng Excel.</p>
           {owned.map(c => <div key={c.id} style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}><span style={{ flex: 1, minWidth: 180 }}>Đám hiếu {DN_TEXT(c)}</span>
-            <button className="btn sm" onClick={() => exportCase(c)}><Icon n="doc" c="sm" />Xuất dữ liệu</button>
+            <button className="btn sm" onClick={() => void exportCaseDoc(c)}><Icon n="doc" c="sm" />Tải bản lưu (in được)</button>
+            <button className="btn sm ghost" onClick={() => void exportCase(c)}>Bảng tính Excel</button>
             {c.deleteRequestedAt
               ? <button className="btn sm ghost" onClick={async () => { const x = await repo.get(c.id); if (x) { x.deleteRequestedAt = undefined; await repo.save(x); } toast('Đã hủy yêu cầu xóa'); nav(0); }}>Hủy yêu cầu xóa</button>
               : <button className="btn sm ghost" style={{ color: 'var(--danger)' }} onClick={() => setDelCase(c.id)}>Yêu cầu xóa</button>}</div>)}
-          {!user.deleteRequestedAt && <button className="btn ghost" style={{ alignSelf: 'flex-start', color: 'var(--danger)' }} onClick={() => { if (window.confirm('Yêu cầu xóa tài khoản? Tài khoản và dữ liệu sẽ bị xóa sau 7 ngày; trong thời gian này anh/chị có thể hủy.')) { requestDeleteAccount(); toast('Đã ghi nhận yêu cầu xóa tài khoản'); } }}>Yêu cầu xóa tài khoản</button>}
+          {!user.deleteRequestedAt && <button className="btn ghost" style={{ alignSelf: 'flex-start', color: 'var(--danger)' }} onClick={() => setDelAcct(true)}>Yêu cầu xóa tài khoản</button>}
         </section>
 
         <section className="card card-pad stack"><h3>Hỗ trợ</h3>
@@ -171,6 +222,7 @@ export function AccountPage() {
         </section>
       </div>
       {phoneSheet && <PhoneSheet onClose={() => setPhoneSheet(false)} />}
+      {delAcct && <DeleteAccountSheet owned={owned} onClose={() => setDelAcct(false)} />}
       {delCase && <Sheet title="Yêu cầu xóa đám hiếu" onClose={() => setDelCase(null)} foot={<><button className="btn" onClick={() => setDelCase(null)}>Hủy</button>
         <button className="btn danger" onClick={async () => { const c = await repo.get(delCase); if (c) { c.deleteRequestedAt = new Date().toISOString(); await repo.save(c); } setDelCase(null); toast('Đã ghi nhận — đám hiếu sẽ bị xóa sau 7 ngày'); nav(0); }}>Yêu cầu xóa</button></>}>
         <Banner kind="warn">Đám hiếu, danh sách việc, chi tiêu, sổ phúng viếng sẽ bị xóa sau 7 ngày. Nên <b>xuất dữ liệu</b> trước. Trong 7 ngày có thể hủy yêu cầu.</Banner>
@@ -218,5 +270,35 @@ function GoogleLink() {
       <button className="btn" style={{ alignSelf: 'flex-start' }} disabled={busy} onClick={async () => { setBusy(true); const e = await linkGoogle(); if (e) { setErr(e); setBusy(false); } }}>{busy ? 'Đang mở Google…' : 'Liên kết tài khoản Google'}</button>
       <ErrorBanner err={err} />
     </div>
+  );
+}
+
+/**
+ * Yêu cầu xóa tài khoản (xóa sau 7 ngày, hủy được).
+ * Đám hiếu anh/chị đứng tên mà còn người thân khác trong đội: phải chuyển quyền người đại diện trước.
+ * Đám hiếu chỉ có một mình anh/chị: xóa cùng tài khoản (nên tải bản lưu trước).
+ */
+function DeleteAccountSheet({ owned, onClose }: { owned: CaseData[]; onClose: () => void }) {
+  const { toast } = useApp();
+  const others = (c: CaseData) => c.members.filter(m => m.id !== 'u1' && m.userId && m.access !== 'link');
+  const blockers = owned.filter(c => others(c).length > 0);
+  const alone = owned.filter(c => others(c).length === 0);
+  return (
+    <Sheet title="Yêu cầu xóa tài khoản" onClose={onClose} foot={<><button className="btn" onClick={onClose}>Để sau</button>
+      <button className="btn danger" disabled={blockers.length > 0} onClick={() => { requestDeleteAccount(); toast('Đã ghi nhận — tài khoản sẽ được xóa sau 7 ngày. Trong thời gian này có thể hủy.'); onClose(); }}>Yêu cầu xóa tài khoản</button></>}>
+      {blockers.length > 0 ? <>
+        <Banner kind="warn"><b>Cần chuyển quyền người đại diện trước.</b> Các đám hiếu dưới đây còn người thân khác trong đội — giao lại cho một người để gia đình vẫn dùng tiếp.</Banner>
+        {blockers.map(c => (
+          <div key={c.id} className="row" style={{ padding: '8px 0' }}><div className="grow"><div className="title">Đám hiếu {DN_TEXT(c)}</div>
+            <div className="meta"><span>Trong đội: {others(c).map(m => m.name).join(', ')}</span></div></div>
+            <Link className="btn sm" to={`/dh/${c.id}/doi`}>Mở Đội để chuyển quyền</Link></div>
+        ))}
+        <p className="muted">Trong Đội, bấm “Sửa” ở người sẽ nhận quyền → “Chuyển quyền người đại diện”.</p>
+      </> : <>
+        <p>Tài khoản sẽ được <b>xóa sau 7 ngày</b>. Trong 7 ngày, anh/chị đăng nhập và bấm “Hủy yêu cầu” là giữ lại.</p>
+        {alone.length > 0 && <Banner kind="warn">Các đám hiếu chỉ có anh/chị sẽ bị xóa cùng tài khoản: {alone.map(c => DN_TEXT(c)).join('; ')}. Nên <b>tải bản lưu</b> ở mục Dữ liệu trước.</Banner>}
+        <p className="muted">Đơn hàng đã thanh toán được giữ lại làm chứng từ (không còn gắn với tài khoản). Anh/chị vẫn ở trong đội của gia đình khác cho tới khi tài khoản bị xóa.</p>
+      </>}
+    </Sheet>
   );
 }

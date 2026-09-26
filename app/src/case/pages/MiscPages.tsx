@@ -7,7 +7,7 @@ import { money } from '../../domain/finance';
 import { findVendor } from '../../domain/vendors';
 import { milestoneList } from '../../domain/aftercare';
 import { DN_TEXT } from '../../domain/text';
-import { exportCase } from '../../pages/AccountPages';
+import { exportCase, exportCaseDoc } from '../../pages/AccountPages';
 import { Icon } from '../../ui/Icon';
 import { Banner, useApp } from '../../ui/common';
 import { inScope, useCase } from '../CaseContext';
@@ -127,7 +127,7 @@ export function SettingsPage() {
         <p>{full ? <>Đã mở đầy đủ{c.access?.activeUntil ? ` · dùng đến ${new Date(c.access.activeUntil).toLocaleDateString('vi-VN')}` : ''}</> : 'Miễn phí: Hồ sơ, Bây giờ, Bản đồ, Chi tiết việc, Cần quyết.'}</p>
         {!full && <button className="btn primary" style={{ alignSelf: 'flex-start' }} onClick={() => nav(`/checkout?goi=full&dh=${c.id}&ve=${encodeURIComponent(location.pathname)}`)}>Mở đầy đủ</button>}</section>
       {isU1 && <section className="card card-pad stack"><h3>Dữ liệu</h3><p className="muted">Xuất danh sách việc, chi tiêu, sổ phúng viếng (CSV). Yêu cầu xóa đám hiếu ở Tài khoản → Dữ liệu.</p>
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}><button className="btn" onClick={() => exportCase(c)}><Icon n="doc" c="sm" />Xuất dữ liệu</button><button className="btn ghost" onClick={() => nav('/tai-khoan')}>Mở Tài khoản</button></div></section>}
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}><button className="btn" onClick={() => void exportCaseDoc(c)}><Icon n="doc" c="sm" />Tải bản lưu (in được)</button><button className="btn ghost" onClick={() => void exportCase(c)}>Bảng tính Excel</button><button className="btn ghost" onClick={() => nav('/tai-khoan')}>Mở Tài khoản</button></div></section>}
       <Banner kind="info">Hoàn cảnh (nơi làm lễ, hình thức an táng) đổi ở mục Cần quyết để thấy tác động trước khi đổi.</Banner>
     </div>
   );

@@ -278,3 +278,24 @@ export function saveAreas(c: CaseData, list: AreaEdit[]) {
 
 export const areaUse = (c: CaseData, a: string) =>
   c.members.filter(m => m.areas.includes(a)).length + c.tasks.filter(t => findTask(c, t.id)?.area === a).length;
+
+/**
+ * Chuyển quyền người đại diện gia đình cho một người trong đội (đã nhận lời mời, có tài khoản).
+ * Vị trí “người đại diện” (mã u1) chuyển sang người mới; người đại diện cũ ở lại đội với quyền Đầy đủ.
+ * Mọi chỗ ghi mã hai người (việc, khoản chi, ca trực) đổi chéo để lịch sử vẫn đúng người.
+ */
+export function transferRepresentative(c: CaseData, memberId: string) {
+  const oldU1 = c.members.find(m => m.id === U1_ID);
+  const target = c.members.find(m => m.id === memberId);
+  if (!oldU1 || !target || memberId === U1_ID) throw new RuleError('Chọn một người khác trong đội.');
+  if (!target.userId || target.access === 'link' || target.system) throw new RuleError(`${target.name} cần nhận lời mời và tham gia đội bằng tài khoản trước.`);
+  const swap = (id: string | null | undefined) => (id === U1_ID ? memberId : id === memberId ? U1_ID : id);
+  c.members = c.members.map(m => {
+    if (m.id === U1_ID) return { ...target, id: U1_ID, role: oldU1.role, access: 'full' as const, areas: ['Toàn bộ'], inviteToken: undefined };
+    if (m.id === memberId) return { ...oldU1, id: memberId, role: 'Thành viên', access: 'full' as const, areas: ['Toàn bộ'] };
+    return m;
+  });
+  c.tasks.forEach(t => { t.owner = swap(t.owner) ?? null; });
+  c.finance?.expenses.forEach(e => { e.payer = swap(e.payer) ?? null; e.requestedBy = swap(e.requestedBy) ?? e.requestedBy; });
+  c.shifts?.forEach(s => { s.memberId = swap(s.memberId) ?? s.memberId; if (s.handedTo) s.handedTo = swap(s.handedTo) ?? s.handedTo; });
+}

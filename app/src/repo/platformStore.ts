@@ -759,3 +759,42 @@ export async function adminSetTempPassword(uid: string, password: string): Promi
   mut(d => { const x = d.users.find(y => y.id === uid)!; Object.assign(x, { salt, passHash, failed: 0, lockUntil: undefined }); log(d, a?.name ?? 'Admin', 'Đặt mật khẩu tạm (đã gọi xác nhận)', fmt(x)); });
   return null;
 }
+
+/* ---------- Admin: yêu cầu xóa đang chờ, dọn tệp của dữ liệu đã xóa ---------- */
+export interface PendingDeletion { kind: 'case' | 'user'; id: string; name: string; requested_at: string; delete_at: string }
+
+export async function loadPendingDeletions(): Promise<PendingDeletion[]> {
+  if (REMOTE) {
+    const { data, error } = await sb!.rpc('admin_pending_deletions');
+    if (error) throw new Error(friendlyError(error));
+    return data as PendingDeletion[];
+  }
+  const week = 7 * 86400000;
+  const cases = (await repo.listAll()).filter(c => c.deleteRequestedAt)
+    .map(c => ({ kind: 'case' as const, id: c.id, name: `${c.person.title} ${c.person.name}`.trim(), requested_at: c.deleteRequestedAt!, delete_at: new Date(Date.parse(c.deleteRequestedAt!) + week).toISOString() }));
+  const users = state.users.filter(u => u.deleteRequestedAt)
+    .map(u => ({ kind: 'user' as const, id: u.id, name: `${u.name} · ${u.phone}`, requested_at: u.deleteRequestedAt!, delete_at: new Date(Date.parse(u.deleteRequestedAt!) + week).toISOString() }));
+  return [...cases, ...users].sort((a, b) => a.delete_at.localeCompare(b.delete_at));
+}
+
+/** Đếm / dọn tệp còn sót của đám hiếu, hồ sơ đã xóa (máy chủ chỉ cho Admin thấy tệp mồ côi) */
+export async function orphanFiles(): Promise<{ bucket: 'case-files' | 'pre-files'; path: string }[]> {
+  if (!REMOTE) return [];
+  const { data, error } = await sb!.rpc('admin_orphan_files');
+  if (error) throw new Error(friendlyError(error));
+  return data as { bucket: 'case-files' | 'pre-files'; path: string }[];
+}
+
+export async function cleanupOrphanFiles(): Promise<{ removed: number; error?: string }> {
+  const list = await orphanFiles();
+  let removed = 0;
+  for (const bucket of ['case-files', 'pre-files'] as const) {
+    const paths = list.filter(x => x.bucket === bucket).map(x => x.path);
+    if (!paths.length) continue;
+    const { data, error } = await sb!.storage.from(bucket).remove(paths);
+    if (error) return { removed, error: friendlyError(error) };
+    removed += data?.length ?? 0;
+  }
+  if (removed) adminLog('Dọn tệp của dữ liệu đã xóa', `${removed} tệp`);
+  return { removed };
+}

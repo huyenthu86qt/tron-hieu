@@ -166,6 +166,14 @@ export class SupabaseRepo implements CaseRepo {
     return member ? { c, member } : null;
   }
 
+  async transferOwner(c: CaseData, newUser: string): Promise<void> {
+    const snap = snaps.get(c.id);
+    if (!snap) throw new Error('Tải lại đám hiếu rồi thử lại.');
+    const { error } = await sb!.rpc('transfer_owner', { p_case: c.id, p_new_user: newUser, p_data: stripForServer(c), p_version: snap.version });
+    if (error) throw new Error(friendlyError(error));
+    snaps.delete(c.id);
+  }
+
   async linkAct(token: string, task: TaskInst, log: string): Promise<void> {
     const { error } = await sb!.rpc('link_act', { p_token: token, p_task: task, p_log: log });
     if (error) throw new Error(friendlyError(error));
