@@ -38,7 +38,7 @@ export function TaskRow({ t, why, acts = true, from }: { t: TaskView; why?: bool
         <div className="meta">
           <StatusPill s={t.status} />{t.lock && <LockPill />}
           <span><Icon n="now" c="sm" /> {t.due}</span>
-          <OwnerPill owner={t.owner} />
+          <OwnerPill owner={t.owner} status={t.status} />
         </div>
         {why && (
           <div className="meta">
@@ -82,9 +82,11 @@ export function DecRow({ d, current }: { d: DecisionView; current?: boolean }) {
   );
 }
 
-/** Nhãn người phụ trách: Việc của tôi (nâu đậm) · tên người khác (be) · Chưa có người nhận (cam đất, cần chú ý) */
-export function OwnerPill({ owner }: { owner: string | null | undefined }) {
+/** Nhãn người phụ trách: Việc của tôi (nâu đậm) · tên người khác (be) · Chưa có người nhận (cam đất, cần chú ý).
+ *  Việc đã xong / không áp dụng mà không ai nhận thì không cảnh báo nữa. */
+export function OwnerPill({ owner, status }: { owner: string | null | undefined; status?: string }) {
   const { c, me } = useCase();
+  if (!owner && (status === 'done' || status === 'skip')) return null;
   if (owner && owner === me.id) return <span className="pill mine"><Icon n="user" c="sm" />Việc của tôi</span>;
   const o = owner ? memberOf(c, owner) : null;
   if (o) return <span className="pill owner"><Icon n="user" c="sm" />{o.name}</span>;

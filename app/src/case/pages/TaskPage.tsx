@@ -64,7 +64,7 @@ export function TaskPage() {
             <button key={x.id} className={mine && !on ? 'row mine' : 'row'} onClick={() => open(x.id, ctxNow ? '' : `ban-do?chang=${x.phase}`)} aria-current={on ? 'true' : undefined}
               style={on ? { background: 'var(--primary-soft)', boxShadow: 'inset 3px 0 0 var(--accent)' } : undefined}>
               <div className="grow"><div className="title" style={on ? { color: 'var(--primary)', fontWeight: 600 } : undefined}>{x.title}</div>
-                <div className="meta"><StatusPill s={x.status} />{x.lock && <Icon n="lock" c="sm" />}<OwnerPill owner={x.owner} /></div></div>
+                <div className="meta"><StatusPill s={x.status} />{x.lock && <Icon n="lock" c="sm" />}<OwnerPill owner={x.owner} status={x.status} /></div></div>
             </button>
           );
         }) : <div className="empty">Không có việc.</div>}
@@ -99,7 +99,7 @@ function Detail({ t }: { t: TaskView }) {
   const miniRow = (x: TaskView) => (
     <button key={x.id} className="row" onClick={() => open(x.id, `ban-do?chang=${x.phase}`)} style={{ padding: '10px 0' }}>
       <div className="grow"><div className="title">{x.title}</div>
-        <div className="meta"><StatusPill s={x.status} /><span>Chặng {x.phase}</span><OwnerPill owner={x.owner} /></div></div>
+        <div className="meta"><StatusPill s={x.status} /><span>Chặng {x.phase}</span><OwnerPill owner={x.owner} status={x.status} /></div></div>
       <Icon n="chev" c="chev" />
     </button>
   );
@@ -113,7 +113,7 @@ function Detail({ t }: { t: TaskView }) {
     {t.guide && <LegalGuideCard g={GUIDES[t.guide]} deadline={t.guide === 'khai-tu' ? t.due : undefined} />}
     <section className="card card-pad"><dl className="kv">
       <dt>Hạn</dt><dd>{t.due}</dd>
-      <dt>Người phụ trách</dt><dd>{o ? `${o.name} · ${o.rel}${o.access === 'link' ? ' · nhận qua link' : ''}` : <OwnerPill owner={null} />}</dd>
+      <dt>Người phụ trách</dt><dd>{o ? `${o.name} · ${o.rel}${o.access === 'link' ? ' · nhận qua link' : ''}` : t.status === 'done' || t.status === 'skip' ? '—' : <OwnerPill owner={null} />}</dd>
       {t.assignNote && <><dt>Lời nhắn khi giao</dt><dd>{t.assignNote}</dd></>}
       {t.area && <><dt>Vùng trách nhiệm</dt><dd>{t.area}</dd></>}
       {t.cat && <><dt>Nhà cung cấp</dt><dd>{VENDOR_CAT_LABEL[t.cat]} · <span className="muted">gợi ý bên gần nhất mở ở giai đoạn 2</span></dd></>}

@@ -91,7 +91,7 @@ function Procedures() {
       <Banner kind="info">Hướng dẫn chi tiết cho thủ tục chỉ hiện khi có nguồn hiện hành đã kiểm chứng. Hiện app giúp gia đình theo dõi ai làm, đã xong chưa và lưu kết quả.</Banner>
       <section className="card"><div className="list">{L.map(t => (
         <button key={t.id} className="row" onClick={() => nav(`${base}/viec/${t.id}`, { state: { from: 'hau-tang/thu-tuc' } })}><div className="grow"><div className="title">{t.title}</div>
-          <div className="meta"><span className={'pill ' + t.status}>{t.status === 'done' ? 'Đã xong' : t.status === 'skip' ? 'Không áp dụng' : t.status === 'doing' ? 'Đang làm' : 'Cần làm'}</span>{t.unverified && <span className="pill soft">Hướng dẫn chi tiết đang bổ sung</span>}{t.evidence && <span><Icon n="doc" c="sm" /> {t.evidence}</span>}<span>{c.members.find(m => m.id === t.owner)?.name ?? 'Chưa có người nhận'}</span></div></div>
+          <div className="meta"><span className={'pill ' + t.status}>{t.status === 'done' ? 'Đã xong' : t.status === 'skip' ? 'Không áp dụng' : t.status === 'doing' ? 'Đang làm' : 'Cần làm'}</span>{t.unverified && <span className="pill soft">Hướng dẫn chi tiết đang bổ sung</span>}{t.evidence && <span><Icon n="doc" c="sm" /> {t.evidence}</span>}{(c.members.find(m => m.id === t.owner)?.name ?? (t.status === 'done' || t.status === 'skip' ? '' : 'Chưa có người nhận')) && <span>{c.members.find(m => m.id === t.owner)?.name ?? 'Chưa có người nhận'}</span>}</div></div>
           <Icon n="chev" c="chev" /></button>
       ))}</div></section></div>
   );
@@ -157,7 +157,7 @@ function Milestone() {
       <section className="card"><div className="sec-h card-pad" style={{ margin: 0, paddingBottom: 4 }}><h3>Việc cho mốc này</h3>
         <button className="btn sm" style={{ marginLeft: 'auto' }} onClick={() => openSheet({ type: 'taskform', mode: 'new', phase: 15 })}><Icon n="plus" c="sm" />Thêm việc</button></div>
         {related.length ? <div className="list">{related.map(t => <button key={t.id} className="row" onClick={() => nav(`${base}/viec/${t.id}`, { state: { from: `hau-tang/moc/${mid}` } })}><div className="grow"><div className="title">{t.title}</div>
-          <div className="meta"><OwnerPill owner={t.owner} /><span>{t.due}</span></div></div><Icon n="chev" c="chev" /></button>)}</div>
+          <div className="meta"><OwnerPill owner={t.owner} status={t.status} /><span>{t.due}</span></div></div><Icon n="chev" c="chev" /></button>)}</div>
           : <p className="muted" style={{ padding: '0 16px 14px' }}>Thêm việc như mời thầy, đặt cỗ, báo họ hàng — đặt tên có chữ “{m.name}” để việc hiện ở đây.</p>}</section>
       <p className="note">App nhắc trong mục Thông báo trước mỗi mốc. Nhắc qua tin nhắn mở ở giai đoạn sau.</p>
     </div>
