@@ -1,18 +1,50 @@
 // Nhà cung cấp: gợi ý đúng loại + gần nơi tổ chức nhất. App không bao giờ tự chọn thay gia đình.
 import type {
-  CaseData, CaseVendor, CatStatus, DirVendor, FamilyVendor, Form, GeoPoint, Situation, VendorCat, Venue, VenueSite,
+  BuiltinCat, CaseData, CaseVendor, CatStatus, DirVendor, FamilyVendor, Form, GeoPoint, Situation, VendorCat, Venue, VenueSite,
 } from './types';
 
-export const CATS: { k: VendorCat; name: string; task: string; venue?: Venue; form?: Form }[] = [
-  { k: 'xe', name: 'Xe tang', task: 'Đặt xe tang' },
-  { k: 'rap', name: 'Rạp, bàn ghế', task: 'Thuê rạp, bàn ghế', venue: 'home' },
+/** Hạng mục dịch vụ đám tang, theo trình tự lo việc. opt = hạng mục thường gặp nhưng không phải nhà nào cũng cần (gói gọn, bấm mở). */
+export const CATS: { k: BuiltinCat; name: string; task: string; venue?: Venue; form?: Form; opt?: boolean }[] = [
+  { k: 'quan', name: 'Quan tài, đồ khâm liệm', task: 'Đặt quan tài và đồ khâm liệm' },
+  { k: 'baoquan', name: 'Bảo quản thi hài (ướp lạnh)', task: 'Thuê bảo quản thi hài', opt: true },
+  { k: 'hall', name: 'Nhà tang lễ (thuê phòng lễ)', task: 'Đăng ký phòng lễ tại nhà tang lễ', venue: 'hall' },
+  { k: 'rap', name: 'Rạp, bàn ghế, loa đài', task: 'Thuê rạp, bàn ghế', venue: 'home' },
+  { k: 'le', name: 'Thầy cúng, nghi lễ tôn giáo', task: 'Mời thầy cúng / chủ lễ' },
   { k: 'hoa', name: 'Hoa tươi, vòng hoa', task: 'Đặt hoa và vòng hoa' },
+  { k: 'do', name: 'Đồ tang, hương nến, vàng mã', task: 'Chuẩn bị khăn tang, áo tang, đồ lễ' },
   { k: 'an', name: 'Nấu cỗ', task: 'Đặt cỗ cho khách và họ hàng' },
-  { k: 'nhac', name: 'Đội nhạc lễ', task: 'Mời đội nhạc lễ' },
-  { k: 'mo', name: 'Đào huyệt, xây mộ', task: 'Đặt thợ đào huyệt, xây mộ tạm', form: 'burial' },
+  { k: 'xe', name: 'Xe tang', task: 'Đặt xe tang' },
+  { k: 'hoatang', name: 'Hỏa táng (đài hóa thân)', task: 'Đăng ký giờ hỏa táng', form: 'cremation' },
+  { k: 'nghiatrang', name: 'Nghĩa trang, đất mộ', task: 'Liên hệ nghĩa trang, đất mộ', form: 'burial' },
+  { k: 'mo', name: 'Đào huyệt, xây mộ, bia mộ', task: 'Đặt thợ đào huyệt, xây mộ tạm', form: 'burial' },
+  { k: 'anh', name: 'Ảnh thờ, in cáo phó', task: 'In ảnh thờ, cáo phó', opt: true },
+  { k: 'nhac', name: 'Đội nhạc lễ', task: 'Mời đội nhạc lễ', opt: true },
+  { k: 'xedua', name: 'Xe đưa đón người thân, khách', task: 'Thuê xe đưa đón', opt: true },
+  { k: 'quay', name: 'Chụp ảnh, quay phim', task: 'Thuê chụp ảnh, quay phim', opt: true },
 ];
-export const catName = (k: VendorCat) => CATS.find(c => c.k === k)?.name ?? k;
+export const isCustomCat = (k: VendorCat) => k.startsWith('x-');
+export const catName = (k: VendorCat) => (isCustomCat(k) ? k.slice(2) : CATS.find(c => c.k === k)?.name ?? k);
 export const catsVisible = (s: Situation) => CATS.filter(c => (!c.form || c.form === s.form) && (!c.venue || c.venue === s.venue));
+export type CatItem = { k: VendorCat; name: string; opt?: boolean; custom?: boolean };
+/** Mọi hạng mục của đám hiếu này: có sẵn (theo hoàn cảnh) + gia đình tự thêm */
+export const catsOf = (c: CaseData): CatItem[] => [
+  ...catsVisible(c.situation).map(k => ({ k: k.k as VendorCat, name: k.name, opt: k.opt })),
+  ...(c.customCats ?? []).map(n => ({ k: `x-${n}` as VendorCat, name: n, custom: true })),
+];
+/** Gia đình tự thêm hạng mục (tên) */
+export function addCustomCat(c: CaseData, name: string, now = new Date()) {
+  const n = name.trim().replace(/\s+/g, ' ');
+  if (!n) throw new Error('Ghi tên hạng mục.');
+  if (n.length > 60) throw new Error('Tên hạng mục ngắn gọn thôi (tối đa 60 ký tự).');
+  if (catsOf(c).some(k => k.name.toLowerCase() === n.toLowerCase())) throw new Error('Đã có hạng mục này.');
+  c.customCats = [...(c.customCats ?? []), n];
+  c.history.push({ at: now.toISOString(), text: `Thêm hạng mục: ${n}` });
+}
+export function removeCustomCat(c: CaseData, name: string) {
+  const k = `x-${name}` as VendorCat;
+  if (c.vendors?.[k]?.vendorId) throw new Error('Hạng mục đã chọn nhà cung cấp — bỏ chọn trước khi xóa.');
+  c.customCats = (c.customCats ?? []).filter(x => x !== name);
+}
 
 /** Khoảng cách đường chim bay (km) — công thức Haversine */
 export function distanceKm(a: GeoPoint, b: GeoPoint): number {
@@ -96,7 +128,7 @@ export function catState(c: CaseData, dir: DirVendor[], cat: VendorCat): CatStat
 /** Bên đang được điền sẵn cho từng hạng mục (để biết cái nào đổi khi đổi địa điểm / danh bạ) */
 export function suggestionSnapshot(c: CaseData, dir: DirVendor[]): Partial<Record<VendorCat, string | null>> {
   const out: Partial<Record<VendorCat, string | null>> = {};
-  for (const k of catsVisible(c.situation)) {
+  for (const k of catsOf(c)) {
     const s = catState(c, dir, k.k);
     if (s.status === 'suggest' || s.status === 'empty') out[k.k] = s.vendor?.id ?? null;
   }
@@ -122,7 +154,7 @@ export function afterVenueChange(c: CaseData, dir: DirVendor[], before: Partial<
   markUpdated(c, dir, before, now);
   c.decisions = c.decisions.filter(d => !(d.key === 'vendor' && d.status === 'pending'));
   const site = siteOf(c), oldSite = siteOf(c, from);
-  for (const k of catsVisible(c.situation)) {
+  for (const k of catsOf(c)) {
     const cv = c.vendors?.[k.k];
     if (!cv || cv.status !== 'committed' || !cv.vendorId) continue;
     const v = dir.find(x => x.id === cv.vendorId);
@@ -179,7 +211,7 @@ export function acceptVendor(c: CaseData, vendorId: string, by: string, now = ne
 
 /** Mọi bên đã chọn / cam kết đều đã nghiệm thu (điều kiện khép vòng) */
 export function allAccepted(c: CaseData) {
-  const used = catsVisible(c.situation).map(k => c.vendors?.[k.k]).filter(cv => cv && cv.vendorId && cv.status !== 'suggest');
+  const used = catsOf(c).map(k => c.vendors?.[k.k]).filter(cv => cv && cv.vendorId && cv.status !== 'suggest');
   return used.every(cv => !!cv!.acceptedAt);
 }
 
@@ -195,7 +227,7 @@ export function addFamilyVendor(c: CaseData, f: Omit<FamilyVendor, 'id'>): strin
 export function packageOffers(c: CaseData, dir: DirVendor[]) {
   const site = siteOf(c);
   if (!site.geo) return [];
-  const vis = catsVisible(c.situation);
+  const vis = catsOf(c);
   return dir
     .filter(v => v.active && v.cats.length > 1 && condOk(v, c.situation.form) && v.geo && distanceKm(site.geo!, v.geo) <= v.radiusKm)
     .map(v => {
@@ -225,18 +257,28 @@ export function resolveVendorDecision(c: CaseData, id: string, pick: string, now
 }
 
 /* ---------- Tìm quanh nơi tổ chức trên Google Maps (khi danh bạ chưa có bên phù hợp) ---------- */
-const MAPS_QUERY: Record<VendorCat, string> = {
+const MAPS_QUERY: Record<BuiltinCat, string> = {
+  quan: 'cơ sở mai táng quan tài',
+  baoquan: 'dịch vụ ướp lạnh bảo quản thi hài',
+  hall: 'nhà tang lễ',
+  le: 'thầy cúng đám tang',
+  do: 'đồ tang lễ khăn tang vàng mã',
+  hoatang: 'đài hóa thân hỏa táng',
+  nghiatrang: 'nghĩa trang',
+  anh: 'in ảnh thờ',
+  xedua: 'cho thuê xe đưa đón đám tang',
+  quay: 'chụp ảnh quay phim đám tang',
   xe: 'xe tang',
-  rap: 'cho thuê rạp đám hiếu bàn ghế',
+  rap: 'cho thuê rạp đám hiếu bàn ghế loa đài',
   hoa: 'vòng hoa viếng',
   an: 'nấu cỗ đám hiếu',
   nhac: 'đội nhạc tang lễ',
-  mo: 'xây mộ đào huyệt',
+  mo: 'xây mộ đào huyệt bia mộ',
 };
 
 /** Link mở Google Maps tìm đúng loại dịch vụ quanh nơi tổ chức; chưa có vị trí lẫn địa chỉ thì tìm “gần đây” (theo vị trí điện thoại) */
 export function mapsSearchUrl(cat: VendorCat, site: VenueSite): string {
-  return mapsQueryUrl(MAPS_QUERY[cat], site);
+  return mapsQueryUrl(isCustomCat(cat) ? catName(cat) : MAPS_QUERY[cat as BuiltinCat], site);
 }
 
 /** Dịch vụ tang lễ trọn gói: một đơn vị lo nhiều hạng mục (xe, rạp, hoa, nhạc, cỗ…) */

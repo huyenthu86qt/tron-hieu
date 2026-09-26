@@ -22,7 +22,6 @@ export const ORGT: Record<OrgType, { label: string; chip: string; full: string; 
   police: { label: 'công an nhân dân', chip: 'Nghi lễ tang công an', full: 'Ban lễ tang đơn vị công an', member: 'Ban lễ tang — đơn vị công an' },
 };
 export const STATUS_LABEL: Record<TaskStatus, string> = { todo: 'Cần làm', doing: 'Đang làm', issue: 'Có vấn đề', done: 'Đã xong', skip: 'Không áp dụng' };
-export const VENDOR_CAT_LABEL: Record<VendorCat, string> = { xe: 'Xe tang', rap: 'Rạp, bàn ghế', hoa: 'Hoa tươi, vòng hoa', an: 'Nấu cỗ', nhac: 'Đội nhạc lễ', mo: 'Đào huyệt, xây mộ' };
 
 export const hasBLT = (s: Situation) => s.org === 'official_rel' || s.org === 'official';
 export const portraitIcon = (r: Rite) => (r === 'catholic' ? 'cross' : r === 'none' ? 'candle' : 'lotus');

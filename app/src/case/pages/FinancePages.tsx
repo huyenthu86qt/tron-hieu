@@ -7,7 +7,7 @@ import {
   ledgerTotals, lockFinance, METHOD_LABEL, money, moveDebt, parseMoney, reconcile, recordPayment, requestExpense, setBudget, totals,
   type ExpenseForm,
 } from '../../domain/finance';
-import { catName, catsVisible, findVendor } from '../../domain/vendors';
+import { catName, catsOf, findVendor } from '../../domain/vendors';
 import { Icon } from '../../ui/Icon';
 import { Banner, ErrorBanner, Sheet, useApp } from '../../ui/common';
 import { useCase } from '../CaseContext';
@@ -31,7 +31,7 @@ export function ExpenseSheet({ onClose, preset }: { onClose: () => void; preset?
   // Người đại diện thường ghi sau khi đã trả: mặc định “Đã trả rồi” để Đã chi / Còn trả đúng ngay
   const [paidNow, setPaidNow] = useState(true);
   const set = <K extends keyof ExpenseForm>(k: K, v: ExpenseForm[K]) => setF(x => ({ ...x, [k]: v }));
-  const vis = catsVisible(c.situation);
+  const vis = catsOf(c);
   const chosen = (k: VendorCat | 'khac') => (k === 'khac' ? undefined : c.vendors?.[k]?.vendorId ?? undefined);
   const send = () => {
     const e = update(d => { const x = requestExpense(d, { ...f, vendorId: chosen(f.cat) }, me.id); if (isU1 && paidNow) recordPayment(d, x.id, x.amount); });
@@ -216,7 +216,7 @@ function Budget() {
   const [fund, setFund] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const T = totals(f);
-  const byCat = [...catsVisible(c.situation).map(k => ({ k: k.k as VendorCat | 'khac', n: k.name })), { k: 'khac' as const, n: 'Khác' }]
+  const byCat = [...catsOf(c).map(k => ({ k: k.k as VendorCat | 'khac', n: k.name })), { k: 'khac' as const, n: 'Khác' }]
     .map(x => ({ ...x, sum: f.expenses.filter(e => e.cat === x.k && e.status !== 'rejected').reduce((s, e) => s + e.amount, 0) }));
   return (
     <div className="page" style={{ maxWidth: 820 }}>

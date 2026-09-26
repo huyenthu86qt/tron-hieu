@@ -7,7 +7,7 @@ import { fmtMoneyInput, money, parseMoney } from '../domain/finance';
 import { activatePreNeed } from '../domain/normalize';
 import { shareToken } from '../domain/actions';
 import { normalizePhone, preGroups, readiness, type PreNeed } from '../domain/platform';
-import { CATS } from '../domain/vendors';
+import { CATS, USE_DIRECTORY } from '../domain/vendors';
 import { activatePre, createPreNeed, myPreNeeds, savePreNeed, usePlatform, useUser } from '../repo/platformStore';
 import { Icon } from '../ui/Icon';
 import { Banner, Chips, ErrorBanner, Opts, useApp } from '../ui/common';
@@ -242,13 +242,13 @@ export function PreBudgetPage() {
   const ro = !canEdit || locked;
   return (
     <PreFrame title="Ngân sách" back={`/chuan-bi/${p.id}`}>
-      <div><div className="eyebrow">Hồ sơ chuẩn bị</div><h1 style={{ fontSize: 24, marginTop: 4 }}>Ngân sách và nhà cung cấp mong muốn</h1><p className="muted" style={{ marginTop: 6 }}>Khi kích hoạt: ngân sách thành ngân sách ở Tài chính; bên mong muốn được ưu tiên khi gợi ý (nếu phục vụ khu vực nơi tổ chức).</p></div>
+      <div><div className="eyebrow">Hồ sơ chuẩn bị</div><h1 style={{ fontSize: 24, marginTop: 4 }}>{USE_DIRECTORY ? 'Ngân sách và nhà cung cấp mong muốn' : 'Ngân sách dự kiến'}</h1><p className="muted" style={{ marginTop: 6 }}>Khi kích hoạt: ngân sách thành ngân sách ở Tài chính; bên mong muốn được ưu tiên khi gợi ý (nếu phục vụ khu vực nơi tổ chức).</p></div>
       <section className="card card-pad stack"><div className="field"><label htmlFor="pbAmt">Ngân sách dự kiến (đồng)</label><input className="input num" id="pbAmt" inputMode="numeric" disabled={ro} value={amount} onChange={e => setAmount(fmtMoneyInput(e.target.value))} style={{ fontSize: 20, fontWeight: 600 }} /></div></section>
-      <section className="card card-pad stack"><h3>Nhà cung cấp mong muốn</h3>
+      {USE_DIRECTORY && <section className="card card-pad stack"><h3>Nhà cung cấp mong muốn</h3>
         {CATS.map(k => { const opts = dir.filter(v => v.active && v.cats.includes(k.k)); return (
           <div key={k.k} className="field"><label htmlFor={'pv-' + k.k}>{k.name}</label><select className="input" id={'pv-' + k.k} disabled={ro} value={vendors[k.k] ?? ''} onChange={e => setVendors({ ...vendors, [k.k]: e.target.value || undefined })}>
             <option value="">Không có mong muốn riêng</option>{opts.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}</select></div>); })}
-        {!dir.length && <p className="muted">Danh bạ nhà cung cấp chưa có bên nào.</p>}</section>
+        {!dir.length && <p className="muted">Danh bạ nhà cung cấp chưa có bên nào.</p>}</section>}
       {!ro && <SaveBar id={p.id} onSave={() => savePreNeed({ ...p, budget: { amount: parseMoney(amount), vendors: Object.fromEntries(Object.entries(vendors).filter(([, v]) => v)) } })} />}
     </PreFrame>
   );

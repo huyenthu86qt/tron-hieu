@@ -83,7 +83,7 @@ describe('Nhà cung cấp — đúng loại + gần nhất', () => {
     const pkg = V('tronGoi', ['xe', 'rap', 'hoa'], HOME, 10);
     confirmVendor(c, 'hoa', 'khac', false);
     const offers = packageOffers(c, [pkg]);
-    expect(offers[0].open.map(k => k.k)).toEqual(['xe', 'rap']);
+    expect(offers[0].open.map(k => k.k)).toEqual(['rap', 'xe']);
     expect(offers[0].locked.map(k => k.k)).toEqual(['hoa']);
     choosePackage(c, pkg, ['xe', 'rap']);
     expect(c.vendors!.rap!.vendorId).toBe('tronGoi');
@@ -286,9 +286,11 @@ describe('Tìm quanh nơi tổ chức trên Google Maps', () => {
   it('có vị trí → tìm quanh tọa độ; chỉ có địa chỉ → tìm theo địa chỉ; không có gì → tìm “gần đây” theo vị trí điện thoại', async () => {
     const { mapsSearchUrl } = await import('./vendors');
     expect(mapsSearchUrl('rap', { name: 'Nhà riêng', address: 'x', geo: { lat: 21.03, lng: 105.88 } }))
-      .toBe('https://www.google.com/maps/search/' + encodeURIComponent('cho thuê rạp đám hiếu bàn ghế') + '/@21.03,105.88,14z');
+      .toBe('https://www.google.com/maps/search/' + encodeURIComponent('cho thuê rạp đám hiếu bàn ghế loa đài') + '/@21.03,105.88,14z');
     expect(mapsSearchUrl('xe', { name: 'Nhà riêng', address: 'Ngọc Lâm, Long Biên' })).toContain(encodeURIComponent('xe tang gần Ngọc Lâm, Long Biên'));
     expect(mapsSearchUrl('hoa', { name: 'Nhà riêng', address: '  ' })).toContain(encodeURIComponent('gần đây'));
+    // Hạng mục gia đình tự thêm: tìm theo chính tên hạng mục
+    expect(mapsSearchUrl('x-Sư thầy tụng kinh', { name: 'Nhà riêng', address: 'Ngọc Lâm' })).toContain(encodeURIComponent('Sư thầy tụng kinh gần Ngọc Lâm'));
   });
 });
 
@@ -344,5 +346,24 @@ describe('Danh xưng và lứa tuổi người đã khuất', () => {
     expect(ageGroup(P('Chị', '1980', '2026-09-24'))).toBe('mid');
     expect(ageGroup(P('Khác', '2018', '2026-09-24'))).toBe('child');
     expect(ageGroup(P('Anh', '', ''))).toBe('young');
+  });
+});
+
+describe('Hạng mục dịch vụ', () => {
+  it('hiện theo hoàn cảnh; gia đình tự thêm, không trùng tên, không bỏ khi đã chọn bên làm', async () => {
+    const { catsOf, addCustomCat, removeCustomCat, catName } = await import('./vendors');
+    const { createCase } = await import('./model');
+    const { DEFAULT_ANSWERS } = await import('./entry');
+    const c = createCase({ answers: { ...DEFAULT_ANSWERS, venue: 'hall', form: 'cremation' } });
+    const ks = catsOf(c).map(k => k.k);
+    expect(ks).toContain('quan'); expect(ks).toContain('hall'); expect(ks).toContain('hoatang');
+    expect(ks).not.toContain('rap'); expect(ks).not.toContain('mo'); expect(ks).not.toContain('nghiatrang');
+    addCustomCat(c, '  Sư thầy   tụng kinh ');
+    expect(catsOf(c).at(-1)).toMatchObject({ k: 'x-Sư thầy tụng kinh', custom: true });
+    expect(catName('x-Sư thầy tụng kinh')).toBe('Sư thầy tụng kinh');
+    expect(() => addCustomCat(c, 'sư thầy tụng kinh')).toThrow('Đã có');
+    expect(() => addCustomCat(c, 'xe tang')).toThrow('Đã có');
+    c.vendors = { 'x-Sư thầy tụng kinh': { vendorId: 'f1', family: true, status: 'confirmed', incidents: [] } };
+    expect(() => removeCustomCat(c, 'Sư thầy tụng kinh')).toThrow('bỏ chọn');
   });
 });

@@ -1,12 +1,13 @@
 // S-MAP-04 · Chi tiết việc (máy tính: chia đôi danh sách | chi tiết)
 import { useState } from 'react';
 import { GUIDES, type LegalGuide } from '../../domain/legal';
+import { catName } from '../../domain/vendors';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import {
   attachEvidence, completeTask, reportIssue, resolveIssue, startTask, takeTask, toggleStep,
 } from '../../domain/actions';
 import {
-  dependencies, findDecision, findTask, issueTasks, lockBlocked, nowTasks, unlocks, VENDOR_CAT_LABEL, visibleTasks, type TaskView,
+  dependencies, findDecision, findTask, issueTasks, lockBlocked, nowTasks, unlocks, visibleTasks, type TaskView,
 } from '../../domain/model';
 import { PHASES } from '../../domain/templates';
 import { Icon } from '../../ui/Icon';
@@ -116,7 +117,7 @@ function Detail({ t }: { t: TaskView }) {
       <dt>Người phụ trách</dt><dd>{o ? `${o.name} · ${o.rel}${o.access === 'link' ? ' · nhận qua link' : ''}` : t.status === 'done' || t.status === 'skip' ? '—' : <OwnerPill owner={null} />}</dd>
       {t.assignNote && <><dt>Lời nhắn khi giao</dt><dd>{t.assignNote}</dd></>}
       {t.area && <><dt>Vùng trách nhiệm</dt><dd>{t.area}</dd></>}
-      {t.cat && <><dt>Nhà cung cấp</dt><dd>{VENDOR_CAT_LABEL[t.cat]} · <span className="muted">gợi ý bên gần nhất mở ở giai đoạn 2</span></dd></>}
+      {t.cat && <><dt>Nhà cung cấp</dt><dd>{catName(t.cat)} · <span className="muted">gợi ý bên gần nhất mở ở giai đoạn 2</span></dd></>}
       {t.note && <><dt>Ghi chú</dt><dd>{t.note}</dd></>}
     </dl></section>
     {(d || deps.length > 0) && (

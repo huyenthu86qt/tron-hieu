@@ -8,7 +8,10 @@ export type Rite = 'traditional' | 'catholic' | 'other' | 'none';
 export type OrgModel = 'family' | 'community' | 'official_rel' | 'official';
 export type OrgType = 'cadre' | 'military' | 'police';
 export type Scale = 'small' | 'medium' | 'large';
-export type VendorCat = 'xe' | 'rap' | 'hoa' | 'an' | 'nhac' | 'mo';
+/** Hạng mục dịch vụ có sẵn */
+export type BuiltinCat = 'quan' | 'baoquan' | 'hall' | 'rap' | 'le' | 'hoa' | 'do' | 'anh' | 'nhac' | 'an' | 'xe' | 'xedua' | 'hoatang' | 'nghiatrang' | 'mo' | 'quay';
+/** Hạng mục: có sẵn, hoặc gia đình tự thêm (“x-” + tên) */
+export type VendorCat = BuiltinCat | `x-${string}`;
 /** Danh xưng: có sẵn, hoặc gia đình tự viết (chọn “Khác”, ví dụ Thầy, Cô, Bác, Sơ) */
 export type Title = 'Cụ ông' | 'Cụ bà' | 'Ông' | 'Bà' | 'Anh' | 'Chị' | (string & {});
 
@@ -196,6 +199,8 @@ export interface CaseData {
   familyVendors?: FamilyVendor[];
   vendors?: Partial<Record<VendorCat, CaseVendor>>;
   updatedCats?: VendorCat[];
+  /** Hạng mục gia đình tự thêm (tên) */
+  customCats?: string[];
   updatedAt?: string;
   finance?: Finance;
   ledger?: Condolence[];

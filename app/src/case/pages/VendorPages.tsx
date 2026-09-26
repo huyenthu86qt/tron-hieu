@@ -4,8 +4,8 @@ import { Tel } from '../../ui/tel';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import type { GeoPoint, VendorCat } from '../../domain/types';
 import {
-  acceptVendor, addFamilyVendor, distanceKm, catName, catState, catsVisible, choosePackage, commitVendor, confirmVendor, findVendor, fmtGeo, fmtKm,
-  mapsQueryUrl, mapsSearchUrl, markUpdated, PACKAGE_QUERY, packageOffers, parseGeo, recordIncident, recordQuote, siteOf, suggestionSnapshot, venueLabel, CATS, USE_DIRECTORY,
+  acceptVendor, addFamilyVendor, distanceKm, addCustomCat, catName, catState, catsOf, removeCustomCat, type CatItem, choosePackage, commitVendor, confirmVendor, findVendor, fmtGeo, fmtKm,
+  mapsQueryUrl, mapsSearchUrl, markUpdated, PACKAGE_QUERY, packageOffers, parseGeo, recordIncident, recordQuote, siteOf, suggestionSnapshot, venueLabel, USE_DIRECTORY,
 } from '../../domain/vendors';
 import { FORM_LABEL } from '../../domain/model';
 import { money, parseMoney, fmtMoneyInput } from '../../domain/finance';
@@ -81,9 +81,11 @@ function VenueCard({ compact }: { compact?: boolean }) {
 export function FamilyVendorSheet({ cat, useNow, pkg, onClose }: { cat?: VendorCat; useNow?: boolean; /** Ghi dịch vụ tang lễ trọn gói: nhận nhiều hạng mục một lần */ pkg?: boolean; onClose: () => void }) {
   const { c, update } = useCase();
   const { toast } = useApp();
-  const vis = catsVisible(c.situation);
+  const vis = catsOf(c);
   const openCats = vis.filter(k => !['committed', 'confirmed'].includes(c.vendors?.[k.k]?.status ?? '')).map(k => k.k);
-  const [f, setF] = useState({ name: '', phone: '', cats: pkg ? openCats : cat ? [cat] : [] as VendorCat[], address: '', note: '', now: !!useNow || !!pkg, share: USE_DIRECTORY });
+  // Trọn gói: tích sẵn các hạng mục chính còn trống (hạng mục thường gặp khác để gia đình tự tích)
+  const pkgDefault = vis.filter(k => !k.opt && !k.custom && openCats.includes(k.k)).map(k => k.k);
+  const [f, setF] = useState({ name: '', phone: '', cats: pkg ? pkgDefault : cat ? [cat] : [] as VendorCat[], address: '', note: '', now: !!useNow || !!pkg, share: USE_DIRECTORY });
   const [err, setErr] = useState<string | null>(null);
   const committed = cat ? c.vendors?.[cat]?.status === 'committed' : false;
   const save = () => {
@@ -138,11 +140,29 @@ function Vendors() {
   const [add, setAdd] = useState(false);
   const [pkg, setPkg] = useState<string | null>(null);
   const [pkgAdd, setPkgAdd] = useState(false);
+  const [custom, setCustom] = useState(false);
   // Đơn vị gia đình tự thêm đang được chọn cho từ 2 hạng mục trở lên = dịch vụ trọn gói
   const pkgV = (c.familyVendors ?? []).find(v => v.cats.length > 1 && Object.values(c.vendors ?? {}).filter(x => x?.vendorId === v.id).length > 1);
   const pkgCats = pkgV ? (Object.entries(c.vendors ?? {}) as [VendorCat, { vendorId?: string | null } | undefined][]).filter(([, x]) => x?.vendorId === pkgV.id).map(([k]) => k) : [];
   const offers = packageOffers(c, dir);
   const upd = c.updatedCats ?? [];
+  // Hạng mục chính luôn hiện; hạng mục thường gặp khác gói gọn, trừ khi đã chọn bên làm
+  const all = catsOf(c);
+  const mainCats = all.filter(k => !k.opt || c.vendors?.[k.k]?.vendorId);
+  const moreCats = all.filter(k => k.opt && !c.vendors?.[k.k]?.vendorId);
+  const catRow = (k: CatItem) => {
+        const s = catState(c, dir, k.k);
+        return (
+          <div key={k.k} className="row" role="button" tabIndex={0} style={{ cursor: 'pointer' }} onClick={() => nav(`${base}/nha-cung-cap/goi-y/${encodeURIComponent(k.k)}`)}><span className="num-badge"><Icon n="vendor" c="sm" /></span>
+            <div className="grow"><div className="title">{k.name}{k.custom && <span className="pill soft" style={{ marginLeft: 6 }}>Gia đình thêm</span>}</div>
+              <div className="meta"><StatusPillCat s={s.status} />{s.vendor && <><span>{s.vendor.name}</span><span className="dist num">{s.vendor.family ? 'gia đình tự thêm' : fmtKm(s.vendor.d)}</span></>}
+                {s.vendor && s.vendor.cats.length > 1 && <span className="pill prio">Trọn gói</span>}
+                {upd.includes(k.k) && <span className="pill prio"><Icon n="refresh" c="sm" />Đã cập nhật</span>}
+                {s.cv?.acceptedAt && <span className="pill done">Đã nghiệm thu</span>}</div>
+              {!s.vendor && <div style={{ marginTop: 8 }}><a className="btn sm" href={mapsSearchUrl(k.k, siteOf(c))} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()}><Icon n="pin" c="sm" />Tìm trên Google Maps</a></div>}</div>
+            <Icon n="chev" c="chev" /></div>
+        );
+  };
   return (
     <div className="page">
       <div className="page-title"><div><h1>Nhà cung cấp</h1><p>{USE_DIRECTORY ? 'Gợi ý đúng loại dịch vụ, gần nơi tổ chức nhất · gia đình xác nhận trước khi chọn' : 'Tìm bên gần nơi tổ chức trên Google Maps, gọi hỏi giá, rồi ghi bên gia đình chọn để cả nhà cùng theo dõi'}</p></div>
@@ -159,22 +179,14 @@ function Vendors() {
       {upd.length > 0 && <Banner kind="upd" icon="refresh">Gợi ý đã tự cập nhật theo địa điểm mới lúc {fmtAt(c.updatedAt)}. Hạng mục đã cam kết không bị thay.</Banner>}
       {offers[0] && <Banner kind="upd" icon="vendor"><b>Có dịch vụ trọn gói gần nơi tổ chức:</b> {offers[0].v.name} ({fmtKm(offers[0].d)}) nhận được {offers[0].open.length} hạng mục chưa chốt: {offers[0].open.map(k => k.name).join(', ')}.
         <div style={{ marginTop: 8 }}><button className="btn sm" onClick={() => setPkg(offers[0].v.id)}>Xem và chọn trọn gói</button></div></Banner>}
-      <section className="card"><div className="list">{catsVisible(c.situation).map(k => {
-        const s = catState(c, dir, k.k);
-        return (
-          <div key={k.k} className="row" role="button" tabIndex={0} style={{ cursor: 'pointer' }} onClick={() => nav(`${base}/nha-cung-cap/goi-y/${k.k}`)}><span className="num-badge"><Icon n="vendor" c="sm" /></span>
-            <div className="grow"><div className="title">{k.name}</div>
-              <div className="meta"><StatusPillCat s={s.status} />{s.vendor && <><span>{s.vendor.name}</span><span className="dist num">{s.vendor.family ? 'gia đình tự thêm' : fmtKm(s.vendor.d)}</span></>}
-                {s.vendor && s.vendor.cats.length > 1 && <span className="pill prio">Trọn gói</span>}
-                {upd.includes(k.k) && <span className="pill prio"><Icon n="refresh" c="sm" />Đã cập nhật</span>}
-                {s.cv?.acceptedAt && <span className="pill done">Đã nghiệm thu</span>}</div>
-              {!s.vendor && <div style={{ marginTop: 8 }}><a className="btn sm" href={mapsSearchUrl(k.k, siteOf(c))} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()}><Icon n="pin" c="sm" />Tìm trên Google Maps</a></div>}</div>
-            <Icon n="chev" c="chev" /></div>
-        );
-      })}</div></section>
+      <section className="card"><div className="list">{mainCats.map(k => catRow(k))}</div>
+        <div className="card-pad" style={{ paddingTop: 10 }}><button className="btn sm" onClick={() => setCustom(true)}><Icon n="plus" c="sm" />Thêm hạng mục khác</button></div></section>
+      {moreCats.length > 0 && <section className="card"><details className="fold" style={{ borderTop: 0 }}><summary><Icon n="chev" c="chev" />Hạng mục khác thường gặp <span className="muted" style={{ marginLeft: 'auto' }}>{moreCats.length}</span></summary>
+        <div className="list">{moreCats.map(k => catRow(k))}</div></details></section>}
       <p className="note">{USE_DIRECTORY ? 'Nguồn: danh bạ do Admin quản lý + nhà cung cấp gia đình tự thêm + nhà cung cấp trong hồ sơ chuẩn bị.' : 'Kết quả tìm kiếm do Google Maps cung cấp; gia đình tự gọi hỏi giá và chọn.'} Không đặt lịch, không thanh toán qua app.</p>
       {add && <FamilyVendorSheet onClose={() => setAdd(false)} />}
       {pkgAdd && <FamilyVendorSheet pkg onClose={() => setPkgAdd(false)} />}
+      {custom && <CustomCatSheet onClose={() => setCustom(false)} />}
       {pkg && <PackageSheet vid={pkg} onClose={() => setPkg(null)} />}
     </div>
   );
@@ -208,8 +220,8 @@ function MapSvg({ cat }: { cat: VendorCat }) {
 export function SuggestPage() { return <PaidGate module="Nhà cung cấp"><Suggest /></PaidGate>; }
 function Suggest() {
   const { hm = 'xe' } = useParams();
-  const cat = (CATS.some(k => k.k === hm) ? hm : 'xe') as VendorCat;
   const { c, base, update, dir, isU1 } = useCase();
+  const cat = (catsOf(c).some(k => k.k === hm) ? hm : 'xe') as VendorCat;
   const { mobile, toast } = useApp();
   const nav = useNavigate();
   const [add, setAdd] = useState(false);
@@ -272,7 +284,7 @@ function Suggest() {
     <div className="page-title"><div><div className="eyebrow">Gợi ý nhà cung cấp</div><h1 style={{ marginTop: 4 }}>{catName(cat)}</h1></div></div>
     <VenueCard compact />
     {upd && <Banner kind="upd" icon="refresh"><b>Đã cập nhật theo địa điểm mới</b>: {venueLabel(c)}, lúc {fmtAt(c.updatedAt)}. Bên điền sẵn trước đây không còn phù hợp.</Banner>}
-    {crit}
+    {USE_DIRECTORY && crit}
     {!isU1 && <p className="muted">Người đại diện gia đình xác nhận lựa chọn cuối cùng.</p>}
   </>;
   if (mobile) return <div className="page">{head}{top}{outHTML}{restHTML}{noGeoList}{famHTML}
@@ -299,7 +311,7 @@ function VendorDetail() {
   const [form, setForm] = useState<null | 'quote' | 'commit' | 'inc' | 'accept'>(null);
   const v = findVendor(c, dir, vid);
   if (!v) return <div className="page"><div className="empty"><span>Không tìm thấy nhà cung cấp.</span><Link className="btn" to={`${base}/nha-cung-cap`}>Về Nhà cung cấp</Link></div></div>;
-  const cats = catsVisible(c.situation).filter(k => c.vendors?.[k.k]?.vendorId === vid);
+  const cats = catsOf(c).filter(k => c.vendors?.[k.k]?.vendorId === vid);
   const cvs = cats.map(k => ({ k: k.k, cv: c.vendors![k.k]! }));
   const st = cvs.some(x => x.cv.status === 'committed') ? 'committed' : cvs.length ? 'confirmed' : 'none';
   const main = cvs[0];
@@ -378,3 +390,28 @@ function VendorLogSheet({ kind, name, onClose, onSave }: { kind: 'quote' | 'comm
   );
 }
 
+
+/** Gia đình tự thêm hạng mục (ví dụ: sư thầy tụng kinh, người trông coi linh cữu…) */
+function CustomCatSheet({ onClose }: { onClose: () => void }) {
+  const { c, update } = useCase();
+  const { toast } = useApp();
+  const [name, setName] = useState('');
+  const [err, setErr] = useState<string | null>(null);
+  const custom = c.customCats ?? [];
+  const save = () => {
+    const e = update(d => addCustomCat(d, name));
+    if (e) { setErr(e); return; }
+    toast(`Đã thêm hạng mục “${name.trim()}”`); onClose();
+  };
+  return (
+    <Sheet title="Thêm hạng mục khác" onClose={onClose} foot={<><button className="btn" onClick={onClose}>Hủy</button><button className="btn primary" onClick={save} disabled={!name.trim()}>Thêm</button></>}>
+      <div className="field"><label htmlFor="ccName">Tên hạng mục gia đình cần</label>
+        <input className="input" id="ccName" value={name} maxLength={60} onChange={e => setName(e.target.value)} placeholder="Ví dụ: Sư thầy tụng kinh, Người trông coi linh cữu" autoFocus /></div>
+      <p className="muted">Hạng mục mới có nút tìm trên Google Maps, ghi nhà cung cấp, báo giá, cam kết như các hạng mục khác, và chọn được khi ghi khoản chi.</p>
+      {custom.length > 0 && <div className="field"><label>Hạng mục gia đình đã thêm</label>
+        <div className="list">{custom.map(n => <div key={n} className="row" style={{ padding: '8px 0' }}><div className="grow">{n}</div>
+          <button className="btn sm ghost" onClick={() => { const e = update(d => removeCustomCat(d, n)); if (e) toast(e); else toast(`Đã bỏ hạng mục “${n}”`); }}>Bỏ</button></div>)}</div></div>}
+      <ErrorBanner err={err} />
+    </Sheet>
+  );
+}
