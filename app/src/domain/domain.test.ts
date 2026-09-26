@@ -256,7 +256,11 @@ describe('Việc riêng, không áp dụng, đội và vùng', () => {
     const c = mk();
     const m = inviteMember(c, { name: 'Chú Bảy', rel: 'Hàng xóm', access: 'link', areas: ['Liên lạc'] });
     expect(m.linkToken).toMatch(/^[A-Z0-9]{20}$/);
-    expect(() => inviteMember(c, { name: 'Hà', rel: 'Con dâu', access: 'full', areas: ['Tài chính'] })).toThrow('số điện thoại');
+    // Đầy đủ / Giới hạn: không bắt buộc số điện thoại, vào đội bằng link mời
+    const ha = inviteMember(c, { name: 'Hà', rel: 'Con dâu', access: 'full', areas: ['Tài chính'] });
+    expect(ha.inviteToken).toMatch(/^[A-Z0-9]{20}$/);
+    expect(ha.phone).toBeUndefined();
+    expect(() => inviteMember(c, { name: 'Tư', rel: 'Cháu', access: 'full', areas: ['Tài chính'], phone: '12345' })).toThrow('Số điện thoại chưa đúng');
     assignTask(c, 't3', m.id);
     removeMember(c, m.id);
     expect(findTask(c, 't3')!.owner).toBeNull();

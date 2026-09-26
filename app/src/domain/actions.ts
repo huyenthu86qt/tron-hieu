@@ -192,20 +192,24 @@ const token = () => Array.from(crypto.getRandomValues(new Uint8Array(20)), b => 
 
 export interface MemberForm { name: string; rel: string; access: Access; areas: string[]; phone?: string }
 
-/** Thành viên Đầy đủ / Giới hạn đăng nhập bằng số điện thoại được mời */
+/** Số điện thoại chỉ để liên lạc (tùy chọn); người Đầy đủ / Giới hạn vào đội bằng link mời */
 function memberPhone(f: MemberForm): string | undefined {
-  if (f.access === 'link') return f.phone?.trim() ? normalizePhone(f.phone) ?? undefined : undefined;
-  const p = normalizePhone(f.phone ?? '');
-  if (!p) throw new RuleError('Cần số điện thoại đúng để người này đăng nhập và thấy đám hiếu.');
+  if (!f.phone?.trim()) return undefined;
+  const p = normalizePhone(f.phone);
+  if (!p) throw new RuleError('Số điện thoại chưa đúng (10 số, bắt đầu bằng 03, 05, 07, 08, 09).');
   return p;
 }
+
+/** Link mời cho người Đầy đủ / Giới hạn chưa có tài khoản gắn */
+export const inviteUrl = (token: string) => `${typeof window !== 'undefined' ? window.location.origin : ''}/moi/${token}`;
 
 export function inviteMember(c: CaseData, f: MemberForm, now?: Date): Member {
   if (!f.name.trim()) throw new RuleError('Cần nhập tên người hỗ trợ.');
   if (!f.areas.length) throw new RuleError('Chọn ít nhất một vùng trách nhiệm.');
   const m: Member = {
     id: newId('m'), name: f.name.trim(), rel: f.rel.trim() || 'Người hỗ trợ', role: f.access === 'link' ? 'Người hỗ trợ' : 'Thành viên',
-    access: f.access, areas: [...f.areas], linkToken: f.access === 'link' ? token() : undefined, phone: memberPhone(f),
+    access: f.access, areas: [...f.areas], linkToken: f.access === 'link' ? token() : undefined,
+    inviteToken: f.access === 'link' ? undefined : token(), phone: memberPhone(f),
   };
   if (m.phone && c.members.some(x => x.phone === m.phone)) throw new RuleError('Số điện thoại này đã có trong đội.');
   c.members.push(m);
@@ -225,7 +229,17 @@ export function saveMember(c: CaseData, id: string, f: MemberForm) {
   if (id !== U1_ID && !m.system) m.phone = memberPhone({ ...f, access: m.access });
   if (m.access === 'link' && !m.linkToken) m.linkToken = token();
   if (m.access !== 'link') m.linkToken = undefined;
+  if (m.access === 'link' || m.userId || id === U1_ID || m.system) m.inviteToken = undefined;
+  else if (!m.inviteToken) m.inviteToken = token();
 }
+
+/** Hủy link mời cũ, tạo link mới (người chưa nhận lời mời) */
+export function renewInvite(c: CaseData, id: string) {
+  const m = c.members.find(x => x.id === id);
+  if (m && !m.userId && m.access !== 'link' && id !== U1_ID) m.inviteToken = token();
+}
+
+export const shareToken = () => token();
 
 export function removeMember(c: CaseData, id: string, now?: Date) {
   if (id === U1_ID) throw new RuleError('Không bỏ được người đại diện gia đình.');

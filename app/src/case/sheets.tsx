@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { Access, Member } from '../domain/types';
 import {
-  addCustomTask, areaUse, initials, assignTask, completeTask, returnTask, deleteCustomTask, editTask, inviteMember, removeMember, renewLink,
+  addCustomTask, areaUse, initials, assignTask, completeTask, returnTask, deleteCustomTask, editTask, inviteMember, inviteUrl, removeMember, renewInvite, renewLink,
   restoreTask, saveAreas, saveMember, skipTask, type AreaEdit, type TaskForm,
 } from '../domain/actions';
 import { dependencies, findTask, U1_ID, visibleTasks } from '../domain/model';
@@ -256,7 +256,10 @@ function InviteSheet() {
           <div className="link-box"><span>{url}</span><button className="btn sm" onClick={async () => toast(await copyText(url) ? 'Đã sao chép link' : 'Không sao chép được — chọn và sao chép thủ công')}><Icon n="copy" c="sm" />Sao chép</button></div>
           {!REMOTE && <p className="note">Bản chạy thử: link chỉ mở được trên thiết bị này. Bản thật mở được trên mọi máy.</p>}
           <a className="btn" href={url} target="_blank" rel="noreferrer"><Icon n="user" />Xem như người nhận</a>
-        </> : <Banner kind="info" icon="check">Đã thêm <b>{made.name}</b> vào đội. Khi người này đăng nhập bằng số <b className="num">{made.phone}</b>, đám hiếu hiện ở trang chủ của họ.</Banner>}
+        </> : <>
+          <Banner kind="info" icon="check">Đã thêm <b>{made.name}</b> vào đội. Gửi link mời dưới đây cho {made.name} qua Zalo — mở link, đăng nhập (Google hoặc số điện thoại) là vào đội.</Banner>
+          <InviteLinkBox id={made.id} />
+        </>}
         {c.tasks.length > 0 && <p className="muted">Giao việc cho {made.name} ở nút “Nhờ người khác” của từng việc.</p>}
       </Sheet>
     );
@@ -267,8 +270,8 @@ function InviteSheet() {
       <div className="field"><label htmlFor="invRel">Quan hệ với gia đình</label><input className="input" id="invRel" value={rel} onChange={e => setRel(e.target.value)} />
         <Chips items={RELS} isOn={x => rel === x} onToggle={setRel} /></div>
       <div className="field"><label>Cách tham gia</label><Opts value={access} onChange={setAccess} items={ACCESS_OPTS} /></div>
-      <div className="field"><label htmlFor="invPhone">Số điện thoại{access === 'link' ? ' (tùy chọn)' : ''}</label><input className="input num" id="invPhone" inputMode="tel" value={phone} onChange={e => setPhone(e.target.value)} placeholder="0912 345 678" />
-        {access !== 'link' && <p className="muted">Người này đăng nhập bằng số này sẽ thấy đám hiếu theo quyền đã chọn.</p>}</div>
+      <div className="field"><label htmlFor="invPhone">Số điện thoại (tùy chọn, để liên lạc)</label><input className="input num" id="invPhone" inputMode="tel" value={phone} onChange={e => setPhone(e.target.value)} placeholder="0912 345 678" />
+        {access !== 'link' && <p className="muted">Sau khi thêm, app tạo link mời riêng cho người này. Chỉ ai mở link đó và đăng nhập mới vào được đội.</p>}</div>
       <div className="field"><label>Vùng trách nhiệm</label><Chips items={c.areas} isOn={a => areas.includes(a)} onToggle={a => setAreas(x => toggleIn(x, a))} /></div>
       <ErrorBanner err={err} />
     </Sheet>
@@ -304,6 +307,7 @@ function MemberSheet({ id }: { id: string }) {
       <div className="field"><label>Cách tham gia</label>
         <Opts value={f.access} onChange={a => setF({ ...f, access: a })} items={ACCESS_OPTS} disabled={isU1} />
         {isU1 && <p className="muted">Người đại diện gia đình luôn có quyền đầy đủ.</p>}
+        {m.access !== 'link' && !isU1 && !isOrg && (m.userId ? <p className="muted"><Icon n="check" c="sm" /> Đã nhận lời mời, đang dùng tài khoản trong app.</p> : <InviteLinkBox id={id} />)}
         {m.access === 'link' && m.linkToken && (
           <div className="link-box"><span>{linkUrl(m.linkToken)}</span>
             <button className="btn sm" onClick={async () => toast(await copyText(linkUrl(m.linkToken!)) ? 'Đã sao chép link' : 'Không sao chép được')}><Icon n="copy" c="sm" />Sao chép</button>
@@ -417,5 +421,27 @@ function ReturnSheet({ taskId }: { taskId: string }) {
         <textarea className="input" id="retReason" value={reason} onChange={e => setReason(e.target.value)} placeholder="Ví dụ: Chiều nay con phải trực ở bệnh viện" /></div>
       <ErrorBanner err={err} />
     </Sheet>
+  );
+}
+
+/** Link mời vào đội cho người Đầy đủ / Giới hạn chưa nhận lời mời: sao chép, gửi qua Zalo, tạo link mới */
+function InviteLinkBox({ id }: { id: string }) {
+  const { c, update } = useCase();
+  const { toast } = useApp();
+  const m = c.members.find(x => x.id === id);
+  if (!m?.inviteToken) return null;
+  const url = inviteUrl(m.inviteToken);
+  const text = `${memberOf(c, U1_ID)?.name ?? 'Gia đình'} mời ${m.name} vào đội lo đám hiếu trên Trọn Hiếu. Mở link để tham gia: ${url}`;
+  return (
+    <div className="stack" style={{ gap: 8 }}>
+      <div className="eyebrow">Link mời · chưa nhận</div>
+      <div className="link-box"><span>{url}</span>
+        <button className="btn sm" onClick={async () => toast(await copyText(text) ? 'Đã sao chép lời mời — dán vào Zalo gửi đi' : 'Không sao chép được')}><Icon n="copy" c="sm" />Sao chép</button></div>
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        {'share' in navigator && <button className="btn sm" onClick={async () => { try { await navigator.share({ title: 'Lời mời vào đội', text }); } catch { /* người dùng hủy */ } }}><Icon n="link" c="sm" />Gửi qua Zalo / Messenger…</button>}
+        <button className="btn sm ghost" onClick={() => { update(d => renewInvite(d, id)); toast('Đã hủy link cũ và tạo link mới'); }}><Icon n="refresh" c="sm" />Tạo link mới</button>
+      </div>
+      <p className="note">Link chỉ dùng được một lần: người đầu tiên mở và đăng nhập sẽ vào đội ở vị trí “{m.name}”. Gửi nhầm người thì bấm “Tạo link mới”.</p>
+    </div>
   );
 }

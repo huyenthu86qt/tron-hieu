@@ -10,7 +10,7 @@ import { DN_TEXT } from '../domain/text';
 import { repo } from '../repo/repo';
 import { REMOTE } from '../repo/backend';
 import {
-  assignTx, createAdmin, dismissCandidate, loadVendorCandidates, login, logout, refundOrder, refundTx, saveProduct, saveSettings, saveVendor, setCaseAccess, setSupportNote,
+  adminSetTempPassword, assignTx, createAdmin, dismissCandidate, loadVendorCandidates, login, logout, refundOrder, refundTx, saveProduct, saveSettings, saveVendor, setCaseAccess, setSupportNote,
   setUserLocked, setVendorActive, simulateBankTx, usePlatform, useUser,
 } from '../repo/platformStore';
 import { Icon, type IconName } from '../ui/Icon';
@@ -144,12 +144,13 @@ export function AdminUserPage() {
   const [note, setNote] = useState(u?.supportNote ?? '');
   const [lock, setLock] = useState<null | boolean>(null);
   const [reason, setReason] = useState('');
+  const [tempPw, setTempPw] = useState(false);
   if (!u) return <AdminShell title="Người dùng" back="/admin/nguoi-dung"><div className="page"><div className="empty">Không tìm thấy.</div></div></AdminShell>;
   const mine = cases.filter(c => c.ownerId === uid);
   return (
     <AdminShell title="Chi tiết người dùng" back="/admin/nguoi-dung"><div className="page" style={{ maxWidth: 900 }}>
       <div className="page-title"><div><div className="eyebrow">Người dùng</div><h1 style={{ marginTop: 4 }}>{u.name}</h1><p className="num">{fmtPhone(u.phone)} · tạo lúc {fmtAt(u.createdAt)}</p></div>
-        <div className="actions"><button className={'btn ' + (u.locked ? '' : 'danger')} onClick={() => setLock(!u.locked)}>{u.locked ? 'Mở khóa tài khoản' : 'Khóa tài khoản'}</button></div></div>
+        <div className="actions">{!u.email && <button className="btn" onClick={() => setTempPw(true)}>Đặt mật khẩu tạm</button>}<button className={'btn ' + (u.locked ? '' : 'danger')} onClick={() => setLock(!u.locked)}>{u.locked ? 'Mở khóa tài khoản' : 'Khóa tài khoản'}</button></div></div>
       <Banner kind="info" icon="lock">Admin chỉ thấy tên và trạng thái; không xem nội dung đám hiếu (sổ phúng viếng, tài chính, hồ sơ người mất) trừ khi gia đình cho phép khi cần hỗ trợ.</Banner>
       <section className="card"><div className="sec-h card-pad" style={{ margin: 0, paddingBottom: 4 }}><h3>Đám hiếu và hồ sơ chuẩn bị</h3></div><div className="list">
         {mine.map(c => <div key={c.id} className="row"><div className="grow"><div className="title">Đám hiếu {DN_TEXT(c)}</div><div className="meta">{isFull(c) ? <span className="pill done">Đã mở đầy đủ</span> : <span className="pill soft">Miễn phí</span>}{c.after?.closed && <span>Đã khép vòng</span>}{c.deleteRequestedAt && <span className="pill wait">Yêu cầu xóa</span>}</div></div></div>)}
@@ -159,6 +160,7 @@ export function AdminUserPage() {
         {orders.length ? <div className="list">{orders.map(o => <div key={o.id} className="row"><div className="grow"><div className="title num">{o.code} · {o.productName}</div><div className="meta"><span>{o.target.name}</span><span>{fmtAt(o.createdAt)}</span></div></div><OPill s={o.status} /><span className="num">{money(o.amount)}</span></div>)}</div> : <div className="empty">Chưa có đơn.</div>}</section>
       <section className="card card-pad stack"><h3>Ghi chú hỗ trợ</h3><textarea className="input" value={note} onChange={e => setNote(e.target.value)} aria-label="Ghi chú hỗ trợ" />
         <button className="btn sm" style={{ alignSelf: 'flex-start' }} onClick={async () => { await setSupportNote(u.id, note); toast('Đã lưu ghi chú'); }}>Lưu ghi chú</button></section>
+      {tempPw && <TempPasswordSheet uid={u.id} name={u.name} phone={u.phone} onClose={() => setTempPw(false)} />}
       {lock !== null && <Sheet title={lock ? 'Khóa tài khoản' : 'Mở khóa tài khoản'} onClose={() => setLock(null)} foot={<><button className="btn" onClick={() => setLock(null)}>Hủy</button>
         <button className={'btn ' + (lock ? 'danger' : 'primary')} disabled={!reason.trim()} onClick={async () => { const e = await setUserLocked(u.id, lock, reason); setLock(null); setReason(''); toast(e ?? (lock ? 'Đã khóa tài khoản' : 'Đã mở khóa')); }}>Xác nhận</button></>}>
         <div className="field"><label htmlFor="lkR">Lý do (ghi vào nhật ký)</label><textarea className="input" id="lkR" value={reason} onChange={e => setReason(e.target.value)} /></div></Sheet>}
@@ -439,5 +441,34 @@ export function AdminVendorCandidatesPage() {
         </div>
       ))}</div> : <div className="empty"><Icon n="team" c="lg" /><span>Chưa có đề xuất mới. Khi gia đình tự thêm nhà cung cấp và đồng ý giới thiệu, bên đó hiện ở đây.</span></div>}</section>
     </div></AdminShell>
+  );
+}
+
+/** Người quên mật khẩu, chưa liên kết Google: Admin gọi đúng số của tài khoản để xác nhận, rồi cấp mật khẩu tạm */
+function TempPasswordSheet({ uid, name, phone, onClose }: { uid: string; name: string; phone: string; onClose: () => void }) {
+  const { toast } = useApp();
+  const [called, setCalled] = useState(false);
+  const [pw, setPw] = useState<string | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+  const make = async () => {
+    const chars = 'abcdefghjkmnpqrstuvwxyz23456789';
+    const p = Array.from(crypto.getRandomValues(new Uint8Array(8)), b => chars[b % chars.length]).join('');
+    const e = await adminSetTempPassword(uid, p);
+    if (e) { setErr(e); return; }
+    setPw(p); toast('Đã đặt mật khẩu tạm, ghi vào nhật ký');
+  };
+  return (
+    <Sheet title="Đặt mật khẩu tạm" onClose={onClose} foot={pw ? <button className="btn primary" onClick={onClose}>Xong</button>
+      : <><button className="btn" onClick={onClose}>Hủy</button><button className="btn primary" disabled={!called} onClick={make}>Tạo mật khẩu tạm</button></>}>
+      {pw ? <>
+        <Banner kind="info" icon="check">Đọc mật khẩu tạm này cho <b>{name}</b> qua điện thoại. Nhắc họ đăng nhập rồi đổi mật khẩu mới ngay, và liên kết Google để lần sau tự vào được.</Banner>
+        <p className="num" style={{ fontSize: 26, letterSpacing: 3, textAlign: 'center' }}>{pw}</p>
+      </> : <>
+        <p>Chỉ làm khi người dùng quên mật khẩu và chưa liên kết Google.</p>
+        <a className="btn" href={`tel:${phone}`} style={{ alignSelf: 'flex-start' }}>Gọi {fmtPhone(phone)}</a>
+        <label className="check"><input type="checkbox" checked={called} onChange={e => setCalled(e.target.checked)} /><span>Tôi đã gọi vào đúng số <b className="num">{fmtPhone(phone)}</b> và người nghe máy là chủ tài khoản {name}.</span></label>
+        <ErrorBanner err={err} />
+      </>}
+    </Sheet>
   );
 }

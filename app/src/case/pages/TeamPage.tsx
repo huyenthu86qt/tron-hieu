@@ -15,7 +15,7 @@ export function TeamPage() {
       <button key={m.id} className="row" onClick={() => openSheet({ type: 'member', id: m.id })}>
         <div className="who" style={{ flex: 1, alignItems: 'flex-start' }}><span className="av">{initials(m.name)}</span>
           <div className="grow"><div className="title">{m.name}</div>
-            <div className="meta"><span>{m.rel}</span><span className="pill soft">{ACCESS_LABEL[m.access]}</span></div>
+            <div className="meta"><span>{m.rel}</span><span className="pill soft">{ACCESS_LABEL[m.access]}</span>{m.inviteToken && <span className="pill wait">Chờ nhận lời mời</span>}</div>
             <div className="meta">{m.areas.join(' · ') || 'Chưa có vùng'} · {open(m.id)} việc đang mở</div></div></div>
         <Icon n="chev" c="chev" />
       </button>
@@ -25,7 +25,7 @@ export function TeamPage() {
       <tbody>{people.map(m => (
         <tr key={m.id}>
           <td><div className="who"><span className="av">{initials(m.name)}</span><div><div style={{ fontWeight: 500 }}>{m.name}</div><div className="muted">{m.rel}</div></div></div></td>
-          <td>{m.role}</td><td><span className="pill soft">{ACCESS_LABEL[m.access]}</span></td><td>{m.areas.join(', ') || '—'}</td>
+          <td>{m.role}</td><td><span className="pill soft">{ACCESS_LABEL[m.access]}</span>{m.inviteToken && <span className="pill wait">Chờ nhận lời mời</span>}</td><td>{m.areas.join(', ') || '—'}</td>
           <td className="num">{open(m.id)}</td><td><button className="btn sm" onClick={() => openSheet({ type: 'member', id: m.id })}>Sửa</button></td>
         </tr>
       ))}</tbody></table></section>

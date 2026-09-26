@@ -7,8 +7,9 @@ import { money, METHOD_LABEL, EXP_STATUS } from '../domain/finance';
 import { fmtPhone, isFull, ORDER_STATUS_LABEL, readiness } from '../domain/platform';
 import { DN_TEXT } from '../domain/text';
 import { repo } from '../repo/repo';
+import { REMOTE } from '../repo/backend';
 import {
-  changePassword, changePhone, logout, logoutAll, markRead, myPreNeeds, requestDeleteAccount, sendOtp, updateProfile, usePlatform, useUser,
+  changePassword, changePhoneSelf, linkGoogle, logout, logoutAll, markRead, myPreNeeds, requestDeleteAccount, updateProfile, usePlatform, useUser,
 } from '../repo/platformStore';
 import { Icon } from '../ui/Icon';
 import { Banner, ErrorBanner, Sheet, useApp } from '../ui/common';
@@ -21,7 +22,7 @@ export function HomePage() {
   const nav = useNavigate();
   const cases = useMyCases();
   const all = usePlatform(s => s.preNeeds);
-  const pres = myPreNeeds(all, user.id, user.phone);
+  const pres = myPreNeeds(all, user.id);
   return (
     <AccountShell title="Trang chủ">
       <div className="page">
@@ -102,6 +103,9 @@ export function AccountPage() {
   const support = usePlatform(s => s.settings.support);
   const [name, setName] = useState(user.name);
   const [pw, setPw] = useState({ old: '', next: '' });
+  const auth = usePlatform(s => s.auth);
+  // Tài khoản vào bằng Google (không có mật khẩu) thì không có mục đổi mật khẩu
+  const pwAllowed = !REMOTE || !!auth?.loginByPhone;
   const [err, setErr] = useState<Record<string, string | null>>({});
   const [phoneSheet, setPhoneSheet] = useState(false);
   const [delCase, setDelCase] = useState<string | null>(null);
@@ -122,13 +126,14 @@ export function AccountPage() {
         </section>
 
         <section className="card card-pad stack"><h3>Bảo mật</h3>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(200px,1fr))', gap: 12 }}>
+          {REMOTE && <GoogleLink />}
+          {pwAllowed && <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(200px,1fr))', gap: 12 }}>
             <div className="field"><label htmlFor="pwOld">Mật khẩu hiện tại</label><input className="input" id="pwOld" type="password" autoComplete="current-password" value={pw.old} onChange={e => setPw({ ...pw, old: e.target.value })} /></div>
             <div className="field"><label htmlFor="pwNew">Mật khẩu mới</label><input className="input" id="pwNew" type="password" autoComplete="new-password" value={pw.next} onChange={e => setPw({ ...pw, next: e.target.value })} /></div>
-          </div>
+          </div>}
           <ErrorBanner err={err.pw} />
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            <button className="btn" onClick={async () => { const e = await changePassword(pw.old, pw.next); setErr({ ...err, pw: e }); if (!e) { setPw({ old: '', next: '' }); toast('Đã đổi mật khẩu'); } }}>Đổi mật khẩu</button>
+            {pwAllowed && <button className="btn" onClick={async () => { const e = await changePassword(pw.old, pw.next); setErr({ ...err, pw: e }); if (!e) { setPw({ old: '', next: '' }); toast('Đã đổi mật khẩu'); } }}>Đổi mật khẩu</button>}
             <button className="btn ghost" onClick={() => { logout(); nav('/'); }}>Đăng xuất</button>
             <button className="btn ghost" onClick={() => { logoutAll(); nav('/dang-nhap'); }}>Đăng xuất khỏi mọi thiết bị</button>
           </div>
@@ -176,21 +181,42 @@ export function AccountPage() {
 
 function PhoneSheet({ onClose }: { onClose: () => void }) {
   const { toast } = useApp();
+  const auth = usePlatform(s => s.auth);
+  const needPass = !REMOTE || !!auth?.loginByPhone;
   const [phone, setPhone] = useState('');
-  const [code, setCode] = useState('');
-  const [sent, setSent] = useState(false);
+  const [pass, setPass] = useState('');
   const [err, setErr] = useState<string | null>(null);
-  const otp = usePlatform(s => s.otp);
+  const [busy, setBusy] = useState(false);
+  const save = async () => {
+    setBusy(true);
+    const e = await changePhoneSelf(phone, pass);
+    setBusy(false);
+    if (e) setErr(e); else { toast('Đã đổi số điện thoại'); onClose(); }
+  };
   return (
-    <Sheet title="Đổi số điện thoại" onClose={onClose} foot={<><button className="btn" onClick={onClose}>Hủy</button>
-      {sent ? <button className="btn primary" onClick={() => { const e = changePhone(phone, code); if (e) setErr(e); else { toast('Đã đổi số điện thoại'); onClose(); } }}>Xác nhận</button>
-        : <button className="btn primary" onClick={() => { const r = sendOtp(phone, 'phone'); if (r.error) setErr(r.error); else { setErr(null); setSent(true); } }}>Gửi mã</button>}</>}>
-      <div className="field"><label htmlFor="npPhone">Số điện thoại mới</label><input className="input num" id="npPhone" inputMode="tel" value={phone} disabled={sent} onChange={e => setPhone(e.target.value)} /></div>
-      {sent && <>
-        {otp && <div className="banner upd"><Icon n="alert" /><div><b>Bản chạy thử:</b> mã là <b className="num">{otp.code}</b>.</div></div>}
-        <div className="field"><label htmlFor="npCode">Mã xác minh</label><input className="input num" id="npCode" inputMode="numeric" maxLength={6} value={code} onChange={e => setCode(e.target.value.replace(/\D/g, ''))} /></div>
-      </>}
+    <Sheet title="Đổi số điện thoại" onClose={onClose} foot={<><button className="btn" onClick={onClose}>Hủy</button><button className="btn primary" disabled={busy} onClick={save}>Lưu số mới</button></>}>
+      <div className="field"><label htmlFor="npPhone">Số điện thoại mới</label><input className="input num" id="npPhone" inputMode="tel" value={phone} onChange={e => setPhone(e.target.value)} /></div>
+      {needPass && <div className="field"><label htmlFor="npPass">Mật khẩu hiện tại</label><input className="input" id="npPass" type="password" autoComplete="current-password" value={pass} onChange={e => setPass(e.target.value)} />
+        <p className="muted">Từ nay anh/chị đăng nhập bằng số mới với mật khẩu này.</p></div>}
       <ErrorBanner err={err} />
     </Sheet>
+  );
+}
+
+/** Liên kết Google để lỡ quên mật khẩu vẫn vào lại được */
+function GoogleLink() {
+  const auth = usePlatform(s => s.auth);
+  const user = useUser()!;
+  const [err, setErr] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  if (!auth) return null;
+  if (!auth.loginByPhone) return <p className="muted"><Icon n="check" c="sm" /> Anh/chị đăng nhập bằng Google{user.email ? <> (<b>{user.email}</b>)</> : null} — không cần nhớ mật khẩu.</p>;
+  if (auth.google) return <p className="muted"><Icon n="check" c="sm" /> Đã liên kết Google. Lỡ quên mật khẩu, anh/chị bấm “Tiếp tục với Google” ở màn đăng nhập là vào được.</p>;
+  return (
+    <div className="stack" style={{ gap: 8 }}>
+      <Banner kind="upd" icon="lock"><b>Nên liên kết Google.</b> Lỡ quên mật khẩu, anh/chị bấm “Tiếp tục với Google” là vào lại được ngay, không cần gọi hỗ trợ.</Banner>
+      <button className="btn" style={{ alignSelf: 'flex-start' }} disabled={busy} onClick={async () => { setBusy(true); const e = await linkGoogle(); if (e) { setErr(e); setBusy(false); } }}>{busy ? 'Đang mở Google…' : 'Liên kết tài khoản Google'}</button>
+      <ErrorBanner err={err} />
+    </div>
   );
 }

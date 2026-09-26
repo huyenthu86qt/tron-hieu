@@ -4,7 +4,8 @@ import { AppFrame } from './ui/common';
 import { FORCED_LOCAL, HAS_SERVER } from './repo/backend';
 import { Ent01, Ent02, Ent03 } from './pages/EntryPages';
 import { LinkPage, NotFound } from './pages/OtherPages';
-import { ForgotPage, LoginPage, RegisterPage, RequireAuth } from './pages/AuthPages';
+import { CompleteProfilePage, ForgotPage, LoginPage, RegisterPage, RequireAuth } from './pages/AuthPages';
+import { InvitePage, PreInvitePage } from './pages/InvitePages';
 import { AccountPage, HomePage, NotificationsPage } from './pages/AccountPages';
 import { CheckoutPage, OrderPage } from './pages/CheckoutPages';
 import { PrivacyPage, TermsPage } from './pages/LegalPages';
@@ -51,6 +52,9 @@ export default function App() {
           <Route path="/dieu-khoan" element={<TermsPage />} />
           <Route path="/bao-mat" element={<PrivacyPage />} />
           <Route path="/l/:token" element={<LinkPage />} />
+          <Route path="/moi/:token" element={<InvitePage />} />
+          <Route path="/moi-cb/:token" element={<PreInvitePage />} />
+          <Route path="/hoan-tat" element={<CompleteProfilePage />} />
           <Route path="/t/:slug" element={<PublicPage />} />
           {DemoPage && <Route path="/mau" element={<Suspense fallback={null}><DemoPage /></Suspense>} />}
 

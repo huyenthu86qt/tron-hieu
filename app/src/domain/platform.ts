@@ -8,6 +8,8 @@ import { parseISODate } from './person';
 export interface User {
   id: string; name: string; phone: string; passHash: string; salt: string; createdAt: string;
   isAdmin?: boolean; locked?: boolean; failed: number; lockUntil?: string; deleteRequestedAt?: string; supportNote?: string;
+  /** Email (tài khoản đăng nhập bằng Google) */
+  email?: string;
 }
 
 export function normalizePhone(s: string): string | null {
@@ -185,7 +187,7 @@ export interface PreNeed {
   wish: { form: 'cremation' | 'burial' | 'family'; venue: 'home' | 'hall' | 'family'; rite: string; items: string; scale: 'small' | 'medium' | 'large'; msg: string; milestones: string[] };
   budget: { amount: number; vendors: Partial<Record<VendorCat, string>> };
   special: string;
-  shares: { id: string; name: string; phone: string; role: 'view' | 'edit' | 'activate' }[];
+  shares: { id: string; name: string; phone: string; role: 'view' | 'edit' | 'activate'; inviteToken?: string; userId?: string }[];
   paid: boolean; orderId?: string;
   activatedAt?: string; activatedBy?: string; caseId?: string;
 }

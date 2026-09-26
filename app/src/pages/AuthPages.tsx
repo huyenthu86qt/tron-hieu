@@ -6,8 +6,9 @@ import { normalizeCase } from '../domain/normalize';
 import { OTP_TTL_MIN } from '../domain/platform';
 import { clearDraft, loadDraft, repo } from '../repo/repo';
 import {
-  currentUser, devOtpCode, getPlatform, login, register, resetPassword, sendOtp, sessionExpired, usePlatform, useUser,
+  completeProfile, currentUser, devOtpCode, getPlatform, login, register, resetPassword, sendOtp, sessionExpired, signInWithGoogle, usePlatform, useUser,
 } from '../repo/platformStore';
+import { REMOTE } from '../repo/backend';
 import { entryItems } from '../domain/entry';
 import { U1_ID } from '../domain/model';
 import { Icon } from '../ui/Icon';
@@ -92,31 +93,33 @@ export function RegisterPage() {
     if (!f.name.trim()) return setErr('Cần nhập họ tên.');
     if (f.pass.length < 8) return setErr('Mật khẩu cần tối thiểu 8 ký tự.');
     if (!f.agree) return setErr('Cần đồng ý Điều khoản sử dụng và Chính sách bảo mật.');
+    if (REMOTE) { void done(); return; }
     const r = sendOtp(f.phone, 'register');
     if (r.error) return setErr(r.error);
     setErr(null); setStep('otp');
   };
-  const done = async () => {
+  async function done() {
     setBusy(true);
     const e = await register(f.name, f.phone, f.pass, code);
     if (e) { setErr(e); setBusy(false); return; }
     await afterAuth(tiep, nav);
-  };
+  }
 
   return (
     <AuthFrame title={step === 'form' ? 'Tạo tài khoản' : 'Xác minh số điện thoại'}
       sub={fromEntry ? 'Lưu lại để không mất những gì anh/chị vừa nhập. Câu trả lời đã được giữ nguyên.' : 'Để cả nhà cùng dùng và giữ dữ liệu của gia đình.'}
       foot={<p className="muted" style={{ textAlign: 'center' }}>Đã có tài khoản? <Link to={`/dang-nhap${tiep ? '?tiep=' + encodeURIComponent(tiep) : ''}`}>Đăng nhập</Link></p>}>
-      {step === 'form' ? (
+      {step === 'form' ? (<>
         <section className="card card-pad stack">
           <div className="field"><label htmlFor="rName">Họ tên</label><input className="input" id="rName" autoComplete="name" value={f.name} onChange={e => setF({ ...f, name: e.target.value })} placeholder="Ví dụ: Nguyễn Minh Tuấn" /></div>
           <div className="field"><label htmlFor="rPhone">Số điện thoại</label><input className="input num" id="rPhone" inputMode="tel" autoComplete="tel" value={f.phone} onChange={e => setF({ ...f, phone: e.target.value })} placeholder="0912 345 678" /></div>
           <div className="field"><label htmlFor="rPass">Mật khẩu (tối thiểu 8 ký tự)</label><input className="input" id="rPass" type="password" autoComplete="new-password" value={f.pass} onChange={e => setF({ ...f, pass: e.target.value })} /></div>
           <label className="check"><input type="checkbox" checked={f.agree} onChange={e => setF({ ...f, agree: e.target.checked })} /><span>Tôi đồng ý <Link to="/dieu-khoan" target="_blank">Điều khoản sử dụng</Link> và <Link to="/bao-mat" target="_blank">Chính sách bảo mật</Link></span></label>
           <ErrorBanner err={err} />
-          <button className="btn primary block" onClick={next}>Gửi mã xác minh</button>
+          <button className="btn primary block" disabled={busy} onClick={next}>{REMOTE ? (fromEntry ? 'Tạo tài khoản và lưu đám hiếu' : 'Tạo tài khoản') : 'Gửi mã xác minh'}</button>
         </section>
-      ) : (
+        {REMOTE && <GoogleBlock next={tiep ?? '/app'} />}
+      </>) : (
         <section className="card card-pad stack">
           <OtpBox phone={f.phone} purpose="register" code={code} setCode={setCode} />
           <ErrorBanner err={err} />
@@ -159,6 +162,7 @@ export function LoginPage() {
         <button className="btn primary block" disabled={busy} onClick={go}>Đăng nhập</button>
         <Link className="btn ghost block" to={`/quen-mat-khau${tiep ? '?tiep=' + encodeURIComponent(tiep) : ''}`}>Quên mật khẩu?</Link>
       </section>
+      {REMOTE && <GoogleBlock next={tiep ?? '/app'} />}
     </AuthFrame>
   );
 }
@@ -178,6 +182,19 @@ export function ForgotPage() {
     if (e) { setErr(e); return; }
     await afterAuth(tiep, nav);
   };
+  if (REMOTE) return (
+    <AuthFrame title="Lấy lại quyền vào tài khoản" foot={<p className="muted" style={{ textAlign: 'center' }}><Link to="/dang-nhap">Về đăng nhập</Link></p>}>
+      <section className="card card-pad stack">
+        <h3>Đã liên kết Google?</h3>
+        <p className="muted">Bấm nút dưới để vào lại tài khoản, rồi đặt mật khẩu mới trong mục Tài khoản.</p>
+        <GoogleBlock next={tiep ?? '/tai-khoan'} bare />
+      </section>
+      <section className="card card-pad stack">
+        <h3>Chưa liên kết Google</h3>
+        <p className="muted">Nhắn Zalo hoặc gọi hỗ trợ Trọn Hiếu. Người hỗ trợ sẽ <b>gọi vào đúng số điện thoại của tài khoản</b> để xác nhận, rồi cấp mật khẩu tạm. Anh/chị đăng nhập bằng mật khẩu tạm và đổi mật khẩu mới ngay.</p>
+      </section>
+    </AuthFrame>
+  );
   return (
     <AuthFrame title="Lấy lại mật khẩu" sub="Nhập số điện thoại đã đăng ký, app gửi mã xác minh để đặt mật khẩu mới."
       foot={<p className="muted" style={{ textAlign: 'center' }}><Link to="/dang-nhap">Về đăng nhập</Link></p>}>
@@ -208,5 +225,69 @@ export function RequireAuth({ children, admin }: { children: ReactNode; admin?: 
     return <Navigate to={`${admin ? '/admin/dang-nhap' : '/dang-nhap'}?${exp ? 'het-phien=1&' : ''}tiep=${encodeURIComponent(loc.pathname + loc.search)}`} replace />;
   }
   if (admin && !user.isAdmin) return <Navigate to="/admin/dang-nhap" replace />;
+  // Vào bằng Google lần đầu: cần họ tên + số điện thoại trước khi dùng app
+  if (REMOTE && !user.phone && !admin) return <Navigate to={`/hoan-tat?tiep=${encodeURIComponent(loc.pathname + loc.search)}`} replace />;
   return <>{children}</>;
+}
+
+/** Nút “Tiếp tục với Google” (bản thật) */
+export function GoogleBlock({ next, bare, label = 'Tiếp tục với Google' }: { next: string; bare?: boolean; label?: string }) {
+  const [err, setErr] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const btn = (
+    <button className="btn block google-btn" disabled={busy} onClick={async () => { setBusy(true); const e = await signInWithGoogle(next); if (e) { setErr(e); setBusy(false); } }}>
+      <GoogleG />{busy ? 'Đang mở Google…' : label}
+    </button>
+  );
+  if (bare) return <>{btn}<ErrorBanner err={err} /></>;
+  return (
+    <section className="stack" style={{ gap: 10 }}>
+      <div className="or-line"><span>hoặc</span></div>
+      {btn}
+      <ErrorBanner err={err} />
+      <p className="note" style={{ textAlign: 'center' }}>Không cần nhớ mật khẩu. Lần đầu vào bằng Google, app hỏi thêm họ tên và số điện thoại.</p>
+    </section>
+  );
+}
+
+function GoogleG() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
+      <path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.5l6.7-6.7C35.6 2.4 30.2 0 24 0 14.6 0 6.6 5.4 2.6 13.2l7.8 6.1C12.3 13.6 17.7 9.5 24 9.5z" />
+      <path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.6 3-2.3 5.5-4.8 7.2l7.5 5.8c4.4-4.1 7.1-10.1 7.1-17.5z" />
+      <path fill="#FBBC05" d="M10.4 28.7c-.5-1.4-.8-3-.8-4.7s.3-3.3.8-4.7l-7.8-6.1C1 16.5 0 20.1 0 24s1 7.5 2.6 10.8l7.8-6.1z" />
+      <path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.5-5.8c-2.1 1.4-4.9 2.3-8.4 2.3-6.3 0-11.7-4.1-13.6-9.8l-7.8 6.1C6.6 42.6 14.6 48 24 48z" />
+    </svg>
+  );
+}
+
+/** Lần đầu vào bằng Google: xác nhận họ tên, thêm số điện thoại để người thân liên lạc */
+export function CompleteProfilePage() {
+  const user = useUser();
+  const ready = usePlatform(s => s.ready);
+  const nav = useNavigate();
+  const [params] = useSearchParams();
+  const tiep = params.get('tiep');
+  const [f, setF] = useState({ name: user?.name ?? '', phone: '' });
+  const [err, setErr] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  if (!ready) return <div className="bare"><div className="bare-inner" style={{ justifyContent: 'center' }}><p className="muted" style={{ textAlign: 'center' }}>Đang tải…</p></div></div>;
+  if (!user) return <Navigate to="/dang-nhap" replace />;
+  const go = async () => {
+    setBusy(true);
+    const e = await completeProfile(f.name, f.phone);
+    if (e) { setErr(e); setBusy(false); return; }
+    await afterAuth(tiep, nav);
+  };
+  return (
+    <AuthFrame title="Hoàn tất tài khoản" sub="Một lần duy nhất. Người thân trong đội thấy tên này; số điện thoại để mọi người gọi nhau khi cần.">
+      <section className="card card-pad stack">
+        {user.email && <p className="muted">Đang vào bằng Google: <b>{user.email}</b></p>}
+        <div className="field"><label htmlFor="cName">Họ tên</label><input className="input" id="cName" autoComplete="name" value={f.name} onChange={e => setF({ ...f, name: e.target.value })} /></div>
+        <div className="field"><label htmlFor="cPhone">Số điện thoại</label><input className="input num" id="cPhone" inputMode="tel" autoComplete="tel" value={f.phone} onChange={e => setF({ ...f, phone: e.target.value })} placeholder="0912 345 678" /></div>
+        <ErrorBanner err={err} />
+        <button className="btn primary block" disabled={busy} onClick={go}>Tiếp tục</button>
+      </section>
+    </AuthFrame>
+  );
 }

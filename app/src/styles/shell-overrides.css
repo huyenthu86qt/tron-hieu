@@ -47,3 +47,9 @@
 /* Tên tệp bấm để mở */
 .file-link{border:0;background:none;padding:0;font:inherit;color:inherit;text-decoration:underline;text-underline-offset:2px;cursor:pointer}
 .file-link:disabled{opacity:.6;cursor:progress}
+
+/* Nút Google + đường “hoặc” */
+.google-btn{background:#fff;color:#1f1f1f;border:1px solid #dadce0;gap:10px;font-weight:500}
+.google-btn:hover{background:#f7f8f8}
+.or-line{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:13px}
+.or-line::before,.or-line::after{content:"";flex:1;height:1px;background:var(--border)}

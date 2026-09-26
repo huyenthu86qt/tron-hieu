@@ -5,6 +5,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import type { OrgModel, Place, Title } from '../domain/types';
 import { fmtMoneyInput, money, parseMoney } from '../domain/finance';
 import { activatePreNeed } from '../domain/normalize';
+import { shareToken } from '../domain/actions';
 import { normalizePhone, preGroups, readiness, type PreNeed } from '../domain/platform';
 import { CATS } from '../domain/vendors';
 import { activatePre, createPreNeed, myPreNeeds, savePreNeed, usePlatform, useUser } from '../repo/platformStore';
@@ -23,7 +24,7 @@ function usePre() {
   const { pid = '' } = useParams();
   const user = useUser()!;
   const p = usePlatform(s => s.preNeeds.find(x => x.id === pid));
-  const share = p?.shares.find(x => x.phone === user.phone);
+  const share = p?.shares.find(x => x.userId === user.id);
   const owner = p?.ownerId === user.id;
   return { p, owner, canEdit: owner || share?.role === 'edit' || share?.role === 'activate', canActivate: owner || share?.role === 'activate', locked: !!p?.caseId };
 }
@@ -50,7 +51,7 @@ export function PreListPage() {
   const user = useUser()!;
   const nav = useNavigate();
   const all = usePlatform(s => s.preNeeds);
-  const L = myPreNeeds(all, user.id, user.phone);
+  const L = myPreNeeds(all, user.id);
   return (
     <AccountShell title="Chuẩn bị trước"><div className="page" style={{ maxWidth: 820 }}>
       <div className="page-title"><div><h1>Hồ sơ chuẩn bị</h1><p>Chuẩn bị dần khi còn thời gian — để lúc cần, gia đình không phải quyết lại từ đầu</p></div>
@@ -261,27 +262,35 @@ export function PreSharePage() {
   if (!p) return <NotFoundPre />;
   const ROLE = { view: 'Chỉ xem', edit: 'Xem và sửa', activate: 'Xem, sửa và kích hoạt' };
   if (!owner) return <PreFrame title="Chia sẻ" back={`/chuan-bi/${p.id}`}><section className="card"><div className="empty"><Icon n="lock" c="lg" /><h2 style={{ color: 'var(--text)' }}>Chỉ người lập hồ sơ quản lý chia sẻ</h2></div></section></PreFrame>;
-  const add = () => {
-    const ph = normalizePhone(n.phone);
-    if (!n.name.trim() || !ph) { setErr('Cần tên và số điện thoại đúng.'); return; }
-    savePreNeed({ ...p, shares: [...p.shares.filter(x => x.phone !== ph), { id: 'sh' + Date.now(), name: n.name.trim(), phone: ph, role: n.role }] });
-    setN({ name: '', phone: '', role: 'view' }); setErr(null); toast('Đã chia sẻ. Người này đăng nhập bằng số đó sẽ thấy hồ sơ.');
+  const add = async () => {
+    const ph = n.phone.trim() ? normalizePhone(n.phone) : '';
+    if (!n.name.trim()) { setErr('Cần nhập họ tên.'); return; }
+    if (ph === null) { setErr('Số điện thoại chưa đúng.'); return; }
+    const e = await savePreNeed({ ...p, shares: [...p.shares, { id: 'sh' + Date.now(), name: n.name.trim(), phone: ph, role: n.role, inviteToken: shareToken() }] });
+    if (e) { setErr(e); return; }
+    setN({ name: '', phone: '', role: 'view' }); setErr(null); toast('Đã tạo link mời — bấm “Sao chép lời mời” rồi gửi qua Zalo.');
+  };
+  const copyInvite = async (x: PreNeed['shares'][number]) => {
+    const url = `${window.location.origin}/moi-cb/${x.inviteToken}`;
+    const text = `Mời ${x.name} ${ROLE[x.role].toLowerCase()} hồ sơ chuẩn bị trên Trọn Hiếu. Mở link để nhận: ${url}`;
+    try { await navigator.clipboard.writeText(text); toast('Đã sao chép lời mời — dán vào Zalo gửi đi'); } catch { toast(url); }
   };
   return (
     <PreFrame title="Chia sẻ" back={`/chuan-bi/${p.id}`}>
       <div><div className="eyebrow">Hồ sơ chuẩn bị</div><h1 style={{ fontSize: 24, marginTop: 4 }}>Ai được xem, sửa hồ sơ?</h1></div>
       <PaidPre p={p} what="Chia sẻ có kiểm soát">
         <section className="card">{p.shares.length ? <div className="list">{p.shares.map(x => (
-          <div key={x.id} className="row"><div className="grow"><div className="title">{x.name}</div><div className="meta"><span className="num">{x.phone}</span></div></div>
+          <div key={x.id} className="row"><div className="grow"><div className="title">{x.name}</div><div className="meta">{x.phone && <span className="num">{x.phone}</span>}{x.userId ? <span className="pill done">Đã nhận lời mời</span> : x.inviteToken ? <span className="pill wait">Chờ nhận lời mời</span> : null}</div>
+              {x.inviteToken && !x.userId && <button className="btn sm" style={{ marginTop: 6 }} onClick={() => void copyInvite(x)}><Icon n="copy" c="sm" />Sao chép lời mời</button>}</div>
             <select className="input" style={{ width: 'auto' }} value={x.role} aria-label={`Quyền của ${x.name}`} onChange={e => savePreNeed({ ...p, shares: p.shares.map(y => y.id === x.id ? { ...y, role: e.target.value as typeof y.role } : y) })}>{Object.entries(ROLE).map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select>
             <button className="icon-btn" aria-label={`Bỏ chia sẻ với ${x.name}`} onClick={() => savePreNeed({ ...p, shares: p.shares.filter(y => y.id !== x.id) })}><Icon n="x" c="sm" /></button></div>
         ))}</div> : <div className="empty"><span>Chưa chia sẻ với ai.</span></div>}</section>
         <section className="card card-pad stack"><h3>Mời người thân</h3>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(160px,1fr))', gap: 8 }}>
             <input className="input" value={n.name} onChange={e => setN({ ...n, name: e.target.value })} placeholder="Họ tên" aria-label="Họ tên" />
-            <input className="input num" inputMode="tel" value={n.phone} onChange={e => setN({ ...n, phone: e.target.value })} placeholder="Số điện thoại" aria-label="Số điện thoại" />
+            <input className="input num" inputMode="tel" value={n.phone} onChange={e => setN({ ...n, phone: e.target.value })} placeholder="Số điện thoại (tùy chọn)" aria-label="Số điện thoại" />
             <select className="input" value={n.role} onChange={e => setN({ ...n, role: e.target.value as typeof n.role })} aria-label="Quyền">{Object.entries(ROLE).map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select></div>
-          <ErrorBanner err={err} /><button className="btn primary" style={{ alignSelf: 'flex-start' }} onClick={add}>Chia sẻ</button>
+          <ErrorBanner err={err} /><button className="btn primary" style={{ alignSelf: 'flex-start' }} onClick={() => void add()}>Tạo link mời</button>
           <p className="note">Người được quyền “kích hoạt” có thể chuyển hồ sơ thành đám hiếu khi sự việc xảy ra.</p></section>
       </PaidPre>
     </PreFrame>

@@ -21,7 +21,7 @@ export function useMyCases() {
     let live = true;
     repo.listAll().then(all => {
       if (!live) return;
-      setList(all.filter(c => c.ownerId === user.id || !c.ownerId || c.members.some(m => m.userId === user.id || (m.phone === user.phone && m.access !== 'link')))
+      setList(all.filter(c => c.ownerId === user.id || !c.ownerId || c.members.some(m => m.userId === user.id))
         .sort((a, b) => b.createdAt.localeCompare(a.createdAt)));
     });
     return () => { live = false; };

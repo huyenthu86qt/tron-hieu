@@ -132,9 +132,11 @@ export interface Member {
   /** Thành viên do hệ thống thêm (Ban lễ tang, hỗ trợ địa phương) */
   system?: 'blt' | 'mttq' | 'hnct';
   linkToken?: string;
+  /** Mã link mời (Đầy đủ / Giới hạn) — người nhận mở link, đăng nhập là vào đội; xóa khi đã nhận */
+  inviteToken?: string;
   /** Tài khoản đã gắn (người có tài khoản) */
   userId?: string;
-  /** Số điện thoại mời — khi người đó đăng nhập bằng số này sẽ thấy đám hiếu */
+  /** Số điện thoại để liên lạc (không dùng để cấp quyền) */
   phone?: string;
 }
 

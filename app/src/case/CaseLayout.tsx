@@ -101,7 +101,7 @@ export function CaseLayout() {
   }, [flush]);
 
   if (c === undefined) return <div className="bare"><div className="bare-inner" style={{ justifyContent: 'center' }}><p className="muted" style={{ textAlign: 'center' }}>Đang mở đám hiếu…</p></div></div>;
-  const me = c?.members.find(m => m.userId === user.id) ?? c?.members.find(m => m.phone && m.phone === user.phone && m.access !== 'link');
+  const me = c?.members.find(m => m.userId === user.id);
   if (c === null || !me) return (
     <div className="bare"><div className="bare-inner" style={{ justifyContent: 'center' }}>
       <div className="empty"><Icon n={c ? 'lock' : 'alert'} c="lg" />

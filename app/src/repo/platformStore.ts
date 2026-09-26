@@ -29,6 +29,8 @@ export interface PlatformState {
   audit: AuditEntry[];
   preNeeds: PreNeed[];
   readUntil?: string;
+  /** Tài khoản đang đăng nhập: vào bằng số điện thoại hay Google, đã liên kết Google chưa */
+  auth?: { email: string | null; loginByPhone: boolean; google: boolean };
 }
 
 const KEY = 'damhieu.platform.v1';
@@ -76,7 +78,7 @@ export function usePlatform<T>(sel: (s: PlatformState) => T): T {
    ===================================================================== */
 type Profile = { id: string; name: string; phone: string | null; email: string | null; is_admin: boolean; locked: boolean; delete_requested_at: string | null; support_note: string | null; created_at: string };
 const toUser = (p: Profile): User => ({
-  id: p.id, name: p.name, phone: p.phone ?? p.email ?? '', passHash: '', salt: '', createdAt: p.created_at, failed: 0,
+  id: p.id, name: p.name, phone: p.phone ?? '', email: p.email ?? undefined, passHash: '', salt: '', createdAt: p.created_at, failed: 0,
   isAdmin: p.is_admin, locked: p.locked, deleteRequestedAt: p.delete_requested_at ?? undefined, supportNote: p.support_note ?? undefined,
 });
 type PreRow = { id: string; owner_id: string; data: PreNeed; paid: boolean; order_code: string | null; case_id: string | null; activated_at: string | null };
@@ -104,6 +106,8 @@ async function hydrate(uid: string | null) {
   const { data: me } = await sb!.from('profiles').select('*').eq('id', uid).maybeSingle();
   if (!me) { await sb!.auth.signOut(); commit({ ...initial(), products, ready: true }); return; }
   const admin = (me as Profile).is_admin;
+  const { data: au } = await sb!.auth.getUser();
+  const auth = { email: au.user?.email ?? null, loginByPhone: !!au.user?.email?.endsWith('@sdt.tronhieu.app'), google: (au.user?.identities ?? []).some(i => i.provider === 'google') };
   const [dir, set, pres, users, ord] = await Promise.all([
     sb!.from('vendor_directory').select('data, active'),
     sb!.from('app_settings').select('data').eq('id', 1).maybeSingle(),
@@ -112,7 +116,7 @@ async function hydrate(uid: string | null) {
     fetchOrders(admin),
   ]);
   commit({
-    ...initial(), ready: true, readUntil: state.readUntil, otp: state.otp,
+    ...initial(), ready: true, readUntil: state.readUntil, otp: state.otp, auth,
     users: ((users.data ?? []) as Profile[]).map(toUser),
     session: { userId: uid, at: new Date().toISOString(), expiresAt: FAR, version: 0 },
     directory: ((dir.data ?? []) as { data: DirVendor; active: boolean }[]).map(r => ({ ...r.data, active: r.active })),
@@ -203,8 +207,8 @@ export async function register(name: string, phoneRaw: string, password: string,
   const pe = passwordError(password);
   if (pe) return pe;
   if (!REMOTE && state.users.some(u => u.phone === phone)) return 'Số điện thoại này đã đăng ký. Vui lòng đăng nhập.';
-  const err = verifyOtp(otp);
-  if (err) return err;
+  // Bản thật: chưa có bên gửi tin nhắn nên không xác minh số bằng mã (số điện thoại không dùng để cấp quyền)
+  if (!REMOTE) { const err = verifyOtp(otp); if (err) return err; }
   if (REMOTE) {
     const { data, error } = await sb!.auth.signUp({ email: phoneEmail(phone), password, options: { data: { name: name.trim(), phone } } });
     if (error) return friendlyError(error);
@@ -215,7 +219,6 @@ export async function register(name: string, phoneRaw: string, password: string,
   const salt = newSalt();
   const u: User = { id: 'u' + Math.random().toString(36).slice(2, 10), name: name.trim(), phone, salt, passHash: await hashPassword(password, salt), createdAt: new Date().toISOString(), failed: 0 };
   mut(d => { d.users.push(u); startSession(d, u); log(d, u.name, 'Đăng ký tài khoản', fmt(u)); });
-  await linkMemberships(u.id, phone);
   return null;
 }
 
@@ -241,7 +244,6 @@ export async function login(phoneRaw: string, password: string): Promise<string 
     d.users[i] = { ...d.users[i], ...r.user };
     if (!r.error) startSession(d, d.users[i]);
   });
-  if (!r.error) await linkMemberships(u.id, u.phone);
   return r.error;
 }
 
@@ -326,15 +328,6 @@ export function requestDeleteAccount(cancel = false) {
   mut(d => { const x = d.users.find(y => y.id === u.id)!; x.deleteRequestedAt = at; if (!REMOTE) log(d, x.name, cancel ? 'Hủy yêu cầu xóa tài khoản' : 'Yêu cầu xóa tài khoản', fmt(x)); });
 }
 
-/** Chế độ trên máy: gắn tài khoản vào thành viên đã được mời bằng số điện thoại (máy chủ tự nhận theo số điện thoại) */
-async function linkMemberships(userId: string, phone: string) {
-  if (REMOTE) return;
-  const all = await repo.listAll();
-  for (const c of all) {
-    const m = c.members.find(x => !x.userId && x.phone === phone);
-    if (m) { m.userId = userId; await repo.save(c); }
-  }
-}
 
 /* ---------- Admin ---------- */
 /** Chế độ trên máy: tạo tài khoản Admin thử. Trên máy chủ: Admin là tài khoản thường được bật quyền. */
@@ -591,8 +584,8 @@ export async function activatePre(p: PreNeed, c: CaseData, until: string | undef
   return null;
 }
 
-export const myPreNeeds = (list: PreNeed[], uid: string, phone: string) =>
-  list.filter(p => p.ownerId === uid || p.shares.some(x => x.phone === phone));
+export const myPreNeeds = (list: PreNeed[], uid: string) =>
+  list.filter(p => p.ownerId === uid || p.shares.some(x => x.userId === uid));
 
 export function markRead() {
   const at = new Date().toISOString();
@@ -624,4 +617,145 @@ export async function loadVendorCandidates(): Promise<VendorCandidate[]> {
 export async function dismissCandidate(phone: string, name: string): Promise<string | null> {
   const s: Settings = { ...state.settings, dismissedCandidates: [...(state.settings.dismissedCandidates ?? []), phone] };
   return saveSettings(s, `Bỏ qua đề xuất nhà cung cấp ${name}`);
+}
+
+/* =====================================================================
+   Đăng nhập Google · lời mời vào đội · tự đổi số · mật khẩu tạm
+   ===================================================================== */
+const back = (path: string) => `${window.location.origin}${path}`;
+
+/** Đăng nhập / đăng ký bằng Google (chuyển sang trang Google rồi quay lại) */
+export async function signInWithGoogle(next: string): Promise<string | null> {
+  if (!REMOTE) return 'Đăng nhập Google chỉ có ở bản thật.';
+  const { error } = await sb!.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: back(`/dang-nhap?tiep=${encodeURIComponent(next)}`) } });
+  return error ? friendlyError(error) : null;
+}
+
+/** Liên kết Google vào tài khoản số điện thoại (để quên mật khẩu vẫn vào được) */
+export async function linkGoogle(): Promise<string | null> {
+  if (!REMOTE) return 'Liên kết Google chỉ có ở bản thật.';
+  const { error } = await sb!.auth.linkIdentity({ provider: 'google', options: { redirectTo: back('/tai-khoan?lien-ket=google') } });
+  return error ? friendlyError(error) : null;
+}
+
+export interface InvitePreview { caseId: string; caseName: string; inviter: string; memberName: string; memberRel: string; access: string; joined: boolean }
+export interface PreInvitePreview { preId: string; subject: string; inviter: string; memberName: string; role: string }
+
+export async function invitePreview(token: string): Promise<InvitePreview | null> {
+  if (REMOTE) {
+    const { data, error } = await sb!.rpc('invite_preview', { p_token: token });
+    if (error) throw new Error(friendlyError(error));
+    return (data as InvitePreview) ?? null;
+  }
+  const c = (await repo.listAll()).find(x => x.members.some(m => m.inviteToken === token));
+  const m = c?.members.find(x => x.inviteToken === token);
+  if (!c || !m) return null;
+  const u1 = c.members.find(x => x.id === 'u1');
+  return { caseId: c.id, caseName: `${c.person.title} ${c.person.name}`.trim(), inviter: u1?.name ?? '', memberName: m.name, memberRel: m.rel, access: m.access, joined: false };
+}
+
+/** Nhận lời mời: gắn tài khoản đang đăng nhập vào đúng vị trí trong đội; trả mã đám hiếu */
+export async function claimInvite(token: string): Promise<{ caseId?: string; error?: string }> {
+  const u = currentUser();
+  if (!u) return { error: 'Cần đăng nhập.' };
+  if (REMOTE) {
+    const { data, error } = await sb!.rpc('claim_invite', { p_token: token });
+    return error ? { error: friendlyError(error) } : { caseId: data as string };
+  }
+  const c = (await repo.listAll()).find(x => x.members.some(m => m.inviteToken === token));
+  const m = c?.members.find(x => x.inviteToken === token);
+  if (!c || !m) return { error: 'Lời mời không còn dùng được.' };
+  if (!c.members.some(x => x.userId === u.id)) {
+    m.userId = u.id; m.inviteToken = undefined; m.phone ||= u.phone || undefined;
+    c.history.push({ at: new Date().toISOString(), text: `${m.name} đã nhận lời mời và tham gia đội (tài khoản ${u.name})` });
+    await repo.save(c);
+  }
+  return { caseId: c.id };
+}
+
+export async function preInvitePreview(token: string): Promise<PreInvitePreview | null> {
+  if (REMOTE) {
+    const { data, error } = await sb!.rpc('pre_invite_preview', { p_token: token });
+    if (error) throw new Error(friendlyError(error));
+    return (data as PreInvitePreview) ?? null;
+  }
+  const p = state.preNeeds.find(x => x.shares.some(s => s.inviteToken === token));
+  const s = p?.shares.find(x => x.inviteToken === token);
+  if (!p || !s) return null;
+  return { preId: p.id, subject: p.subject.name, inviter: state.users.find(u => u.id === p.ownerId)?.name ?? '', memberName: s.name, role: s.role };
+}
+
+export async function claimPreInvite(token: string): Promise<{ preId?: string; error?: string }> {
+  const u = currentUser();
+  if (!u) return { error: 'Cần đăng nhập.' };
+  if (REMOTE) {
+    const { data, error } = await sb!.rpc('claim_pre_invite', { p_token: token });
+    if (error) return { error: friendlyError(error) };
+    await hydrate(u.id);
+    return { preId: data as string };
+  }
+  const p = state.preNeeds.find(x => x.shares.some(s => s.inviteToken === token));
+  if (!p) return { error: 'Lời mời không còn dùng được.' };
+  mut(d => { const s = d.preNeeds.find(x => x.id === p.id)!.shares.find(x => x.inviteToken === token)!; s.userId = u.id; s.inviteToken = undefined; });
+  return { preId: p.id };
+}
+
+/** Tự đổi số điện thoại. Tài khoản đăng nhập bằng số điện thoại cần nhập mật khẩu hiện tại. */
+export async function changePhoneSelf(phoneRaw: string, password: string): Promise<string | null> {
+  const u = currentUser();
+  if (!u) return 'Phiên đăng nhập đã hết.';
+  const phone = normalizePhone(phoneRaw);
+  if (!phone) return 'Số điện thoại chưa đúng (10 số, bắt đầu bằng 03, 05, 07, 08, 09).';
+  if (phone === u.phone) return 'Đây đang là số của anh/chị.';
+  if (REMOTE) {
+    const a = state.auth;
+    if (a?.loginByPhone) {
+      const chk = await sb!.auth.signInWithPassword({ email: a.email!, password });
+      if (chk.error) return 'Mật khẩu hiện tại chưa đúng.';
+      const ch = await sb!.auth.updateUser({ email: phoneEmail(phone) });
+      if (ch.error) return /already|registered|exists/i.test(ch.error.message) ? 'Số điện thoại này đã thuộc tài khoản khác.' : friendlyError(ch.error);
+    }
+    const { error } = await sb!.rpc('set_my_phone', { p_phone: phone });
+    if (error) {
+      if (a?.loginByPhone) await sb!.auth.updateUser({ email: a.email! });
+      return friendlyError(error);
+    }
+    await hydrate(u.id);
+    return null;
+  }
+  if (state.users.some(x => x.phone === phone && x.id !== u.id)) return 'Số điện thoại này đã thuộc tài khoản khác.';
+  if ((await hashPassword(password, u.salt)) !== u.passHash) return 'Mật khẩu hiện tại chưa đúng.';
+  mut(d => { d.users.find(y => y.id === u.id)!.phone = phone; log(d, u.name, 'Đổi số điện thoại', `${u.phone} → ${phone}`); });
+  return null;
+}
+
+/** Hoàn tất hồ sơ sau khi đăng nhập Google lần đầu: họ tên + số điện thoại */
+export async function completeProfile(name: string, phoneRaw: string): Promise<string | null> {
+  const u = currentUser();
+  if (!u) return 'Phiên đăng nhập đã hết.';
+  if (!name.trim()) return 'Cần nhập họ tên.';
+  const phone = normalizePhone(phoneRaw);
+  if (!phone) return 'Số điện thoại chưa đúng (10 số, bắt đầu bằng 03, 05, 07, 08, 09).';
+  const e1 = await updateProfile(name);
+  if (e1) return e1;
+  if (REMOTE) {
+    const { error } = await sb!.rpc('set_my_phone', { p_phone: phone });
+    if (error) return friendlyError(error);
+    await hydrate(u.id);
+    return null;
+  }
+  mut(d => { d.users.find(y => y.id === u.id)!.phone = phone; });
+  return null;
+}
+
+/** Admin đặt mật khẩu tạm cho người quên mật khẩu (sau khi gọi đúng số của tài khoản để xác nhận) */
+export async function adminSetTempPassword(uid: string, password: string): Promise<string | null> {
+  if (REMOTE) {
+    const { error } = await sb!.rpc('admin_set_temp_password', { p_uid: uid, p_password: password });
+    return error ? friendlyError(error) : null;
+  }
+  const salt = newSalt(), passHash = await hashPassword(password, salt);
+  const a = currentUser();
+  mut(d => { const x = d.users.find(y => y.id === uid)!; Object.assign(x, { salt, passHash, failed: 0, lockUntil: undefined }); log(d, a?.name ?? 'Admin', 'Đặt mật khẩu tạm (đã gọi xác nhận)', fmt(x)); });
+  return null;
 }
