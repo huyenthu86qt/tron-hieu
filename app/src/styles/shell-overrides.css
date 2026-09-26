@@ -63,3 +63,13 @@
 .article-body li{margin:4px 0}
 .article-card:hover{border-color:var(--accent)}
 .memory-entry{border-left:3px solid var(--accent-soft)}
+
+/* Chuông chánh niệm */
+.mindful-pause{position:fixed;inset:0;z-index:80;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;text-align:center;padding:24px;color:var(--primary);animation:mp-fade 4.5s ease forwards;cursor:pointer}
+.mindful-pause .mp-1{font-family:var(--serif);font-size:24px;color:var(--text)}
+.mindful-pause .mp-2{font-family:var(--serif);font-size:19px;color:var(--text);opacity:.85}
+.mindful-pause .mp-3{font-size:13px;color:var(--muted);margin-top:18px}
+@keyframes mp-fade{0%{opacity:0}12%{opacity:1}85%{opacity:1}100%{opacity:0}}
+@media (prefers-reduced-motion:reduce){.mindful-pause{animation:none}}
+.row.mindful .title{font-family:var(--serif)}
+.mindful-card{border-left:3px solid var(--accent)}

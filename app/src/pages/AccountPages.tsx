@@ -9,6 +9,8 @@ import { DN_TEXT } from '../domain/text';
 import { repo } from '../repo/repo';
 import { REMOTE } from '../repo/backend';
 import { BinhAnHomeCard } from './BinhAnPages';
+import { bellOn, isMindful, playMindfulBell, setBellOn } from '../ui/bell';
+import { milestoneList } from '../domain/aftercare';
 import {
   changePassword, changePhoneSelf, linkGoogle, logout, logoutAll, markRead, myPreNeeds, requestDeleteAccount, updateProfile, usePlatform, useUser,
 } from '../repo/platformStore';
@@ -29,6 +31,7 @@ export function HomePage() {
       <div className="page">
         <div className="page-title"><div><h1>Chào {user.name}</h1><p>Những hồ sơ anh/chị đang có</p></div>
           <div className="actions"><button className="btn primary" onClick={() => nav('/')}><Icon n="plus" c="sm" />Bắt đầu đám hiếu mới</button></div></div>
+        {cases && <UpcomingRemembrance cases={cases} />}
         <section className="card"><div className="sec-h card-pad" style={{ margin: 0, paddingBottom: 4 }}><h3>Đám hiếu đang lo</h3><span className="muted">{cases?.length ?? 0}</span></div>
           {cases === null ? <p className="muted card-pad">Đang tải…</p> : cases.length ? <div className="list">{cases.map(c => {
             const open = visibleTasks(c).filter(t => t.status !== 'done' && t.status !== 'skip').length;
@@ -65,8 +68,8 @@ export function NotificationsPage() {
       <div className="page" style={{ maxWidth: 820 }}>
         <div className="page-title"><div><h1>Thông báo</h1><p>Việc mới giao, quyết định đã chốt, thay đổi trong các đám hiếu của anh/chị</p></div></div>
         <section className="card">{items.length ? <div className="list">{items.map(({ c, h }, i) => (
-          <button key={i} className="row" onClick={() => nav(h.taskId ? `/dh/${c.id}/viec/${h.taskId}` : h.path ? `/dh/${c.id}/${h.path}` : `/dh/${c.id}`)}>
-            <span className="num-badge" style={!readUntil || h.at > readUntil ? { background: 'var(--accent-soft)', color: 'var(--warning)' } : undefined}><Icon n="bell" c="sm" /></span>
+          <button key={i} className={isMindful(h) ? 'row mindful' : 'row'} onClick={() => nav(h.taskId ? `/dh/${c.id}/viec/${h.taskId}` : h.path ? `/dh/${c.id}/${h.path}${isMindful(h) ? '?lang=1' : ''}` : `/dh/${c.id}`)}>
+            <span className="num-badge" style={!readUntil || h.at > readUntil ? { background: 'var(--accent-soft)', color: 'var(--warning)' } : undefined}><Icon n={isMindful(h) ? 'candle' : 'bell'} c="sm" /></span>
             <div className="grow"><div className="title">{h.text}</div><div className="meta"><span>Đám hiếu {DN_TEXT(c)}</span><span>{fmtAt(h.at)}</span></div></div></button>
         ))}</div> : <div className="empty"><Icon n="bell" c="lg" /><span>Chưa có thông báo.</span></div>}</section>
         <p className="note">Giai đoạn này thông báo hiện trong app. Gửi qua tin nhắn / Zalo mở ở giai đoạn sau.</p>
@@ -205,6 +208,8 @@ export function AccountPage() {
               : <p className="muted">Chưa có đơn hàng.</p>}</div>
         </section>
 
+        <MindfulSetting />
+
         <section className="card card-pad stack"><h3>Dữ liệu</h3>
           <p className="muted"><b>Bản lưu</b>: toàn bộ đám hiếu (người đã khuất, đội, việc, chi tiêu, sổ phúng viếng, tài liệu, lịch sử) — mở bằng trình duyệt, bấm In → Lưu PDF để giữ lâu dài. <b>Bảng tính</b>: mở bằng Excel.</p>
           {owned.map(c => <div key={c.id} style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}><span style={{ flex: 1, minWidth: 180 }}>Đám hiếu {DN_TEXT(c)}</span>
@@ -302,5 +307,47 @@ function DeleteAccountSheet({ owned, onClose }: { owned: CaseData[]; onClose: ()
         <p className="muted">Đơn hàng đã thanh toán được giữ lại làm chứng từ (không còn gắn với tài khoản). Anh/chị vẫn ở trong đội của gia đình khác cho tới khi tài khoản bị xóa.</p>
       </>}
     </Sheet>
+  );
+}
+
+/** Công tắc chuông chánh niệm (lưu trên máy này) + nghe thử */
+function MindfulSetting() {
+  const [on, setOn] = useState(bellOn());
+  return (
+    <section className="card card-pad stack"><h3>Chuông chánh niệm</h3>
+      <p className="muted">Một tiếng chuông nhẹ khi người thân viết vào Sổ tưởng nhớ, khi có lời tưởng nhớ mới, và khi sắp đến lễ 49 ngày, 100 ngày, giỗ. Việc lo toan hằng ngày không dùng chuông này.</p>
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+        <button className={on ? 'btn primary' : 'btn'} aria-pressed={on} onClick={() => { setBellOn(!on); setOn(!on); }}>Tiếng chuông: {on ? 'Đang bật' : 'Đang tắt'}</button>
+        <button className="btn ghost" onClick={() => playMindfulBell(true)}><Icon n="candle" c="sm" />Nghe thử</button>
+      </div>
+    </section>
+  );
+}
+
+/** Sắp đến mốc tưởng niệm (trong 3 ngày): nhắc nhẹ ở trang chủ, ngân chuông một lần mỗi mốc */
+function UpcomingRemembrance({ cases }: { cases: CaseData[] }) {
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const soon = cases.flatMap(c => milestoneList(c).filter(m => m.key !== 'custom' && m.date && m.date >= today && (m.date.getTime() - today.getTime()) <= 3 * 86400000).map(m => ({ c, m })));
+  useEffect(() => {
+    for (const { c, m } of soon) {
+      const k = `tronhieu.bell.ms.${c.id}.${m.key}`;
+      try { if (localStorage.getItem(k)) continue; localStorage.setItem(k, '1'); } catch { continue; }
+      playMindfulBell();
+      break;
+    }
+  }, [soon]);
+  if (!soon.length) return null;
+  return (
+    <section className="card card-pad stack mindful-card" style={{ gap: 8 }}>
+      {soon.map(({ c, m }) => {
+        const days = Math.round((m.date!.getTime() - today.getTime()) / 86400000);
+        return (
+          <Link key={c.id + m.key} to={`/dh/${c.id}/hau-tang/moc`} style={{ display: 'flex', gap: 10, alignItems: 'center', textDecoration: 'none', color: 'inherit' }}>
+            <Icon n="candle" /><div style={{ flex: 1 }}><div style={{ fontFamily: 'var(--serif)', fontSize: 17 }}>{days === 0 ? 'Hôm nay' : `Còn ${days} ngày`} là {m.name.toLowerCase()} của {DN_TEXT(c)}</div>
+              <div className="muted">{m.solar}{m.lunar ? ` · ${m.lunar}` : ''}</div></div><Icon n="chev" c="chev" />
+          </Link>
+        );
+      })}
+    </section>
   );
 }

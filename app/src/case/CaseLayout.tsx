@@ -7,6 +7,7 @@ import { isFull } from '../domain/platform';
 import { syncPublicPage } from '../domain/guests';
 import { repo } from '../repo/repo';
 import { ConflictError } from '../repo/remoteRepo';
+import { ringForNew } from '../ui/bell';
 import { REMOTE } from '../repo/backend';
 import { usePlatform, useUser } from '../repo/platformStore';
 import { Icon } from '../ui/Icon';
@@ -47,8 +48,12 @@ export function CaseLayout() {
 
   const reload = useCallback(async () => {
     const x = await repo.get(id);
-    if (x) { cRef.current = x; setC(x); }
-  }, [id]);
+    if (x) {
+      cRef.current = x; setC(x);
+      // Chuông chánh niệm khi người thân vừa viết vào Sổ tưởng nhớ (không ngân cho dòng của chính mình)
+      ringForNew(x.history, x.members.find(m => m.userId === user.id)?.name ?? user.name);
+    }
+  }, [id, user.id, user.name]);
 
   const flush = useCallback(async () => {
     if (saving.current) return;

@@ -4,6 +4,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import type { CaseData } from '../domain/types';
 import { initials } from '../domain/actions';
 import { repo } from '../repo/repo';
+import { ringForNew } from '../ui/bell';
 import { useUser } from '../repo/platformStore';
 import { DN_TEXT } from '../domain/text';
 import { Icon, type IconName } from '../ui/Icon';
@@ -21,8 +22,11 @@ export function useMyCases() {
     let live = true;
     repo.listAll().then(all => {
       if (!live) return;
-      setList(all.filter(c => c.ownerId === user.id || !c.ownerId || c.members.some(m => m.userId === user.id))
-        .sort((a, b) => b.createdAt.localeCompare(a.createdAt)));
+      const mine = all.filter(c => c.ownerId === user.id || !c.ownerId || c.members.some(m => m.userId === user.id))
+        .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+      setList(mine);
+      // Chuông chánh niệm: có người vừa viết vào Sổ tưởng nhớ kể từ lần trước (không ngân cho dòng của chính mình)
+      ringForNew(mine.flatMap(c => c.history), mine.map(c => c.members.find(m => m.userId === user.id)?.name).find(Boolean) ?? user.name);
     });
     return () => { live = false; };
   }, [user]);

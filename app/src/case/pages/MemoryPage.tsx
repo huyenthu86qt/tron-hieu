@@ -1,6 +1,8 @@
 // Sổ tưởng nhớ — miễn phí cho mọi gia đình. Kỷ niệm của người trong đội và lời tưởng nhớ khách gửi (người đại diện duyệt).
 // Giọng trầm, ấm: không “thích”, không bình luận, không bài viết của app ở đây.
 import { useCallback, useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { markBellSeen, playMindfulBell } from '../../ui/bell';
 import type { CaseData } from '../../domain/types';
 import { U1_ID } from '../../domain/model';
 import { lifeSpan } from '../../domain/person';
@@ -51,6 +53,16 @@ export function MemoryPage() {
   const [f, setF] = useState({ body: '', visibility: 'family' as MemoryVisibility, prompt: '' as string, photoPath: undefined as string | undefined, photoName: '' });
   const [edit, setEdit] = useState<{ id: string; body: string } | null>(null);
   const [dl, setDl] = useState(false);
+  const [params] = useSearchParams();
+  // Mở từ chuông chánh niệm: dừng lại vài giây trước khi đọc sổ
+  const [pause, setPause] = useState(params.get('lang') === '1');
+  useEffect(() => { markBellSeen(); }, []);
+  useEffect(() => {
+    if (!pause) return;
+    playMindfulBell();
+    const t = setTimeout(() => setPause(false), 4500);
+    return () => clearTimeout(t);
+  }, [pause]);
   const [prompts] = useState(() => [...PROMPTS].sort(() => Math.random() - 0.5).slice(0, 4));
 
   const load = useCallback(() => listMemories(c.id).then(setL).catch(e => setErr((e as Error).message)), [c.id]);
@@ -67,6 +79,14 @@ export function MemoryPage() {
 
   return (
     <div className="page" style={{ maxWidth: 760 }}>
+      {pause && (
+        <div className="mindful-pause" role="dialog" aria-label="Dừng lại một chút" onClick={() => setPause(false)}>
+          <Icon n="candle" c="lg" />
+          <p className="mp-1">Dừng lại một chút.</p>
+          <p className="mp-2">Hít thở. Nhớ về {DN(c)}.</p>
+          <p className="mp-3">Chạm để vào sổ</p>
+        </div>
+      )}
       <section className="memorial" style={{ alignItems: 'center' }}>
         {c.person.photo ? <div className="portrait" style={{ padding: 0, overflow: 'hidden' }}><img src={c.person.photo} alt="Ảnh thờ" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /></div>
           : <div className="portrait"><Icon n="candle" c="lg" /></div>}
