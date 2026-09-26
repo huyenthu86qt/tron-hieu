@@ -356,8 +356,10 @@ describe('Hạng mục dịch vụ', () => {
     const { DEFAULT_ANSWERS } = await import('./entry');
     const c = createCase({ answers: { ...DEFAULT_ANSWERS, venue: 'hall', form: 'cremation' } });
     const ks = catsOf(c).map(k => k.k);
-    expect(ks).toContain('quan'); expect(ks).toContain('hall'); expect(ks).toContain('hoatang');
+    expect(ks).toContain('quan'); expect(ks).toContain('hall'); expect(ks).toContain('hoatang'); expect(ks).toContain('hutro');
     expect(ks).not.toContain('rap'); expect(ks).not.toContain('mo'); expect(ks).not.toContain('nghiatrang');
+    const b = createCase({ answers: { ...DEFAULT_ANSWERS, venue: 'home', form: 'burial' } });
+    expect(catsOf(b).map(k => k.k)).not.toContain('hutro');
     addCustomCat(c, '  Sư thầy   tụng kinh ');
     expect(catsOf(c).at(-1)).toMatchObject({ k: 'x-Sư thầy tụng kinh', custom: true });
     expect(catName('x-Sư thầy tụng kinh')).toBe('Sư thầy tụng kinh');

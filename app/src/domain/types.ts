@@ -9,7 +9,7 @@ export type OrgModel = 'family' | 'community' | 'official_rel' | 'official';
 export type OrgType = 'cadre' | 'military' | 'police';
 export type Scale = 'small' | 'medium' | 'large';
 /** Hạng mục dịch vụ có sẵn */
-export type BuiltinCat = 'quan' | 'baoquan' | 'hall' | 'rap' | 'le' | 'hoa' | 'do' | 'anh' | 'nhac' | 'an' | 'xe' | 'xedua' | 'hoatang' | 'nghiatrang' | 'mo' | 'quay';
+export type BuiltinCat = 'quan' | 'baoquan' | 'hall' | 'rap' | 'le' | 'hoa' | 'do' | 'anh' | 'nhac' | 'an' | 'xe' | 'xedua' | 'hoatang' | 'hutro' | 'nghiatrang' | 'mo' | 'quay';
 /** Hạng mục: có sẵn, hoặc gia đình tự thêm (“x-” + tên) */
 export type VendorCat = BuiltinCat | `x-${string}`;
 /** Danh xưng: có sẵn, hoặc gia đình tự viết (chọn “Khác”, ví dụ Thầy, Cô, Bác, Sơ) */
