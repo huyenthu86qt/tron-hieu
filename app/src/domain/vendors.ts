@@ -237,3 +237,57 @@ export function mapsSearchUrl(cat: VendorCat, site: VenueSite): string | null {
   if (site.address.trim()) return `https://www.google.com/maps/search/${encodeURIComponent(`${q} gần ${site.address.trim()}`)}`;
   return null;
 }
+
+/* ---------- Danh bạ tự lớn lên từ các gia đình (lớp 3) ---------- */
+/** Một lượt gia đình tự thêm nhà cung cấp và đồng ý giới thiệu. Không kèm thông tin gia đình, không kèm ghi chú riêng. */
+export interface SharedFamilyVendor {
+  name: string; phone: string; cats: VendorCat[]; address: string;
+  used: boolean; committed: boolean; accepted: boolean; incidents: number; at: string;
+}
+
+/** Tổng hợp của một nhà cung cấp (nhận ra theo số điện thoại) qua nhiều gia đình */
+export interface VendorCandidate {
+  phone: string; names: string[]; cats: VendorCat[]; addresses: string[];
+  families: number; used: number; committed: number; accepted: number; incidents: number; lastAt: string;
+}
+
+export const phoneKey = (p: string) => p.replace(/\D/g, '').replace(/^84/, '0');
+
+/** Lấy các lượt “đồng ý giới thiệu” từ đám hiếu (bản chạy thử trên máy; máy chủ có hàm tương đương) */
+export function sharedFamilyVendors(cases: CaseData[]): SharedFamilyVendor[] {
+  const out: SharedFamilyVendor[] = [];
+  for (const c of cases) {
+    for (const v of c.familyVendors ?? []) {
+      if (!v.share || phoneKey(v.phone).length < 9) continue;
+      const uses = Object.values(c.vendors ?? {}).filter(x => x?.family && x.vendorId === v.id);
+      out.push({
+        name: v.name, phone: v.phone, cats: v.cats, address: v.address,
+        used: uses.length > 0, committed: uses.some(x => x!.status === 'committed'), accepted: uses.some(x => !!x!.acceptedAt),
+        incidents: uses.reduce((n, x) => n + (x!.incidents?.length ?? 0), 0), at: c.updatedAt ?? c.createdAt,
+      });
+    }
+  }
+  return out;
+}
+
+/**
+ * Gom theo số điện thoại, bỏ bên đã có trong danh bạ chung và bên Admin đã bỏ qua.
+ * Xếp: nhiều gia đình dùng thật (đã cam kết / nghiệm thu) lên trước; bên có sự cố xuống sau.
+ */
+export function vendorCandidates(rows: SharedFamilyVendor[], dir: DirVendor[], dismissed: string[] = []): VendorCandidate[] {
+  const known = new Set([...dir.map(v => phoneKey(v.phone)), ...dismissed.map(phoneKey)]);
+  const by = new Map<string, VendorCandidate>();
+  for (const r of rows) {
+    const k = phoneKey(r.phone);
+    if (known.has(k)) continue;
+    const x = by.get(k) ?? { phone: r.phone, names: [], cats: [], addresses: [], families: 0, used: 0, committed: 0, accepted: 0, incidents: 0, lastAt: r.at };
+    if (!x.names.includes(r.name)) x.names.push(r.name);
+    for (const ca of r.cats) if (!x.cats.includes(ca)) x.cats.push(ca);
+    if (r.address && !x.addresses.includes(r.address)) x.addresses.push(r.address);
+    x.families += 1; x.used += +r.used; x.committed += +r.committed; x.accepted += +r.accepted; x.incidents += r.incidents;
+    if (r.at > x.lastAt) x.lastAt = r.at;
+    by.set(k, x);
+  }
+  const score = (x: VendorCandidate) => x.accepted * 3 + x.committed * 2 + x.used + x.families - x.incidents * 2;
+  return [...by.values()].sort((a, b) => score(b) - score(a) || b.lastAt.localeCompare(a.lastAt));
+}

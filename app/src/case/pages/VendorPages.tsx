@@ -81,13 +81,13 @@ export function FamilyVendorSheet({ cat, useNow, onClose }: { cat?: VendorCat; u
   const { c, update } = useCase();
   const { toast } = useApp();
   const vis = catsVisible(c.situation);
-  const [f, setF] = useState({ name: '', phone: '', cats: cat ? [cat] : [] as VendorCat[], address: '', note: '', now: !!useNow });
+  const [f, setF] = useState({ name: '', phone: '', cats: cat ? [cat] : [] as VendorCat[], address: '', note: '', now: !!useNow, share: true });
   const [err, setErr] = useState<string | null>(null);
   const committed = cat ? c.vendors?.[cat]?.status === 'committed' : false;
   const save = () => {
     let id = '';
     const e = update(d => {
-      id = addFamilyVendor(d, { name: f.name, phone: f.phone, cats: f.cats, address: f.address, note: f.note });
+      id = addFamilyVendor(d, { name: f.name, phone: f.phone, cats: f.cats, address: f.address, note: f.note, share: f.share });
       if (f.now && cat && f.cats.includes(cat) && !committed) confirmVendor(d, cat, id, true);
     });
     if (e) { setErr(e); return; }
@@ -102,7 +102,8 @@ export function FamilyVendorSheet({ cat, useNow, onClose }: { cat?: VendorCat; u
       <div className="field"><label htmlFor="fvNote">Ghi chú (tùy chọn)</label><input className="input" id="fvNote" value={f.note} onChange={e => setF({ ...f, note: e.target.value })} placeholder="Ví dụ: đã làm cho đám nhà bác cả năm ngoái" /></div>
       {cat && !committed && <label className="check"><input type="checkbox" checked={f.now} onChange={e => setF({ ...f, now: e.target.checked })} /><span>Chọn luôn bên này cho hạng mục <b>{catName(cat)}</b></span></label>}
       <ErrorBanner err={err} />
-      <p className="note">Nhà cung cấp gia đình tự thêm chỉ nằm trong đám hiếu này, không vào danh bạ chung của Admin.</p>
+      <label className="check"><input type="checkbox" checked={f.share} onChange={e => setF({ ...f, share: e.target.checked })} /><span>Giới thiệu bên này cho các gia đình khác. Trọn Hiếu gọi xác nhận với nhà cung cấp trước khi đưa vào danh bạ chung; chỉ chia sẻ tên, số điện thoại, hạng mục, địa chỉ của nhà cung cấp — không kèm thông tin gia đình hay ghi chú.</span></label>
+      <p className="note">Bỏ chọn nếu đây là người quen làm giúp, không nhận làm cho người ngoài.</p>
     </Sheet>
   );
 }

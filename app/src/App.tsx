@@ -13,7 +13,7 @@ import {
 } from './pages/PrePages';
 import {
   AdminAccessPage, AdminAuditPage, AdminHomePage, AdminLoginPage, AdminOrdersPage, AdminProductsPage, AdminSepayPage, AdminUnmatchedPage,
-  AdminUserPage, AdminUsersPage, AdminVendorEditPage, AdminVendorsPage,
+  AdminUserPage, AdminUsersPage, AdminVendorCandidatesPage, AdminVendorEditPage, AdminVendorsPage,
 } from './pages/AdminPages';
 import { CaseLayout } from './case/CaseLayout';
 import { NowPage } from './case/pages/NowPage';
@@ -121,6 +121,7 @@ export default function App() {
           <Route path="/admin/sepay" element={AD(<AdminSepayPage />)} />
           <Route path="/admin/chua-khop" element={AD(<AdminUnmatchedPage />)} />
           <Route path="/admin/nha-cung-cap" element={AD(<AdminVendorsPage />)} />
+          <Route path="/admin/nha-cung-cap/de-xuat" element={AD(<AdminVendorCandidatesPage />)} />
           <Route path="/admin/nha-cung-cap/:vid" element={AD(<AdminVendorEditPage />)} />
           <Route path="/admin/nhat-ky" element={AD(<AdminAuditPage />)} />
 

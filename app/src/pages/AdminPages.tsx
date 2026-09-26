@@ -3,14 +3,14 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { Link, Navigate, useLocation, useNavigate, useParams } from 'react-router-dom';
 import type { CaseData, DirVendor, VendorCat, VendorCond } from '../domain/types';
-import { CATS, catName, fmtGeo, parseGeo } from '../domain/vendors';
+import { CATS, catName, fmtGeo, parseGeo, type VendorCandidate } from '../domain/vendors';
 import { fmtMoneyInput, money, parseMoney } from '../domain/finance';
 import { fmtPhone, isFull, ORDER_STATUS_LABEL, type OrderStatus, type Product } from '../domain/platform';
 import { DN_TEXT } from '../domain/text';
 import { repo } from '../repo/repo';
 import { REMOTE } from '../repo/backend';
 import {
-  assignTx, createAdmin, login, logout, refundOrder, refundTx, saveProduct, saveSettings, saveVendor, setCaseAccess, setSupportNote,
+  assignTx, createAdmin, dismissCandidate, loadVendorCandidates, login, logout, refundOrder, refundTx, saveProduct, saveSettings, saveVendor, setCaseAccess, setSupportNote,
   setUserLocked, setVendorActive, simulateBankTx, usePlatform, useUser,
 } from '../repo/platformStore';
 import { Icon, type IconName } from '../ui/Icon';
@@ -326,6 +326,8 @@ export function AdminVendorsPage() {
   const dir = usePlatform(s => s.directory);
   const { mobile, toast } = useApp();
   const nav = useNavigate();
+  const [cands, setCands] = useState<number | null>(null);
+  useEffect(() => { loadVendorCandidates().then(l => setCands(l.length)).catch(() => setCands(null)); }, [dir]);
   const [F, setF] = useState({ cat: 'all', status: 'all', q: '' });
   const [hide, setHide] = useState<DirVendor | null>(null);
   const L = dir.filter(v => (F.cat === 'all' || v.cats.includes(F.cat as VendorCat)) && (F.status === 'all' || (F.status === 'on' ? v.active : !v.active)) && `${v.name} ${v.address}`.toLowerCase().includes(F.q.toLowerCase()));
@@ -335,6 +337,7 @@ export function AdminVendorsPage() {
       <div className="page-title"><div><h1>Danh bạ nhà cung cấp</h1><p>Nguồn cho gợi ý “đúng + gần nhất” của mọi gia đình · {dir.filter(v => v.active).length} bên đang hoạt động</p></div>
         <div className="actions"><button className="btn primary" onClick={() => nav('/admin/nha-cung-cap/moi')}><Icon n="plus" c="sm" />Thêm nhà cung cấp</button></div></div>
       {mobile && <Banner kind="info">Trên điện thoại chỉ xem và bật/tắt. Thêm, sửa đầy đủ trên máy tính.</Banner>}
+      {!!cands && <Banner kind="upd" icon="team"><b>{cands} đề xuất từ các gia đình</b> — nhà cung cấp gia đình tự thêm và đồng ý giới thiệu. <Link to="/admin/nha-cung-cap/de-xuat">Xem và duyệt</Link></Banner>}
       <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
         <select className="input" style={{ width: 'auto' }} value={F.cat} onChange={e => setF({ ...F, cat: e.target.value })} aria-label="Loại dịch vụ"><option value="all">Mọi loại dịch vụ</option>{CATS.map(k => <option key={k.k} value={k.k}>{k.name}</option>)}</select>
         <select className="input" style={{ width: 'auto' }} value={F.status} onChange={e => setF({ ...F, status: e.target.value })} aria-label="Trạng thái"><option value="all">Mọi trạng thái</option><option value="on">Đang hoạt động</option><option value="off">Đã ẩn</option></select>
@@ -355,12 +358,13 @@ export function AdminVendorsPage() {
 /* ---------- S-ADM-02 ---------- */
 export function AdminVendorEditPage() {
   const { vid = 'moi' } = useParams();
+  const prefill = (useLocation().state as { prefill?: { name: string; phone: string; cats: VendorCat[]; address: string } } | null)?.prefill;
   const dir = usePlatform(s => s.directory);
   const nav = useNavigate();
   const { toast } = useApp();
   const orig = dir.find(v => v.id === vid);
   const isNew = vid === 'moi' || !orig;
-  const [f, setF] = useState(() => ({ name: orig?.name ?? '', phone: orig?.phone ?? '', cats: orig?.cats ?? [] as VendorCat[], address: orig?.address ?? '', geo: fmtGeo(orig?.geo), radiusKm: orig?.radiusKm ?? 10, cond: orig?.cond ?? 'both' as VendorCond, active: orig?.active ?? true }));
+  const [f, setF] = useState(() => ({ name: orig?.name ?? prefill?.name ?? '', phone: orig?.phone ?? prefill?.phone ?? '', cats: orig?.cats ?? prefill?.cats ?? [] as VendorCat[], address: orig?.address ?? prefill?.address ?? '', geo: fmtGeo(orig?.geo), radiusKm: orig?.radiusKm ?? 10, cond: orig?.cond ?? 'both' as VendorCond, active: orig?.active ?? true }));
   const [err, setErr] = useState<string | null>(null);
   const g = parseGeo(f.geo);
   const save = async () => {
@@ -394,6 +398,46 @@ export function AdminVendorEditPage() {
       <div className="split">{form}<section className="card card-pad stack" style={{ gap: 8 }}><h3>Vị trí</h3>
         {g ? <><p className="num">{g.lat.toFixed(5)}, {g.lng.toFixed(5)} · bán kính {f.radiusKm} km</p><a className="btn sm" href={`https://www.google.com/maps/search/?api=1&query=${g.lat},${g.lng}`} target="_blank" rel="noreferrer" style={{ alignSelf: 'flex-start' }}><Icon n="pin" c="sm" />Xem trên bản đồ</a></> : <p className="muted">Chưa có vị trí.</p>}
         </section></div>
+    </div></AdminShell>
+  );
+}
+
+/* ---------- Đề xuất nhà cung cấp từ các gia đình (danh bạ tự lớn lên) ---------- */
+export function AdminVendorCandidatesPage() {
+  const dir = usePlatform(s => s.directory);
+  const dismissed = usePlatform(s => s.settings.dismissedCandidates);
+  const nav = useNavigate();
+  const { toast } = useApp();
+  const [L, setL] = useState<VendorCandidate[] | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+  useEffect(() => { loadVendorCandidates().then(setL).catch(e => setErr((e as Error).message)); }, [dir, dismissed]);
+  const add = (x: VendorCandidate) => nav('/admin/nha-cung-cap/moi', { state: { prefill: { name: x.names[0], phone: x.phone, cats: x.cats, address: x.addresses[0] ?? '' } } });
+  const skip = async (x: VendorCandidate) => { const e = await dismissCandidate(x.phone, x.names[0]); toast(e ?? `Đã bỏ qua ${x.names[0]}`); };
+  return (
+    <AdminShell title="Đề xuất từ các gia đình" back="/admin/nha-cung-cap"><div className="page" style={{ maxWidth: 960 }}>
+      <div className="page-title"><div><div className="eyebrow">Danh bạ nhà cung cấp</div><h1 style={{ marginTop: 4 }}>Đề xuất từ các gia đình</h1>
+        <p>Nhà cung cấp các gia đình tự thêm và đồng ý giới thiệu. Bên được nhiều gia đình dùng, đã cam kết, đã nghiệm thu đứng đầu.</p></div></div>
+      <Banner kind="info" icon="alert">Trước khi đưa vào danh bạ: <b>gọi xác nhận</b> với nhà cung cấp (còn nhận làm, khu vực phục vụ, đồng ý có tên trong app). App chỉ nhận được tên, số điện thoại, hạng mục, địa chỉ nhà cung cấp — không có thông tin gia đình.</Banner>
+      <ErrorBanner err={err} />
+      <section className="card">{L === null ? <div className="empty">Đang tải…</div> : L.length ? <div className="list">{L.map(x => (
+        <div key={x.phone} className="row" style={{ alignItems: 'flex-start' }}>
+          <div className="grow">
+            <div className="title">{x.names.join(' · ')}</div>
+            <div className="meta"><span className="num">{x.phone}</span><span>{x.cats.map(catName).join(', ')}</span>{x.addresses[0] && <span>{x.addresses[0]}</span>}</div>
+            <div className="meta">
+              <span className="pill soft">{x.families} gia đình thêm</span>
+              {x.committed > 0 && <span className="pill done">{x.committed} lần cam kết</span>}
+              {x.accepted > 0 && <span className="pill done">{x.accepted} lần nghiệm thu</span>}
+              {x.incidents > 0 && <span className="pill issue">{x.incidents} sự cố ghi nhận</span>}
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <a className="btn sm" href={`tel:${x.phone.replace(/\s/g, '')}`}>Gọi xác nhận</a>
+            <button className="btn sm primary" onClick={() => add(x)}>Đưa vào danh bạ</button>
+            <button className="btn sm ghost" onClick={() => void skip(x)}>Bỏ qua</button>
+          </div>
+        </div>
+      ))}</div> : <div className="empty"><Icon n="team" c="lg" /><span>Chưa có đề xuất mới. Khi gia đình tự thêm nhà cung cấp và đồng ý giới thiệu, bên đó hiện ở đây.</span></div>}</section>
     </div></AdminShell>
   );
 }

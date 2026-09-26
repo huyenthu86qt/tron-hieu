@@ -167,6 +167,8 @@ export const auditEntry = (actor: string, action: string, target: string, detail
 export interface Settings {
   sepay: { env: 'test' | 'live'; account: ReceiveAccount; matchRule: string; lastCheck?: { at: string; ok: boolean; note: string } };
   support: { phone: string; zalo: string };
+  /** Số điện thoại các đề xuất nhà cung cấp Admin đã xem và bỏ qua */
+  dismissedCandidates?: string[];
 }
 export const DEFAULT_SETTINGS: Settings = {
   sepay: { env: 'test', account: { bank: '', number: '', holder: '', active: false }, matchRule: 'Mã đơn trong nội dung + đúng số tiền + đúng tài khoản nhận' },

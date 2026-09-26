@@ -3,7 +3,8 @@
 //  • REMOTE (Phase 3a): Supabase Auth + bảng trên máy chủ; state ở đây chỉ là bản sao để hiển thị.
 //  • Trên máy (bản chạy thử, trang /mau): như Phase 2, lưu localStorage.
 import { useSyncExternalStore } from 'react';
-import type { CaseData, DirVendor } from '../domain/types';
+import type { CaseData, DirVendor, VendorCat } from '../domain/types';
+import { sharedFamilyVendors, vendorCandidates, type SharedFamilyVendor, type VendorCandidate } from '../domain/vendors';
 import {
   auditEntry, checkOtp, createOrder, DEFAULT_PRODUCTS, DEFAULT_SETTINGS, grantFull, hashPassword, issueOtp, isExpired, loginAttempt,
   matchTransaction, newPreNeed, newSalt, normalizePhone, passwordError, revokeAccess,
@@ -604,4 +605,23 @@ export function resetAllLocalData() {
   localStorage.removeItem(KEY);
   state = initial();
   subs.forEach(f => f());
+}
+
+/* ---------- Đề xuất nhà cung cấp từ các gia đình (danh bạ tự lớn lên) ---------- */
+export async function loadVendorCandidates(): Promise<VendorCandidate[]> {
+  let rows: SharedFamilyVendor[];
+  if (REMOTE) {
+    const { data, error } = await sb!.rpc('admin_shared_family_vendors');
+    if (error) throw new Error(friendlyError(error));
+    rows = (data as (Omit<SharedFamilyVendor, 'cats'> & { cats: VendorCat[] })[]).map(r => ({ ...r, incidents: Number(r.incidents) }));
+  } else {
+    rows = sharedFamilyVendors(await repo.listAll());
+  }
+  return vendorCandidates(rows, state.directory, state.settings.dismissedCandidates ?? []);
+}
+
+/** Admin xem rồi bỏ qua một đề xuất (không hiện lại) */
+export async function dismissCandidate(phone: string, name: string): Promise<string | null> {
+  const s: Settings = { ...state.settings, dismissedCandidates: [...(state.settings.dismissedCandidates ?? []), phone] };
+  return saveSettings(s, `Bỏ qua đề xuất nhà cung cấp ${name}`);
 }

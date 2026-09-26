@@ -291,3 +291,24 @@ describe('Tìm quanh nơi tổ chức trên Google Maps', () => {
     expect(mapsSearchUrl('hoa', { name: 'Nhà riêng', address: '  ' })).toBeNull();
   });
 });
+
+describe('Danh bạ tự lớn lên từ các gia đình', () => {
+  it('chỉ lấy bên gia đình đồng ý giới thiệu; gom theo số điện thoại; bỏ bên đã có trong danh bạ / đã bỏ qua; xếp bên dùng thật lên đầu', async () => {
+    const { sharedFamilyVendors, vendorCandidates } = await import('./vendors');
+    const mkCase = (fv: object[], vendors: object = {}) => ({ ...normalizeCase(createCase({ answers: DEFAULT_ANSWERS })), familyVendors: fv, vendors } as unknown as CaseData);
+    const a = mkCase([
+      { id: 'f1', name: 'Rạp Minh Anh', phone: '0911 222 333', cats: ['rap'], address: 'Long Biên', note: 'riêng', share: true },
+      { id: 'f2', name: 'Cô Lan nấu cỗ', phone: '0977000111', cats: ['an'], address: '', note: '', share: false },
+      { id: 'f3', name: 'Kèn bác Tư', phone: '0988777666', cats: ['nhac'], address: '', note: '', share: true },
+    ], { rap: { vendorId: 'f1', family: true, status: 'committed', incidents: [], acceptedAt: 'x' } });
+    const b = mkCase([{ id: 'g1', name: 'Rạp Minh Anh (Long Biên)', phone: '+84 911222333', cats: ['rap', 'xe'], address: '', note: '', share: true }]);
+    const c = mkCase([{ id: 'h1', name: 'Hoa Cúc', phone: '0900111222', cats: ['hoa'], address: '', note: '', share: true }]);
+    const rows = sharedFamilyVendors([a, b, c]);
+    expect(rows.map(r => r.name)).not.toContain('Cô Lan nấu cỗ');
+    const dir = [{ id: 'v1', name: 'Hoa Cúc', phone: '0900 111 222', cats: ['hoa'], address: '', radiusKm: 5, cond: 'both', active: true, updatedAt: '' }] as unknown as DirVendor[];
+    const L = vendorCandidates(rows, dir, ['0988777666']);
+    expect(L).toHaveLength(1);
+    expect(L[0]).toMatchObject({ families: 2, committed: 1, accepted: 1, cats: ['rap', 'xe'] });
+    expect(L[0].names).toEqual(['Rạp Minh Anh', 'Rạp Minh Anh (Long Biên)']);
+  });
+});

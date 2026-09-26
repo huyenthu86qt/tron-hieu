@@ -209,7 +209,11 @@ export interface DirVendor {
   radiusKm: number; cond: VendorCond; active: boolean; updatedAt: string;
 }
 /** Nhà cung cấp gia đình tự thêm — chỉ thuộc đám hiếu này */
-export interface FamilyVendor { id: string; name: string; phone: string; cats: VendorCat[]; address: string; note: string }
+export interface FamilyVendor {
+  id: string; name: string; phone: string; cats: VendorCat[]; address: string; note: string;
+  /** Gia đình đồng ý giới thiệu bên này cho các gia đình khác (Admin gọi xác nhận trước khi đưa vào danh bạ chung) */
+  share?: boolean;
+}
 export type CatStatus = 'suggest' | 'confirmed' | 'committed';
 export interface VendorLog { text: string; amount?: number; at: string; by?: string }
 export interface CaseVendor {
