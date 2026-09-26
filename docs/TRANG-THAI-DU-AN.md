@@ -50,7 +50,7 @@
 - ✓ **Bản xem thử online** — https://tron-hieu.vercel.app (xem như khách trả phí: /mau) · code: https://github.com/huyenthu86qt/tron-hieu (riêng tư) · mỗi lần đẩy code lên GitHub, Vercel tự cập nhật
 - ✓ **Xây app — Phase 3a: Tài khoản thật + dữ liệu trên máy chủ** — APPROVE 25/09/2026 (mốc dbc7b3f). Supabase (Singapore) đã cài, bản online dùng máy chủ; đăng nhập bằng số điện thoại; Admin: 0784869988. Kèm sửa theo góp ý: lọc Việc của tôi, việc của mình nổi màu, xong việc tự về danh sách, trả lại việc kèm lý do, nhãn Chưa có người nhận màu cam đất
 - ✓ **Xây app — Phase 3b: Tệp, link mời, bản đồ, đăng nhập Google** — APPROVE 26/09/2026 (mốc 19fade9). Lưu tệp riêng tư; link nhờ việc trên máy khác; tìm vị trí từ địa chỉ + Google Maps khi danh bạ trống; danh bạ tự lớn lên từ gia đình; mời vào đội bằng link; đăng nhập Google; tự đổi số; Admin cấp mật khẩu tạm. OTP SMS/Zalo hoãn tới khi có hộ kinh doanh
-- ● **Phase 3c** — tiếp theo: kích hoạt hồ sơ trên máy chủ, nhật ký, xuất / xóa dữ liệu
+- ● **Phase 3c** — đã lên bản online (3f55fe8, 26/09/2026): chuyển quyền người đại diện; chỉ xóa khi khách yêu cầu, sau 7 ngày (máy chủ tự chạy 2 giờ sáng), người đại diện muốn xóa tài khoản phải chuyển quyền trước (Chủ dự án chọn phương án a); giữ đơn hàng làm chứng từ; bản lưu đám hiếu in được + bảng tính; Admin xem yêu cầu chờ xóa và dọn tệp. Chờ Chủ dự án duyệt
 - ○ 3c · ○ Phase 4 · ○ Working App · ○ Sales Page · ○ Kiểm chứng thị trường
 
 ## Mốc các phase
@@ -61,7 +61,7 @@
 | Bản xem thử online (GitHub + Vercel) | Đã chạy 25/09/2026 — https://tron-hieu.vercel.app | — |
 | 3a Tài khoản thật + dữ liệu trên máy chủ | APPROVE 25/09/2026 | dbc7b3f |
 | 3b Tệp, link mời, bản đồ, đăng nhập Google | APPROVE 26/09/2026 (OTP hoãn tới khi có hộ kinh doanh) | 19fade9 |
-| 3c Kích hoạt, nhật ký, xuất / xóa dữ liệu | Chưa bắt đầu | — |
+| 3c Chuyển quyền, xuất / xóa dữ liệu | Chờ duyệt | 3f55fe8 |
 | 4 Thanh toán, vận hành & Working App | Chưa bắt đầu | — |
 
 ## Phase 1 — ghi chú bàn giao
