@@ -1,4 +1,4 @@
-// Chuông chánh niệm — tiếng chuông nhẹ, ngân ngắn (~3 giây), tự tạo bằng Web Audio (không dùng tệp âm thanh của ai).
+// Chuông chánh niệm — tiếng chuông trầm, nhẹ, ngân ngắn (~1,8 giây), tự tạo bằng Web Audio (không dùng tệp âm thanh của ai).
 // Chỉ dùng cho những điều thuộc về tình: Sổ tưởng nhớ, lời tưởng nhớ, mốc 49 ngày / 100 ngày / giỗ.
 const ON_KEY = 'tronhieu.bell.on';
 const LAST_KEY = 'tronhieu.bell.last';
@@ -19,7 +19,9 @@ export function playMindfulBell(force = false) {
     out.gain.value = 0.12; // nhỏ, êm
     out.connect(ctx.destination);
     // Âm cơ bản + các họa âm của chuông, họa âm cao tắt nhanh hơn
-    const partials: [number, number, number][] = [[396, 1, 3.0], [396 * 2.01, 0.35, 2.0], [396 * 2.76, 0.25, 1.4], [396 * 5.4, 0.08, 0.7]];
+    // Chủ dự án chọn (26/09/2026): trầm (264 Hz) và ngắn (~1,8 giây)
+    const B = 264;
+    const partials: [number, number, number][] = [[B, 1, 1.8], [B * 2.01, 0.35, 1.2], [B * 2.76, 0.25, 0.84], [B * 5.4, 0.08, 0.42]];
     for (const [f, amp, dur] of partials) {
       const o = ctx.createOscillator(), g = ctx.createGain();
       o.type = 'sine';
