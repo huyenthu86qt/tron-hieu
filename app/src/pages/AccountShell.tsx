@@ -1,4 +1,4 @@
-// Khung “Không gian của tôi”: Trang chủ, Chuẩn bị trước, Thông báo, Tài khoản (bản mẫu: shellX 'acct')
+// Khung “Không gian của tôi”: Trang chủ, Chuẩn bị trước, Góc Bình An, Thông báo, Tài khoản (bản mẫu: shellX 'acct')
 import { useEffect, useState, type ReactNode } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import type { CaseData } from '../domain/types';
@@ -11,7 +11,7 @@ import { Icon, type IconName } from '../ui/Icon';
 import { useApp } from '../ui/common';
 import { SideLogo } from '../ui/brand';
 
-const ITEMS: [string, IconName, string][] = [['Trang chủ', 'now', '/app'], ['Chuẩn bị trước', 'doc', '/chuan-bi'], ['Thông báo', 'bell', '/thong-bao'], ['Tài khoản', 'user', '/tai-khoan']];
+const ITEMS: [string, IconName, string][] = [['Trang chủ', 'now', '/app'], ['Chuẩn bị trước', 'doc', '/chuan-bi'], ['Góc Bình An', 'lotus', '/goc-binh-an'], ['Thông báo', 'bell', '/thong-bao'], ['Tài khoản', 'user', '/tai-khoan']];
 
 /** Đám hiếu mà tài khoản này là người đại diện hoặc thành viên */
 export function useMyCases() {
@@ -47,7 +47,7 @@ export function AccountShell({ title, back, children }: { title: string; back?: 
         <div className="t"><h2>{title}</h2><p>Không gian của {user.name}</p></div>
       </header>
       <main className="content">{children}</main>
-      <nav className="bottom-nav four" aria-label="Điều hướng chính">
+      <nav className="bottom-nav" aria-label="Điều hướng chính">
         {ITEMS.map(([l, i, to]) => <button key={to} className="bn" onClick={() => nav(to)} aria-current={cur(to)}><Icon n={i} />{l}</button>)}
       </nav>
     </div>

@@ -1,23 +1,36 @@
-// Góc bình an — bài viết của Admin về phong tục, người ở lại, sống trọn nghĩa tình.
+// Góc Bình An — hai chuyên mục Nghệ thuật sống / Nghệ thuật chết (nội dung của Chủ dự án).
+// Quy chuẩn mỗi bài: Ảnh đại diện → Tiêu đề → Nội dung → Một phút nhìn lại.
 // Ai cũng đọc được (không cần đăng nhập), chia sẻ được qua Zalo / Facebook. Không bình luận, không “thích”.
+// Đã đăng nhập: hiện trong khung “Không gian của tôi” (Góc Bình An nằm ở thanh menu chính).
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import {
-  deleteArticle, getArticle, isLive, listArticles, newArticle, saveArticle, slugify, uploadArticleCover, type Article, type Milestone,
+  deleteArticle, getArticle, isLive, listArticles, newArticle, saveArticle, slugify, uploadArticleCover, type Article, type Category, type Milestone,
 } from '../repo/nghiaTinh';
-import { adminLog } from '../repo/platformStore';
+import { adminLog, useUser } from '../repo/platformStore';
 import { Icon } from '../ui/Icon';
-import { Banner, Chips, ErrorBanner, useApp } from '../ui/common';
+import { Banner, ErrorBanner, useApp } from '../ui/common';
 import { BrandLine } from '../ui/brand';
 import { Markdown } from '../ui/markdown';
 import { AdminShell } from './AdminPages';
+import { AccountShell } from './AccountShell';
 
-export const BINH_AN = 'Góc bình an';
-const TOPICS = ['Phong tục', 'Người ở lại', 'Thủ tục', 'Sống trọn nghĩa tình'];
+export const BINH_AN = 'Góc Bình An';
+export const CATEGORY: Record<Category, string> = { song: 'Nghệ thuật sống', chet: 'Nghệ thuật chết' };
+const CATS: Category[] = ['song', 'chet'];
 const MILESTONE: Record<Milestone, string> = { 'sau-tang': 'Sau tang lễ', d49: 'Lễ 49 ngày', d100: 'Lễ 100 ngày', gio: 'Giỗ đầu' };
 const fmtDay = (iso?: string) => (iso ? new Date(iso).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '');
+const num = (a: Article) => (a.seq ? String(a.seq).padStart(2, '0') : '');
+/** Dòng nhỏ trên tiêu đề: “Nghệ thuật sống · 01” */
+const eyebrowOf = (a: Article) => [a.category ? CATEGORY[a.category] : BINH_AN, num(a)].filter(Boolean).join(' · ');
+const catRank = (a: Article) => (a.category ? CATS.indexOf(a.category) : CATS.length);
+const bySeq = (a: Article, b: Article) => (a.seq ?? 99) - (b.seq ?? 99) || a.title.localeCompare(b.title, 'vi');
 
-function Frame({ children }: { children: React.ReactNode }) {
+const TAGLINE = ['Hiểu về sự sống – để sống trọn vẹn.', 'Hiểu về cái chết – để biết trân quý hiện tại.'];
+
+function Frame({ title, children }: { title?: string; children: React.ReactNode }) {
+  const user = useUser();
+  if (user) return <AccountShell title={title ?? BINH_AN}><div className="page" style={{ maxWidth: 720 }}>{children}</div></AccountShell>;
   return <div className="bare"><div className="bare-inner" style={{ maxWidth: 720 }}><Link to="/" style={{ textDecoration: 'none' }}><BrandLine /></Link>{children}</div></div>;
 }
 
@@ -25,41 +38,72 @@ function Card({ a }: { a: Article }) {
   return (
     <Link to={`/goc-binh-an/${a.slug}`} className="card article-card" style={{ textDecoration: 'none', color: 'inherit', overflow: 'hidden' }}>
       {a.coverUrl && <img src={a.coverUrl} alt="" style={{ width: '100%', height: 180, objectFit: 'cover' }} />}
-      <div className="card-pad stack" style={{ gap: 6 }}>
-        <div className="eyebrow">{a.topics.join(' · ') || BINH_AN}</div>
-        <h3 style={{ fontFamily: 'var(--serif)', fontSize: 19 }}>{a.title}</h3>
-        {a.summary && <p className="muted">{a.summary}</p>}
+      <div className="card-pad" style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
+        {num(a) && <div className="ba-num" aria-hidden>{num(a)}</div>}
+        <div className="stack" style={{ gap: 6, flex: 1 }}>
+          <h3 style={{ fontFamily: 'var(--serif)', fontSize: 19, lineHeight: 1.35 }}>{a.title}</h3>
+          {a.summary && <p className="muted">{a.summary}</p>}
+        </div>
       </div>
     </Link>
   );
 }
 
-/** Danh sách bài đã đăng */
+/** Thông điệp Góc Bình An (cuối trang) */
+function Message() {
+  return (
+    <section className="ba-message">
+      <div className="eyebrow">Thông điệp {BINH_AN}</div>
+      <p className="ba-serif">Học về sự sống để sống trọn vẹn.<br />Hiểu về cái chết để biết trân quý hiện tại.</p>
+      <p>{BINH_AN} không được tạo ra để nói về nỗi buồn.<br />{BINH_AN} được tạo ra để mỗi người có một nơi dừng lại, nhìn sâu vào chính mình và nhận ra:</p>
+      <p className="ba-serif" style={{ fontWeight: 600 }}>Còn sống là còn cơ hội để yêu thương.</p>
+    </section>
+  );
+}
+
+/** Trang Góc Bình An: lời mở đầu → hai chuyên mục → thông điệp */
 export function BinhAnListPage() {
   const [L, setL] = useState<Article[] | null>(null);
-  const [topic, setTopic] = useState<string | null>(null);
+  const [cat, setCat] = useState<Category | null>(null);
   useEffect(() => { listArticles().then(x => setL(x.filter(a => isLive(a)))).catch(() => setL([])); }, []);
-  const shown = (L ?? []).filter(a => !topic || a.topics.includes(topic));
+  const live = L ?? [];
+  const groups: [string, Article[]][] = [
+    ...CATS.filter(k => !cat || cat === k).map(k => [CATEGORY[k], live.filter(a => a.category === k).sort(bySeq)] as [string, Article[]]),
+    ...(cat ? [] : [['Bài viết khác', live.filter(a => !a.category)] as [string, Article[]]]),
+  ].filter(([, xs]) => xs.length > 0);
   return (
     <Frame>
-      <div><h1 style={{ fontSize: 28, fontFamily: 'var(--serif)' }}>{BINH_AN}</h1>
-        <p className="muted" style={{ marginTop: 6 }}>Những bài viết nhẹ nhàng về phong tục, về người ở lại và sống trọn nghĩa tình.</p></div>
-      <Chips items={TOPICS} isOn={t => topic === t} onToggle={t => setTopic(topic === t ? null : t)} />
-      {L === null ? <p className="muted">Đang tải…</p> : shown.length ? <div className="stack" style={{ gap: 14 }}>{shown.map(a => <Card key={a.id} a={a} />)}</div>
-        : <div className="empty"><Icon n="lotus" c="lg" /><span>Chưa có bài viết.</span></div>}
+      <section className="ba-hero">
+        <Icon n="lotus" c="lg" />
+        <h1>{BINH_AN}</h1>
+        <p className="ba-serif">{TAGLINE[0]}<br />{TAGLINE[1]}</p>
+        <p className="muted">{BINH_AN} là không gian chia sẻ những góc nhìn về sự sống, tâm thức, vô thường, yêu thương, chia ly và sự tiếp nối.</p>
+      </section>
+      <div className="chips" role="tablist" aria-label="Chuyên mục">
+        <button className="chip" aria-pressed={!cat} onClick={() => setCat(null)}>Tất cả</button>
+        {CATS.map(k => <button key={k} className="chip" aria-pressed={cat === k} onClick={() => setCat(cat === k ? null : k)}>{CATEGORY[k]}</button>)}
+      </div>
+      {L === null ? <p className="muted">Đang tải…</p> : groups.length ? groups.map(([h, xs]) => (
+        <section key={h} className="stack" style={{ gap: 12 }}>
+          <h2 className="ba-sec">{h}</h2>
+          {xs.map(a => <Card key={a.id} a={a} />)}
+        </section>
+      )) : <div className="empty"><Icon n="lotus" c="lg" /><span>Chưa có bài viết.</span></div>}
+      <p className="muted" style={{ textAlign: 'center', fontSize: 13 }}>Mỗi bài viết kết thúc bằng “Một phút nhìn lại” – một câu hỏi để người đọc quay về quan sát chính mình.</p>
+      <Message />
     </Frame>
   );
 }
 
-/** Đọc một bài */
+/** Đọc một bài: Ảnh đại diện → Tiêu đề → Nội dung → Một phút nhìn lại */
 export function ArticlePage() {
   const { slug = '' } = useParams();
   const { toast } = useApp();
   const [a, setA] = useState<Article | null | undefined>(undefined);
-  const [more, setMore] = useState<Article[]>([]);
+  const [all, setAll] = useState<Article[]>([]);
   useEffect(() => {
     getArticle(slug).then(x => setA(x && (isLive(x) ? x : null))).catch(() => setA(null));
-    listArticles().then(x => setMore(x.filter(y => isLive(y) && y.slug !== slug).slice(0, 3))).catch(() => undefined);
+    listArticles().then(x => setAll(x.filter(y => isLive(y)))).catch(() => undefined);
   }, [slug]);
   if (a === undefined) return <Frame><p className="muted">Đang tải…</p></Frame>;
   if (!a) return <Frame><div className="empty"><Icon n="lotus" c="lg" /><span>Không tìm thấy bài viết.</span><Link className="btn" to="/goc-binh-an">Về {BINH_AN}</Link></div></Frame>;
@@ -68,22 +112,37 @@ export function ArticlePage() {
     if (typeof navigator.share === 'function') { try { await navigator.share({ title: a.title, url }); return; } catch { return; } }
     try { await navigator.clipboard.writeText(url); toast('Đã sao chép đường dẫn bài viết'); } catch { toast(url); }
   };
+  // Bài tiếp theo cùng chuyên mục (hết thì sang chuyên mục kia), rồi thêm vài bài khác
+  const ordered = CATS.flatMap(k => all.filter(x => x.category === k).sort(bySeq)).concat(all.filter(x => !x.category));
+  const i = ordered.findIndex(x => x.id === a.id);
+  const next = i >= 0 ? ordered[(i + 1) % ordered.length] : undefined;
+  const more = all.filter(x => x.id !== a.id && x.id !== next?.id && x.category === a.category).slice(0, 2);
   return (
     <Frame>
       <Link to="/goc-binh-an" className="muted" style={{ textDecoration: 'none' }}><Icon n="back" c="sm" /> {BINH_AN}</Link>
-      <article className="stack" style={{ gap: 14 }}>
+      <article className="stack" style={{ gap: 16 }}>
         {a.coverUrl && <img src={a.coverUrl} alt="" style={{ width: '100%', maxHeight: 340, objectFit: 'cover', borderRadius: 12 }} />}
-        <div><div className="eyebrow">{a.topics.join(' · ')}</div><h1 style={{ fontFamily: 'var(--serif)', fontSize: 28, lineHeight: 1.3, marginTop: 6 }}>{a.title}</h1>
-          <p className="muted" style={{ marginTop: 6 }}>{fmtDay(a.publishAt)}</p></div>
-        <Markdown text={a.body} />
+        <div><div className="eyebrow">{eyebrowOf(a)}</div><h1 style={{ fontFamily: 'var(--serif)', fontSize: 28, lineHeight: 1.3, marginTop: 6 }}>{a.title}</h1></div>
+        <div className="ba-body"><Markdown text={a.body} /></div>
+        {a.reflection?.trim() && <Reflection text={a.reflection} />}
         <button className="btn" style={{ alignSelf: 'flex-start' }} onClick={() => void share()}><Icon n="link" c="sm" />Chia sẻ bài viết</button>
       </article>
+      {next && next.id !== a.id && <section className="stack" style={{ gap: 12 }}><h3>Bài tiếp theo</h3><Card a={next} /></section>}
       {more.length > 0 && <section className="stack" style={{ gap: 12 }}><h3>Đọc thêm</h3>{more.map(x => <Card key={x.id} a={x} />)}</section>}
     </Frame>
   );
 }
 
-/** Gợi ý một bài đúng mốc (dùng ở trang chủ, Hậu tang) — nhẹ nhàng, bỏ qua được */
+function Reflection({ text }: { text: string }) {
+  return (
+    <aside className="ba-reflect" aria-label="Một phút nhìn lại">
+      <div className="h"><Icon n="lotus" c="sm" />Một phút nhìn lại</div>
+      {text.trim().split('\n').filter(s => s.trim()).map((s, k) => <p key={k}>{s}</p>)}
+    </aside>
+  );
+}
+
+/** Gợi ý một bài đúng mốc (dùng ở Hậu tang) — nhẹ nhàng, bỏ qua được */
 export function ArticleSuggestion({ milestone }: { milestone: Milestone }) {
   const [a, setA] = useState<Article | null>(null);
   useEffect(() => { listArticles().then(L => setA(L.find(x => isLive(x) && x.milestone === milestone) ?? null)).catch(() => undefined); }, [milestone]);
@@ -102,7 +161,7 @@ export function BinhAnHomeCard() {
   if (!L.length) return null;
   return (
     <section className="card"><div className="sec-h card-pad" style={{ margin: 0, paddingBottom: 4 }}><h3>{BINH_AN}</h3><Link className="btn sm ghost" to="/goc-binh-an" style={{ marginLeft: 'auto' }}>Xem tất cả</Link></div>
-      <div className="list">{L.map(a => <Link key={a.id} to={`/goc-binh-an/${a.slug}`} className="row" style={{ textDecoration: 'none', color: 'inherit' }}><Icon n="lotus" c="sm" /><div className="grow"><div className="title">{a.title}</div>{a.summary && <div className="meta"><span>{a.summary}</span></div>}</div><Icon n="chev" c="chev" /></Link>)}</div>
+      <div className="list">{L.map(a => <Link key={a.id} to={`/goc-binh-an/${a.slug}`} className="row" style={{ textDecoration: 'none', color: 'inherit' }}><Icon n="lotus" c="sm" /><div className="grow"><div className="title">{a.title}</div><div className="meta"><span>{eyebrowOf(a)}</span></div></div><Icon n="chev" c="chev" /></Link>)}</div>
     </section>
   );
 }
@@ -115,17 +174,17 @@ const stateOf = (a: Article) => (a.status === 'draft' ? ['soft', 'Nháp'] : isLi
 export function AdminArticlesPage() {
   const nav = useNavigate();
   const [L, setL] = useState<Article[] | null>(null);
-  useEffect(() => { listArticles().then(setL).catch(() => setL([])); }, []);
+  useEffect(() => { listArticles().then(x => setL([...x].sort((p, q) => catRank(p) - catRank(q) || bySeq(p, q)))).catch(() => setL([])); }, []);
   return (
     <AdminShell title={BINH_AN}><div className="page">
       <div className="page-title"><div><h1>{BINH_AN}</h1><p>Bài viết cho mọi người đọc · không bình luận, không quảng cáo</p></div>
         <div className="actions"><button className="btn primary" onClick={() => nav('/admin/goc-binh-an/moi')}><Icon n="plus" c="sm" />Viết bài mới</button>
           <Link className="btn" to="/goc-binh-an" target="_blank">Xem trang đọc</Link></div></div>
-      <Banner kind="info" icon="alert">Chỉ đăng bài chị tự viết hoặc được phép dùng (cả ảnh bìa). Bài về thủ tục nên ghi “thông tin tham khảo”. Khoảng 2–4 bài mỗi tháng là đủ.</Banner>
+      <Banner kind="info" icon="lotus">Quy chuẩn mỗi bài: Ảnh đại diện → Tiêu đề → Nội dung → Một phút nhìn lại. Chỉ dùng bài và ảnh chị tự viết/chụp hoặc được phép dùng.</Banner>
       <section className="card">{L === null ? <div className="empty">Đang tải…</div> : L.length ? <div className="list">{L.map(a => {
         const [k, l] = stateOf(a);
         return <button key={a.id} className="row" style={{ textAlign: 'left' }} onClick={() => nav(`/admin/goc-binh-an/${a.id}`)}><div className="grow"><div className="title">{a.title}</div>
-          <div className="meta"><span className={`pill ${k}`}>{l}</span>{a.milestone && <span>Gợi ý dịp: {MILESTONE[a.milestone]}</span>}<span>Sửa {fmtDay(a.updatedAt)}</span></div></div><Icon n="chev" c="chev" /></button>;
+          <div className="meta"><span className={`pill ${k}`}>{l}</span><span>{eyebrowOf(a)}</span>{a.milestone && <span>Gợi ý dịp: {MILESTONE[a.milestone]}</span>}<span>Sửa {fmtDay(a.updatedAt)}</span></div></div><Icon n="chev" c="chev" /></button>;
       })}</div> : <div className="empty"><span>Chưa có bài viết.</span></div>}</section>
     </div></AdminShell>
   );
@@ -167,8 +226,10 @@ export function AdminArticleEditPage() {
         <section className="card card-pad stack" style={{ maxWidth: 420, margin: '0 auto', width: '100%' }}>
           <p className="note">Xem trước trên điện thoại</p>
           {a.coverUrl && <img src={a.coverUrl} alt="" style={{ width: '100%', maxHeight: 220, objectFit: 'cover', borderRadius: 10 }} />}
+          <div className="eyebrow">{eyebrowOf(a)}</div>
           <h1 style={{ fontFamily: 'var(--serif)', fontSize: 24 }}>{a.title || '(Chưa có tiêu đề)'}</h1>
-          <Markdown text={a.body} />
+          <div className="ba-body"><Markdown text={a.body} /></div>
+          {a.reflection?.trim() && <Reflection text={a.reflection} />}
         </section>
       ) : (
         <section className="card card-pad stack">
@@ -176,7 +237,7 @@ export function AdminArticleEditPage() {
           <div className="field"><label htmlFor="arSlug">Đường dẫn</label><input className="input num" id="arSlug" value={a.slug} onChange={e => { setSlugTouched(true); set({ slug: slugify(e.target.value) }); }} />
             <p className="muted">{window.location.origin}/goc-binh-an/{a.slug || '…'}</p></div>
           <div className="field"><label htmlFor="arSum">Tóm tắt (1–2 câu, hiện ở danh sách)</label><textarea className="input" id="arSum" rows={2} value={a.summary} onChange={e => set({ summary: e.target.value })} /></div>
-          <div className="field"><label>Ảnh bìa (tùy chọn)</label>
+          <div className="field"><label>Ảnh đại diện</label>
             {a.coverUrl && <img src={a.coverUrl} alt="" style={{ width: 240, maxHeight: 140, objectFit: 'cover', borderRadius: 8 }} />}
             <div style={{ display: 'flex', gap: 8 }}>
               <label className="btn sm file-btn"><Icon n="plus" c="sm" />{a.coverUrl ? 'Đổi ảnh' : 'Chọn ảnh'}<input type="file" accept="image/*" onChange={async e => { const f = e.target.files?.[0]; e.target.value = ''; if (!f) return; const r = await uploadArticleCover(f); if (r.error) toast(r.error); else set({ coverUrl: r.url }); }} /></label>
@@ -184,7 +245,16 @@ export function AdminArticleEditPage() {
           <div className="field"><label htmlFor="arBody">Nội dung</label>
             <textarea className="input" id="arBody" rows={18} value={a.body} onChange={e => set({ body: e.target.value })} style={{ fontFamily: 'var(--sans)', lineHeight: 1.6 }} />
             <p className="muted">Cách trình bày: dòng trống để tách đoạn · “## ” đầu dòng cho tiêu đề phụ · “- ” đầu dòng cho danh sách · **chữ đậm** · *chữ nghiêng*.</p></div>
-          <div className="field"><label>Chủ đề</label><Chips items={TOPICS} isOn={t => a.topics.includes(t)} onToggle={t => set({ topics: a.topics.includes(t) ? a.topics.filter(x => x !== t) : [...a.topics, t] })} /></div>
+          <div className="field"><label htmlFor="arRef">Một phút nhìn lại</label>
+            <textarea className="input" id="arRef" rows={3} value={a.reflection ?? ''} onChange={e => set({ reflection: e.target.value })} placeholder="Một câu hỏi để người đọc quay về quan sát chính mình" />
+            <p className="muted">Hiện thành ô riêng ở cuối bài. Mỗi dòng là một câu.</p></div>
+          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+            <div className="field"><label htmlFor="arCat">Chuyên mục</label>
+              <select className="input" id="arCat" style={{ width: 'auto' }} value={a.category ?? ''} onChange={e => set({ category: (e.target.value || undefined) as Category | undefined })}>
+                <option value="">Chưa xếp chuyên mục</option>{CATS.map(k => <option key={k} value={k}>{CATEGORY[k]}</option>)}</select></div>
+            <div className="field"><label htmlFor="arSeq">Số thứ tự bài</label>
+              <input className="input num" id="arSeq" type="number" min={1} max={99} style={{ width: 90 }} value={a.seq ?? ''} onChange={e => set({ seq: e.target.value ? Math.max(1, Math.min(99, Number(e.target.value))) : undefined })} /></div>
+          </div>
           <div className="field"><label htmlFor="arMs">Gợi ý cho gia đình vào dịp</label>
             <select className="input" id="arMs" style={{ width: 'auto' }} value={a.milestone ?? ''} onChange={e => set({ milestone: (e.target.value || undefined) as Milestone | undefined })}>
               <option value="">Không gắn dịp nào</option>{(Object.keys(MILESTONE) as Milestone[]).map(m => <option key={m} value={m}>{MILESTONE[m]}</option>)}</select>

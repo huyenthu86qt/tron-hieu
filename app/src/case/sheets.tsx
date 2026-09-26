@@ -52,6 +52,7 @@ function MoreSheet() {
         <button className="row" onClick={() => { update(d => { d.mourning = !d.mourning; }); close(); toast(c.mourning ? 'Đã tắt Chế độ tang gia' : 'Đã bật Chế độ tang gia'); }}>
           <Icon n="settings" /><div className="grow"><div className="title">Chế độ tang gia</div><div className="meta">{c.mourning ? 'Đang bật — chỉ báo điều cần quyết' : 'Đang tắt'}</div></div>
         </button>
+        <button className="row" onClick={() => { close(); nav('/goc-binh-an'); }}><Icon n="lotus" /><div className="grow"><div className="title">Góc Bình An</div></div><Icon n="chev" c="chev" /></button>
         <button className="row" onClick={() => { close(); nav('/app'); }}><Icon n="swap" /><div className="grow"><div className="title">Đổi hồ sơ</div></div></button>
         <button className="row" onClick={() => { close(); nav('/tai-khoan'); }}><Icon n="user" /><div className="grow"><div className="title">Tài khoản</div></div></button>
       </div>

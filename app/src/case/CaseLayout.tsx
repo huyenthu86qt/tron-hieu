@@ -183,6 +183,7 @@ function Shell() {
           </button>
         ))}
         <div className="sep" />
+        <button className="nav-item" onClick={() => nav('/goc-binh-an')}><Icon n="lotus" />Góc Bình An</button>
         <button className="nav-item" onClick={() => nav('/app')}><Icon n="swap" />Đổi hồ sơ</button>
         <button className="nav-item" onClick={() => go('cai-dat')} aria-current={rest === '/cai-dat' ? 'page' : undefined}><Icon n="settings" />Cài đặt</button>
       </nav>

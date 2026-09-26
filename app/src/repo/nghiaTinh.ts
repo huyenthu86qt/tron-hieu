@@ -9,9 +9,12 @@ export interface Memory {
   body: string; photoPath?: string; prompt?: string; visibility: MemoryVisibility; status: 'approved' | 'pending' | 'hidden'; createdAt: string;
 }
 export type Milestone = 'd49' | 'd100' | 'gio' | 'sau-tang';
+export type Category = 'song' | 'chet';
 export interface Article {
   id: string; slug: string; title: string; summary: string; coverUrl?: string; body: string; topics: string[];
   milestone?: Milestone; status: 'draft' | 'published'; publishAt?: string; updatedAt: string;
+  /** Chuyên mục: Nghệ thuật sống / Nghệ thuật chết; seq = số thứ tự bài (01–05…); reflection = “Một phút nhìn lại” */
+  category?: Category; seq?: number; reflection?: string;
 }
 
 /* ---------- Bản chạy thử trên máy ---------- */
@@ -111,8 +114,8 @@ export async function signedPhotoUrl(path: string): Promise<string | null> {
 /* =====================================================================
    Góc bình an
    ===================================================================== */
-type ArtRow = { id: string; slug: string; title: string; summary: string; cover_url: string | null; body: string; topics: string[]; milestone: Milestone | null; status: Article['status']; publish_at: string | null; updated_at: string };
-const toArt = (r: ArtRow): Article => ({ id: r.id, slug: r.slug, title: r.title, summary: r.summary, coverUrl: r.cover_url ?? undefined, body: r.body, topics: r.topics ?? [], milestone: r.milestone ?? undefined, status: r.status, publishAt: r.publish_at ?? undefined, updatedAt: r.updated_at });
+type ArtRow = { id: string; slug: string; title: string; summary: string; cover_url: string | null; body: string; topics: string[]; milestone: Milestone | null; status: Article['status']; publish_at: string | null; updated_at: string; category: Category | null; seq: number | null; reflection: string | null };
+const toArt = (r: ArtRow): Article => ({ id: r.id, slug: r.slug, title: r.title, summary: r.summary, coverUrl: r.cover_url ?? undefined, body: r.body, topics: r.topics ?? [], milestone: r.milestone ?? undefined, status: r.status, publishAt: r.publish_at ?? undefined, updatedAt: r.updated_at, category: r.category ?? undefined, seq: r.seq ?? undefined, reflection: r.reflection ?? '' });
 export const isLive = (a: Article, now = new Date()) => a.status === 'published' && (!a.publishAt || new Date(a.publishAt) <= now);
 
 /** Bài đã đăng (khách) hoặc mọi bài (Admin — máy chủ tự phân quyền) */
@@ -137,7 +140,7 @@ export const slugify = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '')
 export async function saveArticle(a: Article): Promise<string | null> {
   if (!a.title.trim()) return 'Cần tiêu đề.';
   if (!a.slug.trim()) return 'Cần đường dẫn bài viết.';
-  const row = { id: a.id, slug: a.slug, title: a.title.trim(), summary: a.summary.trim(), cover_url: a.coverUrl ?? null, body: a.body, topics: a.topics, milestone: a.milestone ?? null, status: a.status, publish_at: a.status === 'published' ? (a.publishAt ?? new Date().toISOString()) : (a.publishAt ?? null), updated_at: new Date().toISOString() };
+  const row = { id: a.id, slug: a.slug, title: a.title.trim(), summary: a.summary.trim(), cover_url: a.coverUrl ?? null, body: a.body, topics: a.topics, milestone: a.milestone ?? null, category: a.category ?? null, seq: a.seq ?? null, reflection: (a.reflection ?? '').trim(), status: a.status, publish_at: a.status === 'published' ? (a.publishAt ?? new Date().toISOString()) : (a.publishAt ?? null), updated_at: new Date().toISOString() };
   if (REMOTE) {
     const { error } = await sb!.from('articles').upsert(row);
     if (error) return /duplicate|unique/i.test(error.message) ? 'Đường dẫn này đã có bài khác dùng — đổi đường dẫn.' : friendlyError(error);
@@ -168,7 +171,7 @@ export async function uploadArticleCover(file: File): Promise<{ url?: string; er
   return { url: sb!.storage.from('article-images').getPublicUrl(path).data.publicUrl };
 }
 
-export const newArticle = (): Article => ({ id: rid('a-'), slug: '', title: '', summary: '', body: '', topics: [], status: 'draft', updatedAt: new Date().toISOString() });
+export const newArticle = (): Article => ({ id: rid('a-'), slug: '', title: '', summary: '', body: '', topics: [], reflection: '', status: 'draft', updatedAt: new Date().toISOString() });
 
 /** Bản chạy thử: ghi thông báo vào lịch sử đám hiếu (bản thật do máy chủ tự ghi) */
 async function notifyLocal(caseId: string, text: string) {

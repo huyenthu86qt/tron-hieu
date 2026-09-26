@@ -33,7 +33,7 @@ function useAllCases() {
 const NAVS: [string, IconName, string][] = [
   ['Tổng quan', 'now', '/admin'], ['Người dùng', 'user', '/admin/nguoi-dung'], ['Đơn hàng', 'wallet', '/admin/don-hang'], ['Quyền truy cập', 'lock', '/admin/quyen'],
   ['Gói & giá', 'doc', '/admin/goi-gia'], ['SePay', 'link', '/admin/sepay'], ['Giao dịch chưa khớp', 'alert', '/admin/chua-khop'],
-  ['Danh bạ nhà cung cấp', 'vendor', '/admin/nha-cung-cap'], ['Góc bình an', 'lotus', '/admin/goc-binh-an'], ['Nhật ký', 'refresh', '/admin/nhat-ky'],
+  ['Danh bạ nhà cung cấp', 'vendor', '/admin/nha-cung-cap'], ['Góc Bình An', 'lotus', '/admin/goc-binh-an'], ['Nhật ký', 'refresh', '/admin/nhat-ky'],
 ];
 
 export function AdminShell({ title, back, children }: { title: string; back?: string; children: ReactNode }) {

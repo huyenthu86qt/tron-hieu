@@ -1,4 +1,4 @@
-// Kiểm tra 0006 (Sổ tưởng nhớ, Góc bình an) trên PGlite. Chạy: node tests-3d.mjs 0001 0002 0003 0004 0005 0006
+// Kiểm tra 0006 (Sổ tưởng nhớ, Góc bình an) trên PGlite. Chạy: node tests-3d.mjs 0001 … 0006 (hoặc … 0008 để kiểm tra thêm Góc Bình An)
 import { PGlite } from '@electric-sql/pglite';
 import fs from 'node:fs';
 
@@ -65,14 +65,25 @@ ok('duyệt xong: hiện trên trang cáo phó', (await as(null, () => q(`select
 ok('khách chưa đăng nhập không đọc thẳng bảng sổ tưởng nhớ', (await as(null, () => q(`select id from public.memories`)).catch(() => ({ rows: [] }))).rows.length === 0);
 
 console.log('Góc bình an:');
-ok('5 bài mẫu ở dạng nháp', (await q(`select count(*)::int n from public.articles where status = 'draft'`)).rows[0].n === 5);
+ok('5 bài mẫu ở dạng nháp', (await q(`select count(*)::int n from public.articles where status = 'draft' and id like 'a-%'`)).rows[0].n === 5);
 ok('khách không thấy bài nháp', (await as(null, () => q(`select id from public.articles`))).rows.length === 0);
-ok('Admin thấy bài nháp', (await as(U.adm, () => q(`select id from public.articles`))).rows.length === 5);
+ok('Admin thấy bài nháp', (await as(U.adm, () => q(`select id from public.articles where id like 'a-%'`))).rows.length === 5);
 await expectErr('người dùng thường không đăng bài', async () => { const r = await as(U.tuan, () => q(`update public.articles set status = 'published' where id = 'a-49-ngay' returning id`)); if (!r.rows.length) throw new Error('không đăng được'); }, /không đăng được/);
 await as(U.adm, () => q(`update public.articles set status = 'published', publish_at = now() - interval '1 minute' where id = 'a-49-ngay'`));
 await as(U.adm, () => q(`update public.articles set status = 'published', publish_at = now() + interval '1 day' where id = 'a-100-ngay'`));
 const pub = (await as(null, () => q(`select id from public.articles`))).rows.map(r => r.id);
 ok('khách thấy bài đã đăng; bài hẹn giờ chưa tới thì chưa thấy', pub.join() === 'a-49-ngay');
+if (files.at(-1).includes('0008')) await check0008();
 
 console.log(`\n${pass} đạt, ${fail} lỗi`);
 process.exit(fail ? 1 : 0);
+
+// 0008 · Góc Bình An: 10 bài nháp, đủ chuyên mục / số thứ tự / Một phút nhìn lại
+async function check0008() {
+  const r = await q(`select category, count(*)::int n, min(seq) a, max(seq) b, bool_and(reflection <> '') r, bool_and(status = 'draft') d from public.articles where id like 'n%' group by category order by category`);
+  ok('0008: 5 bài Nghệ thuật chết + 5 bài Nghệ thuật sống, số 1–5, đều có Một phút nhìn lại, đều là nháp',
+    JSON.stringify(r.rows) === JSON.stringify([{ category: 'chet', n: 5, a: 1, b: 5, r: true, d: true }, { category: 'song', n: 5, a: 1, b: 5, r: true, d: true }]), JSON.stringify(r.rows));
+  await expectErr('0008: chuyên mục lạ bị từ chối', () => q(`update public.articles set category = 'xyz' where id = 'ns-01'`), /check/);
+  const pub = (await as(null, () => q(`select id from public.articles where id like 'n%'`))).rows;
+  ok('0008: khách chưa thấy bài nháp', pub.length === 0);
+}
