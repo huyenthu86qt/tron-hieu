@@ -79,7 +79,7 @@
 ## Phase 2 — ghi chú bàn giao
 - Đã xây: Nhà cung cấp (gợi ý gần nhất theo tọa độ, trọn gói, NCC gia đình, báo giá / cam kết / phát sinh / nghiệm thu, quyết định khi bên đã cam kết ở xa) · Tài chính (đề nghị chi, duyệt, nguồn tiền 4 số cuối, tài khoản bên nhận chỉ quyền Tài chính, sổ phúng viếng, công nợ, đối soát & khóa) · Khách viếng (ghi nhanh, danh sách, bàn giao ca, trang thông tin công khai tự cập nhật khi đổi quyết định) · Hậu tang (thủ tục, mốc tưởng niệm âm lịch, cảm ơn theo từng người con, khép vòng) · Chuẩn bị trước + kích hoạt + tiếp nhận · Đăng ký / đăng nhập / quên mật khẩu / hết phiên · Tài khoản · Checkout (giả lập) · Admin (tổng quan, người dùng, đơn hàng, quyền, gói & giá, SePay, giao dịch chưa khớp, danh bạ NCC, nhật ký) · Trang pháp lý khung · Việc của tôi, Tài liệu, Lịch sử, Cài đặt, Tìm kiếm, Thông báo
 - Giả lập đến Phase 3–4: mã OTP hiện trên màn (chưa có bên gửi tin nhắn); thanh toán giả lập, ghi rõ “chưa thanh toán thật”; dữ liệu vẫn lưu trên trình duyệt; tệp chỉ ghi tên; vị trí nhập bằng tọa độ hoặc “Dùng vị trí hiện tại” (chưa có dịch vụ bản đồ)
-- Giá đang là giá thử nghiệm (299.000 đ / 199.000 đ) — chị chốt giá (U1) trước khi mở bán
+- Giá bán thật Chủ dự án chốt 27/09/2026: Mở đầy đủ đám hiếu 499.000 đ · Chuẩn bị trước 199.000 đ
 - Kiểm thử: `npm test` 64 bài xanh · `npm run build` sạch
 - Xem như khách trả phí: chạy thử trên máy → mở http://localhost:5180/mau → “Dựng dữ liệu mẫu và vào app”
 - Sau Phase 2: thanh điều hướng bên trái đổi sang tone nâu (Chủ dự án yêu cầu) — `app/src/styles/shell-overrides.css`

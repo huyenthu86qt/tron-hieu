@@ -231,7 +231,6 @@ export function AdminProductsPage() {
   return (
     <AdminShell title="Gói & giá"><div className="page">
       <div className="page-title"><div><h1>Gói & giá</h1><p>Đổi giá không ảnh hưởng đơn đã tạo</p></div></div>
-      {products.some(p => !p.updatedAt) && <Banner kind="upd">Đang dùng <b>giá thử nghiệm</b>. Chủ dự án chốt giá trước khi mở bán.</Banner>}
       <section className="card"><div className="list">{products.map(p => (
         <div key={p.id} className="row"><div className="grow"><div className="title">{p.name}</div><div className="meta"><span className="num">{money(p.price)}</span><span>{p.duration}</span>{p.active ? <span className="pill done">Đang bán</span> : <span className="pill skip">Tạm ngừng</span>}{p.updatedAt && <span>Sửa lúc {fmtAt(p.updatedAt)}</span>}</div><div className="meta"><span>{p.desc}</span></div></div>
           <button className="btn sm" onClick={() => { setEdit({ ...p }); setPrice(p.price.toLocaleString('vi-VN')); }}>Sửa</button></div>

@@ -81,7 +81,7 @@ export function seedDemo(): string {
     users: [{ id: uid, name: 'Nguyễn Minh Tuấn (mẫu)', phone: '0912345678', passHash: 'mau', salt: 'mau', createdAt: now, failed: 0 }],
     session: { userId: uid, at: now, expiresAt: new Date(Date.now() + 30 * 864e5).toISOString(), version: 0 },
     directory: dir, preNeeds: [pre],
-    orders: [order('DHMAU001', 'full', 'Mở đầy đủ đám hiếu', 'case', c.id, 'Đám hiếu Cụ ông Nguyễn Văn Hòa (mẫu)', 299000), order('DHMAU002', 'pre', 'Chuẩn bị trước', 'pre', 'cbmau01', 'Hồ sơ chuẩn bị Trần Thị Mai (mẫu)', 199000)],
+    orders: [order('DHMAU001', 'full', 'Mở đầy đủ đám hiếu', 'case', c.id, 'Đám hiếu Cụ ông Nguyễn Văn Hòa (mẫu)', 499000), order('DHMAU002', 'pre', 'Chuẩn bị trước', 'pre', 'cbmau01', 'Hồ sơ chuẩn bị Trần Thị Mai (mẫu)', 199000)],
   }));
   return c.id;
 }
