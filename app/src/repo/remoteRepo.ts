@@ -80,7 +80,7 @@ export class SupabaseRepo implements CaseRepo {
     return (data as { id: string; owner_id: string; name: string; access: CaseData['access']; closed: boolean; delete_requested_at: string | null; created_at: string }[])
       .map(r => normalizeCase({
         id: r.id, ownerId: r.owner_id, createdAt: r.created_at, access: r.access, deleteRequestedAt: r.delete_requested_at ?? undefined,
-        person: { title: 'Cụ ông', name: r.name, saint: '', birthYear: '', death: '', time: '', hometown: '', photo: null },
+        person: { title: '', name: r.name, saint: '', birthYear: '', death: '', time: '', hometown: '', photo: null },
         situation: { place: 'home', venue: 'home', form: 'cremation', rite: 'traditional', org: 'family', orgType: 'cadre', scale: 'medium', hasPre: false },
         members: [], areas: [], tasks: [], decisions: [], mourning: false, history: [], after: { closed: r.closed, thanked: {}, thankText: '', thankAuto: false },
       } as CaseData));
