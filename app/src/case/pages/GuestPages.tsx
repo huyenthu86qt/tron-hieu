@@ -13,7 +13,7 @@ import { repo } from '../../repo/repo';
 import { Icon } from '../../ui/Icon';
 import { Banner, Chips, ErrorBanner, Sheet, toggleIn, useApp } from '../../ui/common';
 import { REMOTE } from '../../repo/backend';
-import { publicMemories, submitGuestMemory } from '../../repo/nghiaTinh';
+import { listMemories, publicMemories, submitGuestMemory, type Memory } from '../../repo/nghiaTinh';
 import { useCase } from '../CaseContext';
 import { PaidGate } from '../Paywall';
 import { BRAND } from '../../ui/brand';
@@ -165,7 +165,7 @@ function Compose() {
     <div className="page"><div className="page-title"><div><div className="eyebrow">Khách viếng và truyền tin</div><h1 style={{ marginTop: 4 }}>Trang thông tin cho khách</h1>
       <p>Khách mở link là thấy đúng giờ, đúng nơi. Khi gia đình đổi quyết định, trang tự cập nhật.</p></div></div>
       {mobile ? form : <div className="split">{form}<section className="card" style={{ overflow: 'hidden' }}><div className="eyebrow" style={{ padding: '12px 16px 0' }}>Xem trước</div>
-        <div style={{ transform: 'scale(.86)', transformOrigin: 'top center' }}><ObitBody c={draft} preview /></div></section></div>}
+        <div style={{ transform: 'scale(.86)', transformOrigin: 'top center' }}><ObitBody c={draft} preview /><MemoriesPreview caseId={c.id} /></div></section></div>}
       {share && <ShareSheet slug={p.slug} onClose={() => setShare(false)} />}
     </div>
   );
@@ -271,6 +271,22 @@ function PublicMemories({ slug, caseId }: { slug: string; caseId: string }) {
           <button className="btn primary" style={{ alignSelf: 'flex-start' }} disabled={busy || !f.name.trim() || !f.body.trim()} onClick={() => void send()}>{busy ? 'Đang gửi…' : 'Gửi tới gia đình'}</button>
         </section>
       )}
+    </section>
+  );
+}
+
+/** Xem trước phần “Lời tưởng nhớ” trên trang thông tin: dòng Công khai của gia đình + lời khách đã được cho hiện */
+function MemoriesPreview({ caseId }: { caseId: string }) {
+  const [L, setL] = useState<Memory[]>([]);
+  useEffect(() => { listMemories(caseId).then(x => setL(x.filter(m => m.visibility === 'public' && m.status === 'approved').reverse())).catch(() => undefined); }, [caseId]);
+  return (
+    <section className="stack" style={{ gap: 10, padding: '8px 16px 24px' }}>
+      <h2 style={{ fontFamily: 'var(--serif)', fontSize: 20, textAlign: 'center' }}>Lời tưởng nhớ</h2>
+      {L.length ? L.map(m => (
+        <article key={m.id} className="card card-pad"><p style={{ whiteSpace: 'pre-wrap', fontFamily: 'var(--serif)', fontSize: 16, lineHeight: 1.6 }}>{m.body}</p>
+          <p className="muted" style={{ marginTop: 6 }}>— {m.authorName}</p></article>
+      )) : <p className="muted" style={{ textAlign: 'center' }}>Chưa có. Dòng “Công khai” trong Sổ tưởng nhớ và lời khách được gia đình cho hiện sẽ ở đây.</p>}
+      <p className="muted" style={{ textAlign: 'center' }}>Khách có ô “Gửi lời tưởng nhớ” ở cuối trang.</p>
     </section>
   );
 }

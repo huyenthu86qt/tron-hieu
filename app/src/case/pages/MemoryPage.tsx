@@ -1,7 +1,7 @@
 // Sổ tưởng nhớ — miễn phí cho mọi gia đình. Kỷ niệm của người trong đội và lời tưởng nhớ khách gửi (người đại diện duyệt).
 // Giọng trầm, ấm: không “thích”, không bình luận, không bài viết của app ở đây.
 import { useCallback, useEffect, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { markBellSeen, playMindfulBell } from '../../ui/bell';
 import type { CaseData } from '../../domain/types';
 import { U1_ID } from '../../domain/model';
@@ -40,7 +40,8 @@ function Photo({ path }: { path: string }) {
 }
 
 export function MemoryPage() {
-  const { c, me } = useCase();
+  const { c, me, base, full } = useCase();
+  const published = !!c.publicPage?.published;
   const user = useUser()!;
   const { toast } = useApp();
   const up = useUploader();
@@ -97,6 +98,9 @@ export function MemoryPage() {
         <textarea className="input" rows={5} value={f.body} onChange={e => setF({ ...f, body: e.target.value })} aria-label="Nội dung kỷ niệm"
           placeholder="Viết điều anh/chị muốn lưu lại…" />
         <div className="field"><label>Ai đọc được</label><Opts value={f.visibility} onChange={v => setF({ ...f, visibility: v })} items={VIS} /></div>
+        {f.visibility === 'public' && !published && <Banner kind="upd" icon="alert">{full
+          ? <>Trang thông tin (cáo phó) <b>chưa công bố</b>, nên dòng “Công khai” chưa hiện với khách. {me.id === U1_ID ? <Link to={`${base}/khach-vieng/trang-tin`}>Mở trang thông tin để công bố</Link> : 'Người đại diện gia đình công bố trang ở mục Khách viếng.'}</>
+          : <>Trang thông tin (cáo phó) thuộc gói Mở đầy đủ. Dòng “Công khai” vẫn được lưu trong sổ và sẽ hiện trên trang khi gia đình mở gói và công bố.</>}</Banner>}
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
           <label className="btn sm file-btn" aria-disabled={up.busy}><Icon n="plus" c="sm" />{up.busy ? 'Đang tải ảnh…' : f.photoName ? 'Đổi ảnh' : 'Thêm ảnh'}
             <input type="file" accept="image/*" disabled={up.busy} onChange={async e => { const file = e.target.files?.[0]; e.target.value = ''; if (!file) return; const s = await up.run(() => uploadCaseFile(c.id, 'memory', file)); if (s) setF(x => ({ ...x, photoPath: s.path, photoName: s.name })); }} /></label>
