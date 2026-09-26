@@ -1,15 +1,14 @@
 // S-ENT-06 · Hồ sơ người đã khuất (+ người đại diện gia đình)
 import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import type { Title } from '../../domain/types';
 import { savePerson, validatePerson, type PersonForm } from '../../domain/actions';
 import { portraitIcon, U1_ID } from '../../domain/model';
 import { longevityWord, lunarAge, lunarDeathText } from '../../domain/person';
 import { Icon } from '../../ui/Icon';
 import { Banner, Chips, ErrorBanner, useApp } from '../../ui/common';
+import { TitlePicker } from '../../ui/title';
 import { useCase } from '../CaseContext';
 
-const TITLES: Title[] = ['Cụ ông', 'Cụ bà', 'Ông', 'Bà', 'Anh', 'Chị'];
 const U1_RELS = ['Con trai trưởng', 'Con trai', 'Con gái', 'Vợ', 'Chồng', 'Cháu đích tôn', 'Người thân khác'];
 
 /** Thu nhỏ ảnh thờ trước khi lưu (lưu trên máy có giới hạn dung lượng) */
@@ -80,7 +79,7 @@ export function ProfilePage() {
             {f.photo && <button className="btn sm ghost" onClick={() => set('photo', null)}>Bỏ ảnh</button>}
           </div>
           <div className="stack" style={{ flex: 1, minWidth: 240, gap: 12 }}>
-            <div className="field"><label>Danh xưng</label><Chips items={TITLES} isOn={x => f.title === x} onToggle={x => set('title', x as Title)} /></div>
+            <div className="field"><label>Danh xưng</label><TitlePicker value={f.title} onChange={t => set('title', t)} /></div>
             <div className="field"><label htmlFor="pName">Họ và tên</label><input className="input" id="pName" value={f.name} onChange={e => set('name', e.target.value)} placeholder="Ví dụ: Nguyễn Văn Hòa" /></div>
             {cath && <div className="field"><label htmlFor="pSaint">Tên thánh</label><input className="input" id="pSaint" value={f.saint} onChange={e => set('saint', e.target.value)} placeholder="Ví dụ: Giuse" /></div>}
             <p className="muted">Hiển thị: <b style={{ color: 'var(--text)' }}>{preview}</b></p>

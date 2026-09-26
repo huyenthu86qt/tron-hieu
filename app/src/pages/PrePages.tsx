@@ -11,6 +11,7 @@ import { CATS } from '../domain/vendors';
 import { activatePre, createPreNeed, myPreNeeds, savePreNeed, usePlatform, useUser } from '../repo/platformStore';
 import { Icon } from '../ui/Icon';
 import { Banner, Chips, ErrorBanner, Opts, useApp } from '../ui/common';
+import { TitlePicker } from '../ui/title';
 import { AccountShell } from './AccountShell';
 import { FileName, useUploader } from '../ui/files';
 import { removeStored, uploadPreFile } from '../repo/files';
@@ -137,7 +138,7 @@ export function PreInfoPage() {
     <PreFrame title="Thông tin cá nhân" back={`/chuan-bi/${p.id}`}>
       <div><div className="eyebrow">Hồ sơ chuẩn bị</div><h1 style={{ fontSize: 24, marginTop: 4 }}>Thông tin cá nhân</h1></div>
       <section className="card card-pad stack">
-        <div className="field"><label>Danh xưng</label><Chips items={['Cụ ông', 'Cụ bà', 'Ông', 'Bà', 'Anh', 'Chị']} isOn={x => s.title === x} onToggle={x => !ro && setS({ ...s, title: x })} /></div>
+        <div className="field"><label>Danh xưng</label><TitlePicker value={s.title} disabled={ro} onChange={t => setS({ ...s, title: t })} /></div>
         <div className="field"><label htmlFor="piName">Họ và tên</label><input className="input" id="piName" disabled={ro} value={s.name} onChange={e => setS({ ...s, name: e.target.value })} /></div>
         <div className="field"><label htmlFor="piBirth">Năm sinh</label><input className="input num" id="piBirth" disabled={ro} inputMode="numeric" maxLength={4} value={s.birthYear} onChange={e => setS({ ...s, birthYear: e.target.value.replace(/\D/g, '') })} /></div>
         <div className="field"><label htmlFor="piHome">Quê quán</label><input className="input" id="piHome" disabled={ro} value={s.hometown} onChange={e => setS({ ...s, hometown: e.target.value })} /></div>

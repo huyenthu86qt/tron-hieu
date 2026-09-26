@@ -8,7 +8,8 @@ export type OrgModel = 'family' | 'community' | 'official_rel' | 'official';
 export type OrgType = 'cadre' | 'military' | 'police';
 export type Scale = 'small' | 'medium' | 'large';
 export type VendorCat = 'xe' | 'rap' | 'hoa' | 'an' | 'nhac' | 'mo';
-export type Title = 'Cụ ông' | 'Cụ bà' | 'Ông' | 'Bà' | 'Anh' | 'Chị';
+/** Danh xưng: có sẵn, hoặc gia đình tự viết (chọn “Khác”, ví dụ Thầy, Cô, Bác, Sơ) */
+export type Title = 'Cụ ông' | 'Cụ bà' | 'Ông' | 'Bà' | 'Anh' | 'Chị' | (string & {});
 
 export interface Situation {
   place: Place;

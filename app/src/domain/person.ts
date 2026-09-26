@@ -15,8 +15,22 @@ export const fmtDM = (d: Date) => `${p2(d.getDate())}/${p2(d.getMonth() + 1)}`;
 export const fmtDMY = (d: Date) => `${fmtDM(d)}/${d.getFullYear()}`;
 export const fmtWeekday = (d: Date) => `${WEEKDAY[d.getDay()]}, ${fmtDMY(d)}`;
 
-const PRONOUN: Record<Title, string> = { 'Cụ ông': 'cụ', 'Cụ bà': 'cụ', 'Ông': 'ông', 'Bà': 'bà', 'Anh': 'anh', 'Chị': 'chị' };
-export const pronoun = (title: Title) => PRONOUN[title] ?? 'cụ';
+export const TITLES = ['Cụ ông', 'Cụ bà', 'Ông', 'Bà', 'Anh', 'Chị'] as const;
+const PRONOUN: Record<string, string> = { 'Cụ ông': 'cụ', 'Cụ bà': 'cụ', 'Ông': 'ông', 'Bà': 'bà', 'Anh': 'anh', 'Chị': 'chị', 'Em': 'em', 'Bé': 'bé' };
+/** Xưng hô người mất; danh xưng tự viết thì lấy chữ đầu viết thường (“Cô giáo” → “cô”) */
+export const pronoun = (title: Title) => PRONOUN[title] ?? (title.trim() ? title.trim().split(/\s+/)[0].toLowerCase() : 'cụ');
+
+/** Lứa tuổi để chọn lời lẽ phù hợp (Sổ tưởng nhớ): theo tuổi khi mất, không có tuổi thì theo danh xưng */
+export type AgeGroup = 'old' | 'mid' | 'young' | 'child';
+export function ageGroup(p: Person): AgeGroup {
+  const by = Number(p.birthYear), d = parseISODate(p.death);
+  const age = by ? (d ? d.getFullYear() : new Date().getFullYear()) - by : null;
+  if (age !== null && age >= 0 && age < 130) return age < 16 ? 'child' : age < 30 ? 'young' : age < 60 ? 'mid' : 'old';
+  if (p.title === 'Bé') return 'child';
+  if (p.title === 'Em' || p.title === 'Anh' || p.title === 'Chị') return 'young';
+  if (p.title === 'Ông' || p.title === 'Bà') return 'mid';
+  return 'old';
+}
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
 /** Tên hiển thị: danh xưng + (tên thánh nếu Công giáo) + họ tên */

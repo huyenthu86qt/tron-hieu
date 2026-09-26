@@ -330,3 +330,19 @@ describe('Chuyển quyền người đại diện', () => {
     expect(t2.owner).toBe(U1_ID);  // việc của Lan vẫn là của Lan (nay là người đại diện)
   });
 });
+
+describe('Danh xưng và lứa tuổi người đã khuất', () => {
+  it('danh xưng tự viết (Khác) dùng làm xưng hô; lứa tuổi theo năm sinh – năm mất, không có thì theo danh xưng', async () => {
+    const { pronoun, ageGroup } = await import('./person');
+    expect(pronoun('Cụ bà')).toBe('cụ');
+    expect(pronoun('Anh')).toBe('anh');
+    expect(pronoun('Cô giáo')).toBe('cô');
+    expect(pronoun('Thầy')).toBe('thầy');
+    const P = (title: string, birthYear: string, death: string) => ({ title, name: 'A', saint: '', birthYear, death, time: '', hometown: '', photo: null });
+    expect(ageGroup(P('Cụ ông', '1938', '2026-09-24'))).toBe('old');
+    expect(ageGroup(P('Anh', '2001', '2026-09-24'))).toBe('young');
+    expect(ageGroup(P('Chị', '1980', '2026-09-24'))).toBe('mid');
+    expect(ageGroup(P('Khác', '2018', '2026-09-24'))).toBe('child');
+    expect(ageGroup(P('Anh', '', ''))).toBe('young');
+  });
+});

@@ -41,16 +41,16 @@ export interface EntryItem {
 export function entryItems(a: Answers): EntryItem[] {
   const L: EntryItem[] = [];
   if (a.place === 'hospital') {
-    L.push({ key: 'hosp', title: 'Nhận giấy báo tử và làm thủ tục tại bệnh viện', hint: 'Cần có trước khi đưa cụ về', taskIds: ['t0'] },
-      { key: 'car', title: 'Liên hệ xe đưa cụ về nơi làm lễ', hint: 'Bệnh viện thường có danh sách xe; app sẽ gợi ý bên gần nhất sau khi lưu', taskIds: ['m1b'] });
+    L.push({ key: 'hosp', title: 'Nhận giấy báo tử và làm thủ tục tại bệnh viện', hint: 'Cần có trước khi đưa người thân về', taskIds: ['t0'] },
+      { key: 'car', title: 'Liên hệ xe đưa người thân về nơi làm lễ', hint: 'Bệnh viện thường có danh sách xe; app sẽ gợi ý bên gần nhất sau khi lưu', taskIds: ['m1b'] });
   } else if (a.place === 'home') {
     L.push({ key: 'home', title: 'Báo cho trạm y tế hoặc chính quyền địa phương để được hướng dẫn giấy báo tử', hint: 'Nội dung thủ tục đang chờ nguồn kiểm chứng', taskIds: ['p1a'] });
   } else {
-    L.push({ key: 'other', title: 'Liên hệ nơi cụ mất để được hướng dẫn thủ tục', hint: 'Nội dung thủ tục đang chờ nguồn kiểm chứng', taskIds: ['p1b'] });
+    L.push({ key: 'other', title: 'Liên hệ nơi người thân mất để được hướng dẫn thủ tục', hint: 'Nội dung thủ tục đang chờ nguồn kiểm chứng', taskIds: ['p1b'] });
   }
   const groups = [
     { label: 'Họ hàng bên nội', taskId: 't3' }, { label: 'Họ hàng bên ngoại', taskId: 't11' },
-    { label: 'Cơ quan, đoàn thể nơi cụ từng công tác, sinh hoạt', taskId: 't12' },
+    { label: 'Cơ quan, đoàn thể nơi người mất từng công tác, sinh hoạt', taskId: 't12' },
   ];
   if (a.org !== 'community') groups.push({ label: 'Tổ dân phố và bà con lối xóm', taskId: 't13' });
   L.push({ key: 'news', title: 'Báo tin', hint: 'Để mọi người kịp về viếng và cùng chia việc — có thể nhờ mỗi người báo một nhóm', taskIds: ['m1c'], groups });

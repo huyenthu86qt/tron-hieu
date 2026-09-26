@@ -5,7 +5,7 @@ import { useSearchParams } from 'react-router-dom';
 import { markBellSeen, playMindfulBell } from '../../ui/bell';
 import type { CaseData } from '../../domain/types';
 import { U1_ID } from '../../domain/model';
-import { lifeSpan } from '../../domain/person';
+import { ageGroup, lifeSpan, type AgeGroup } from '../../domain/person';
 import { useUser } from '../../repo/platformStore';
 import { REMOTE } from '../../repo/backend';
 import { uploadCaseFile } from '../../repo/files';
@@ -17,16 +17,13 @@ import { Banner, ErrorBanner, Opts, useApp } from '../../ui/common';
 import { useUploader } from '../../ui/files';
 import { DN, useCase } from '../CaseContext';
 
-const PROMPTS = [
-  'Điều cụ hay dặn con cháu là gì?',
-  'Món ăn cụ thích nhất, ai nấu cho cụ?',
-  'Một kỷ niệm làm anh/chị mỉm cười khi nhớ lại?',
-  'Cụ đã dạy anh/chị điều gì mà đến giờ vẫn nhớ?',
-  'Nơi cụ thích ngồi nhất trong nhà?',
-  'Câu nói quen thuộc của cụ?',
-  'Lần cuối anh/chị trò chuyện với cụ?',
-  'Điều anh/chị muốn nói với cụ hôm nay?',
-];
+/** Lời giới thiệu đầu sổ theo lứa tuổi người đã khuất (Chủ dự án chốt: không có câu gợi ý, để người viết tự viết) */
+const INTRO: Record<AgeGroup, string> = {
+  old: 'Nơi con cháu và người thân lưu lại kỷ niệm, lời dặn, những điều muốn nói. Cuốn sổ này ở lại với gia đình.',
+  mid: 'Nơi gia đình, bạn bè, đồng nghiệp lưu lại kỷ niệm và những điều muốn nói. Cuốn sổ này ở lại với gia đình.',
+  young: 'Nơi gia đình và bạn bè lưu lại kỷ niệm, những điều muốn nói. Bạn bè cũng có thể gửi lời tưởng nhớ từ trang thông tin (cáo phó).',
+  child: 'Nơi bố mẹ và người thân lưu giữ những kỷ niệm về con.',
+};
 const VIS: { k: MemoryVisibility; title: string; note: string }[] = [
   { k: 'family', title: 'Gia đình', note: 'Người trong đội đám hiếu đọc được' },
   { k: 'private', title: 'Chỉ mình tôi', note: 'Như một lá thư riêng gửi người đã khuất' },
@@ -63,7 +60,7 @@ export function MemoryPage() {
     const t = setTimeout(() => setPause(false), 4500);
     return () => clearTimeout(t);
   }, [pause]);
-  const [prompts] = useState(() => [...PROMPTS].sort(() => Math.random() - 0.5).slice(0, 4));
+  const group = ageGroup(c.person);
 
   const load = useCallback(() => listMemories(c.id).then(setL).catch(e => setErr((e as Error).message)), [c.id]);
   useEffect(() => { void load(); }, [load]);
@@ -91,15 +88,14 @@ export function MemoryPage() {
         {c.person.photo ? <div className="portrait" style={{ padding: 0, overflow: 'hidden' }}><img src={c.person.photo} alt="Ảnh thờ" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /></div>
           : <div className="portrait"><Icon n="candle" c="lg" /></div>}
         <div style={{ flex: 1 }}><div className="eyebrow">Sổ tưởng nhớ</div><h2>{DN(c)}</h2><div className="sub num">{lifeSpan(c.person)}</div>
-          <p className="muted" style={{ marginTop: 6 }}>Nơi con cháu và người thân lưu lại kỷ niệm, lời dặn, những điều muốn nói. Cuốn sổ này ở lại với gia đình.</p></div>
+          <p className="muted" style={{ marginTop: 6 }}>{INTRO[group]}</p></div>
         {shown.length > 0 && <button className="btn sm" style={{ alignSelf: 'flex-start' }} disabled={dl} onClick={async () => { setDl(true); await downloadMemoryBook(c, L ?? []); setDl(false); }}><Icon n="doc" c="sm" />{dl ? 'Đang chuẩn bị…' : 'Tải Sổ tưởng nhớ'}</button>}
       </section>
 
       <section className="card card-pad stack">
         <h3>Viết vào sổ</h3>
-        <div className="chips">{prompts.map(p => <button key={p} type="button" className="chip" aria-pressed={f.prompt === p} onClick={() => setF({ ...f, prompt: f.prompt === p ? '' : p })}>{p}</button>)}</div>
         <textarea className="input" rows={5} value={f.body} onChange={e => setF({ ...f, body: e.target.value })} aria-label="Nội dung kỷ niệm"
-          placeholder={f.prompt || 'Một kỷ niệm, một lời dặn, một điều muốn nói…'} />
+          placeholder="Viết điều anh/chị muốn lưu lại…" />
         <div className="field"><label>Ai đọc được</label><Opts value={f.visibility} onChange={v => setF({ ...f, visibility: v })} items={VIS} /></div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
           <label className="btn sm file-btn" aria-disabled={up.busy}><Icon n="plus" c="sm" />{up.busy ? 'Đang tải ảnh…' : f.photoName ? 'Đổi ảnh' : 'Thêm ảnh'}
