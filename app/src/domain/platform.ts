@@ -3,6 +3,7 @@
 import type { CaseAccess, CaseData, OrgModel, OrgType, VendorCat } from './types';
 import { lunarAnniversary } from './lunar';
 import { parseISODate } from './person';
+import { USE_DIRECTORY } from './vendors';
 
 /* ---------- Tài khoản ---------- */
 export interface User {
@@ -203,7 +204,7 @@ export function preGroups(p: PreNeed) {
     { k: 'rep', n: 'Người đại diện và người liên hệ', path: 'lien-he', st: st(!!p.rep.name && p.contacts.length > 0, !!p.rep.name || p.contacts.length > 0), note: p.rep.name ? `${p.rep.name} · ${p.contacts.length} người liên hệ` : '' },
     { k: 'docs', n: 'Giấy tờ', path: 'giay-to', st: st(p.docs.length >= 2, p.docs.length > 0), note: p.docs.length ? `${p.docs.length} tệp đã ghi` : '', paid: true },
     { k: 'wish', n: 'Nguyện vọng hậu sự', path: 'nguyen-vong', st: st((!!w.rite || w.org === 'official') && !!w.msg.trim(), !!w.rite || !!w.org || w.form !== 'family'), note: (w.rite || w.org) && !w.msg.trim() ? 'Còn thiếu: lời nhắn cho con cháu' : '' },
-    { k: 'budget', n: 'Ngân sách và nhà cung cấp mong muốn', path: 'ngan-sach', st: st(p.budget.amount > 0, Object.keys(p.budget.vendors).length > 0), note: p.budget.amount ? p.budget.amount.toLocaleString('vi-VN') + ' đ' : '' },
+    { k: 'budget', n: USE_DIRECTORY ? 'Ngân sách và nhà cung cấp mong muốn' : 'Ngân sách dự kiến', path: 'ngan-sach', st: st(p.budget.amount > 0, Object.keys(p.budget.vendors).length > 0), note: p.budget.amount ? p.budget.amount.toLocaleString('vi-VN') + ' đ' : '' },
     { k: 'special', n: 'Mong muốn đặc biệt', path: 'nguyen-vong', st: st(!!p.special.trim(), false), note: '' },
   ];
 }

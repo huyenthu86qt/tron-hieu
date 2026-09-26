@@ -316,7 +316,7 @@ export function PreActivatePage() {
   const user = useUser()!;
   const nav = useNavigate();
   // Điền sẵn theo nguyện vọng đã chuẩn bị (nếu có)
-  const [x, setX] = useState({ death: '', place: 'hospital' as Place, org: (p?.wish.org || 'family') as OrgModel, orgType: (p?.wish.orgType ?? 'cadre') as OrgType });
+  const [x, setX] = useState({ death: '', place: '' as Place | '', org: (p?.wish.org || 'family') as OrgModel, orgType: (p?.wish.orgType ?? 'cadre') as OrgType });
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   if (!p) return <NotFoundPre />;
@@ -326,14 +326,15 @@ export function PreActivatePage() {
     ['Nguyện vọng hậu sự', 'Hiện là đề xuất trong Cần quyết — người đại diện vẫn xác nhận'],
     [`${p.contacts.length} người liên hệ`, 'Thành danh sách mời vào Đội đám hiếu'],
     [p.budget.amount ? `Ngân sách ${money(p.budget.amount)}` : 'Ngân sách', 'Thành ngân sách ở Tài chính'],
-    ['Nhà cung cấp mong muốn', 'Được ưu tiên khi gợi ý nhà cung cấp'],
+    ...(USE_DIRECTORY ? [['Nhà cung cấp mong muốn', 'Được ưu tiên khi gợi ý nhà cung cấp'] as [string, string]] : []),
     ['Mốc tưởng niệm mong muốn', 'Gợi ý sẵn ở Hậu tang'],
     [`${p.docs.length} giấy tờ`, 'Chuyển vào Tài liệu'],
   ];
   const go = async () => {
     setBusy(true);
     try {
-      const c = activatePreNeed(p, x, user.id, user.name);
+      if (!x.place) { setErr('Chọn nơi người thân mất.'); setBusy(false); return; }
+      const c = activatePreNeed(p, { ...x, place: x.place }, user.id, user.name);
       c.members[0].phone = user.phone;
       const e = await activatePre(p, c, c.access?.activeUntil, user.name);
       if (e) { setErr(e); setBusy(false); return; }
@@ -356,7 +357,7 @@ export function PreActivatePage() {
         <section className="card card-pad"><dl className="kv"><dt>Người kích hoạt</dt><dd>{user.name}</dd><dt>Sẽ báo cho</dt><dd>{p.shares.map(s => s.name).join(', ') || 'Không có người được chia sẻ'}</dd><dt>Lưu vết</dt><dd>Thời điểm và người kích hoạt được ghi vào lịch sử</dd><dt>Gói</dt><dd>Đám hiếu được mở đầy đủ, không thu lần hai</dd></dl></section>
         <ErrorBanner err={err} />
         <Banner kind="warn" icon="lock">Kích hoạt không đảo ngược được: hồ sơ chuyển sang chỉ đọc.</Banner>
-        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}><button className="btn primary" style={{ flex: 1 }} disabled={busy || !x.death} onClick={go}>Kích hoạt hồ sơ</button><button className="btn" onClick={() => nav(`/chuan-bi/${p.id}`)}>Chưa phải lúc này</button></div>
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}><button className="btn primary" style={{ flex: 1 }} disabled={busy || !x.death || !x.place} onClick={go}>Kích hoạt hồ sơ</button><button className="btn" onClick={() => nav(`/chuan-bi/${p.id}`)}>Chưa phải lúc này</button></div>
       </PaidPre>
     </PreFrame>
   );

@@ -88,7 +88,7 @@ function Procedures() {
   const L = visibleTasks(c).filter(t => t.phase === 14);
   return (
     <div className="page" style={{ maxWidth: 820 }}><div className="page-title"><div><div className="eyebrow">Hậu tang</div><h1 style={{ marginTop: 4 }}>Thủ tục và quyền lợi</h1><p>Theo dõi từng thủ tục, đính kết quả vào từng việc</p></div></div>
-      <Banner kind="info">Hướng dẫn chi tiết cho thủ tục chỉ hiện khi có nguồn hiện hành đã kiểm chứng. Hiện app giúp gia đình theo dõi ai làm, đã xong chưa và lưu kết quả.</Banner>
+      <Banner kind="info"><b>Đăng ký khai tử</b> có hướng dẫn theo quy định hiện hành, kèm điều khoản — bấm vào việc để xem. Thủ tục khác: hướng dẫn chỉ hiện khi có nguồn đã kiểm chứng; app giúp gia đình theo dõi ai làm, đã xong chưa và lưu kết quả.</Banner>
       <section className="card"><div className="list">{L.map(t => (
         <button key={t.id} className="row" onClick={() => nav(`${base}/viec/${t.id}`, { state: { from: 'hau-tang/thu-tuc' } })}><div className="grow"><div className="title">{t.title}</div>
           <div className="meta"><span className={'pill ' + t.status}>{t.status === 'done' ? 'Đã xong' : t.status === 'skip' ? 'Không áp dụng' : t.status === 'doing' ? 'Đang làm' : 'Cần làm'}</span>{t.unverified && <span className="pill soft">Hướng dẫn chi tiết đang bổ sung</span>}{t.evidence && <span><Icon n="doc" c="sm" /> {t.evidence}</span>}{(c.members.find(m => m.id === t.owner)?.name ?? (t.status === 'done' || t.status === 'skip' ? '' : 'Chưa có người nhận')) && <span>{c.members.find(m => m.id === t.owner)?.name ?? 'Chưa có người nhận'}</span>}</div></div>

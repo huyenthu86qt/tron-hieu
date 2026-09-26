@@ -5,7 +5,8 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { inviteMember } from '../../domain/actions';
 import { issueTasks, soonTasks, visibleTasks } from '../../domain/model';
 import { money } from '../../domain/finance';
-import { findVendor } from '../../domain/vendors';
+import { findVendor, USE_DIRECTORY } from '../../domain/vendors';
+import { answerLabel } from '../../domain/entry';
 import { milestoneList } from '../../domain/aftercare';
 import { DN_TEXT } from '../../domain/text';
 import { exportCase, exportCaseDoc } from '../../pages/AccountPages';
@@ -21,19 +22,23 @@ const fmtAt = (iso?: string) => (iso ? new Date(iso).toLocaleString('vi-VN', { h
 
 /* ---------- S-ENT-07 ---------- */
 export function IntakePage() {
-  const { c, base, update, dir } = useCase();
+  const { c, base, update, dir, me } = useCase();
   const { toast } = useApp();
   const nav = useNavigate();
   const recv = c.intake ?? {};
   const fd = c.decisions.find(d => d.key === 'form'), vd = c.decisions.find(d => d.key === 'venue');
   const picks = Object.entries(c.familyPick ?? {}).map(([, id]) => findVendor(c, dir, id)?.name).filter(Boolean);
   const ms = milestoneList(c).map(m => m.name);
+  // Hình thức tổ chức, đối tượng nghi lễ tang, nghi lễ tôn giáo — lấy đúng lựa chọn đã chuyển từ nguyện vọng
+  const s0 = c.situation, official = s0.org === 'official_rel' || s0.org === 'official';
+  const orgText = [answerLabel('org', s0.org), official ? answerLabel('orgType', s0.orgType) : '', s0.org !== 'official' ? 'Nghi lễ: ' + answerLabel('rite', s0.rite) : ''].filter(Boolean).join(' · ');
+  const wishText = [fd?.wish?.text, vd?.wish?.text].filter(Boolean).join(' ');
   const G: [string, string, string, string][] = [
     ['p', 'Thông tin người đã khuất', `${DN_TEXT(c)}${c.person.birthYear ? ' · ' + c.person.birthYear : ''}`, 'ho-so'],
-    ['w', 'Nguyện vọng hậu sự', fd?.wish || vd?.wish ? [fd?.wish?.text, vd?.wish?.text].filter(Boolean).join(' ') + ' → hiện là đề xuất trong Cần quyết' : 'Hồ sơ để gia đình quyết hình thức và nơi làm lễ', 'can-quyet'],
+    ['w', 'Nguyện vọng hậu sự', `${orgText}. ${wishText ? wishText + ' → hiện là đề xuất trong Cần quyết' : 'Hình thức an táng và nơi làm lễ: để gia đình quyết'}`, 'can-quyet'],
     ['c', 'Người liên hệ', `${c.pendingContacts?.length ?? 0} người → mời vào Đội đám hiếu khi sẵn sàng`, 'doi'],
     ['b', 'Ngân sách', c.finance?.budget ? `${money(c.finance.budget)} → Tài chính` : 'Chưa ghi', 'tai-chinh/ngan-sach'],
-    ['v', 'Nhà cung cấp mong muốn', picks.length ? `${picks.join(', ')} → ưu tiên khi gợi ý` : 'Không có', 'nha-cung-cap'],
+    ...(USE_DIRECTORY ? [['v', 'Nhà cung cấp mong muốn', picks.length ? `${picks.join(', ')} → ưu tiên khi gợi ý` : 'Không có', 'nha-cung-cap'] as [string, string, string, string]] : []),
     ['m', 'Mốc tưởng niệm', ms.length ? `${ms.join(', ')} → gợi ý ở Hậu tang` : 'Không có', 'hau-tang/moc'],
   ];
   const n = G.filter(g => recv[g[0]]).length;
@@ -50,7 +55,7 @@ export function IntakePage() {
   return (
     <div className="page" style={{ maxWidth: 760 }}>
       <p style={{ fontFamily: 'var(--serif)', fontSize: 18, color: 'var(--primary)' }}>Xin chia buồn cùng gia đình.</p>
-      <div><h1 style={{ fontSize: 24 }}>Dữ liệu đã có sẵn từ hồ sơ chuẩn bị</h1><p className="muted" style={{ marginTop: 6 }}>Anh xem nhanh và xác nhận từng nhóm. Có thể sửa sau.</p></div>
+      <div><h1 style={{ fontSize: 24 }}>Dữ liệu đã có sẵn từ hồ sơ chuẩn bị</h1><p className="muted" style={{ marginTop: 6 }}>{(x => x.charAt(0).toUpperCase() + x.slice(1))(xung(me.rel))} xem nhanh và xác nhận từng nhóm. Có thể sửa sau.</p></div>
       <section className="card"><div className="list">{G.map(([k, t, d, to]) => (
         <div key={k} className="row"><span className="num-badge"><Icon n={recv[k] ? 'check' : 'doc'} c="sm" /></span>
           <div className="grow"><div className="title">{t}</div><div className="meta">{d}</div>

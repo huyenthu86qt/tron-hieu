@@ -97,7 +97,7 @@ export function OrderPage() {
 
   if (o.status === 'paid') return (
     <Frame foot={<button className="btn primary block" onClick={() => nav(back)}>{o.target.kind === 'case' ? 'Về đúng phần đang cần dùng' : 'Về hồ sơ chuẩn bị'}</button>}>
-      <div className="empty" style={{ padding: '24px 0' }}><Icon n="check" c="lg" /><h1 style={{ fontSize: 24, color: 'var(--text)' }}>Đã mở đầy đủ</h1>
+      <div className="empty" style={{ padding: '24px 0' }}><Icon n="check" c="lg" /><h1 style={{ fontSize: 24, color: 'var(--text)' }}>{o.target.kind === 'case' ? 'Đã mở đầy đủ' : 'Đã mở gói Chuẩn bị trước'}</h1>
         <p>{o.productName} — {o.target.name}. Mã đơn <b className="num">{o.code}</b>.</p></div>
     </Frame>
   );

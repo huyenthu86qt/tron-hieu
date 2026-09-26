@@ -21,7 +21,7 @@ export function LinkPage() {
   if (st === null) return (
     <div className="bare"><div className="bare-inner" style={{ justifyContent: 'center' }}><div className="empty"><Icon n="link" c="lg" />
       <h2 style={{ color: 'var(--text)' }}>Link này không còn dùng được</h2>
-      <p>{'Người đại diện gia đình đã thu hồi hoặc link đã hết hạn. Bác liên hệ người đại diện gia đình để nhận link mới.'}</p></div></div></div>
+      <p>{'Người đại diện gia đình đã thu hồi hoặc link đã hết hạn. Anh/chị liên hệ người đại diện gia đình để nhận link mới.'}</p></div></div></div>
   );
   const { c, member } = st;
   const u1 = c.members.find(m => m.id === U1_ID)!;

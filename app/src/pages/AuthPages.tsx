@@ -3,7 +3,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Link, Navigate, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { createCase } from '../domain/model';
 import { normalizeCase } from '../domain/normalize';
-import { OTP_TTL_MIN } from '../domain/platform';
+import { fmtPhone, OTP_TTL_MIN, SUPPORT } from '../domain/platform';
 import { clearDraft, loadDraft, repo } from '../repo/repo';
 import {
   completeProfile, currentUser, devOtpCode, getPlatform, login, register, resetPassword, sendOtp, sessionExpired, signInWithGoogle, usePlatform, useUser,
@@ -192,6 +192,8 @@ export function ForgotPage() {
       <section className="card card-pad stack">
         <h3>Chưa liên kết Google</h3>
         <p className="muted">Nhắn Zalo hoặc gọi hỗ trợ Trọn Hiếu. Người hỗ trợ sẽ <b>gọi vào đúng số điện thoại của tài khoản</b> để xác nhận, rồi cấp mật khẩu tạm. Anh/chị đăng nhập bằng mật khẩu tạm và đổi mật khẩu mới ngay.</p>
+        <p>Hỗ trợ: <b>{SUPPORT.name}</b> — <span className="num">{fmtPhone(SUPPORT.phone)}</span></p>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}><a className="btn primary" href={`tel:${SUPPORT.phone}`}>Gọi {SUPPORT.name}</a><a className="btn" href={`https://zalo.me/${SUPPORT.phone}`} target="_blank" rel="noreferrer">Nhắn Zalo</a></div>
       </section>
     </AuthFrame>
   );
