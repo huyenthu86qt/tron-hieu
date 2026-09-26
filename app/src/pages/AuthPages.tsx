@@ -114,7 +114,7 @@ export function RegisterPage() {
           <div className="field"><label htmlFor="rName">Họ tên</label><input className="input" id="rName" autoComplete="name" value={f.name} onChange={e => setF({ ...f, name: e.target.value })} placeholder="Ví dụ: Nguyễn Minh Tuấn" /></div>
           <div className="field"><label htmlFor="rPhone">Số điện thoại</label><input className="input num" id="rPhone" inputMode="tel" autoComplete="tel" value={f.phone} onChange={e => setF({ ...f, phone: e.target.value })} placeholder="0912 345 678" /></div>
           <div className="field"><label htmlFor="rPass">Mật khẩu (tối thiểu 8 ký tự)</label><input className="input" id="rPass" type="password" autoComplete="new-password" value={f.pass} onChange={e => setF({ ...f, pass: e.target.value })} /></div>
-          <label className="check"><input type="checkbox" checked={f.agree} onChange={e => setF({ ...f, agree: e.target.checked })} /><span>Tôi đồng ý <Link to="/dieu-khoan" target="_blank">Điều khoản sử dụng</Link> và <Link to="/bao-mat" target="_blank">Chính sách bảo mật</Link></span></label>
+          <Consent checked={f.agree} onChange={v => setF({ ...f, agree: v })} />
           <ErrorBanner err={err} />
           <button className="btn primary block" disabled={busy} onClick={next}>{REMOTE ? (fromEntry ? 'Tạo tài khoản và lưu đám hiếu' : 'Tạo tài khoản') : 'Gửi mã xác minh'}</button>
         </section>
@@ -270,12 +270,13 @@ export function CompleteProfilePage() {
   const nav = useNavigate();
   const [params] = useSearchParams();
   const tiep = params.get('tiep');
-  const [f, setF] = useState({ name: user?.name ?? '', phone: '' });
+  const [f, setF] = useState({ name: user?.name ?? '', phone: '', agree: false });
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   if (!ready) return <div className="bare"><div className="bare-inner" style={{ justifyContent: 'center' }}><p className="muted" style={{ textAlign: 'center' }}>Đang tải…</p></div></div>;
   if (!user) return <Navigate to="/dang-nhap" replace />;
   const go = async () => {
+    if (!f.agree) { setErr('Cần đồng ý Điều khoản sử dụng và Chính sách bảo mật.'); return; }
     setBusy(true);
     const e = await completeProfile(f.name, f.phone);
     if (e) { setErr(e); setBusy(false); return; }
@@ -287,9 +288,18 @@ export function CompleteProfilePage() {
         {user.email && <p className="muted">Đang vào bằng Google: <b>{user.email}</b></p>}
         <div className="field"><label htmlFor="cName">Họ tên</label><input className="input" id="cName" autoComplete="name" value={f.name} onChange={e => setF({ ...f, name: e.target.value })} /></div>
         <div className="field"><label htmlFor="cPhone">Số điện thoại</label><input className="input num" id="cPhone" inputMode="tel" autoComplete="tel" value={f.phone} onChange={e => setF({ ...f, phone: e.target.value })} placeholder="0912 345 678" /></div>
+        <Consent checked={f.agree} onChange={v => setF({ ...f, agree: v })} />
         <ErrorBanner err={err} />
         <button className="btn primary block" disabled={busy} onClick={go}>Tiếp tục</button>
       </section>
     </AuthFrame>
+  );
+}
+
+/** Đồng ý khi tạo tài khoản — nói rõ có dữ liệu nhạy cảm (Điều 9 Luật Bảo vệ dữ liệu cá nhân 2025: đồng ý rõ ràng, cụ thể) */
+function Consent({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <label className="check"><input type="checkbox" checked={checked} onChange={e => onChange(e.target.checked)} />
+      <span>Tôi đồng ý <Link to="/dieu-khoan" target="_blank">Điều khoản sử dụng</Link> và <Link to="/bao-mat" target="_blank">Chính sách bảo mật</Link>, gồm việc xử lý dữ liệu nhạy cảm (nghi thức tôn giáo, dữ liệu tài chính) khi tôi tự nhập để lo việc của gia đình.</span></label>
   );
 }
