@@ -8,6 +8,7 @@ import { fullUntil, isExpired, isFull, type ProductId } from '../domain/platform
 import { DN_TEXT } from '../domain/text';
 import { repo } from '../repo/repo';
 import { REMOTE } from '../repo/backend';
+import { bankCode } from '../domain/platform';
 import { expireOrders, placeOrder, refreshOrders, simulateBankTx, usePlatform, useUser } from '../repo/platformStore';
 import { Icon } from '../ui/Icon';
 import { Banner, ErrorBanner, useApp } from '../ui/common';
@@ -111,7 +112,7 @@ export function OrderPage() {
   );
 
   const content = o.code;
-  const qr = acct.number && acct.bank ? `https://qr.sepay.vn/img?acc=${encodeURIComponent(acct.number)}&bank=${encodeURIComponent(acct.bank)}&amount=${o.amount}&des=${encodeURIComponent(content)}` : null;
+  const qr = acct.number && acct.bank ? `https://qr.sepay.vn/img?acc=${encodeURIComponent(acct.number)}&bank=${encodeURIComponent(bankCode(acct.bank))}&amount=${o.amount}&des=${encodeURIComponent(content)}` : null;
   const left = Math.max(0, new Date(o.expiresAt).getTime() - Date.now());
   return (
     <Frame foot={<button className="btn primary block" onClick={() => setWaiting(true)} disabled={waiting}>{waiting ? 'Đang chờ ngân hàng báo…' : 'Tôi đã chuyển khoản'}</button>}>
@@ -127,7 +128,7 @@ export function OrderPage() {
         <CopyLine label="Số tiền" value={money(o.amount)} big />
         <CopyLine label="Nội dung chuyển khoản" value={content} big />
         <CopyLine label="Số tài khoản" value={acct.number} />
-        <CopyLine label="Ngân hàng" value={acct.bank} />
+        <CopyLine label="Ngân hàng" value={bankCode(acct.bank)} />
         <CopyLine label="Chủ tài khoản" value={acct.holder} />
       </section>
       <Banner kind="warn">Ghi <b>đúng nội dung {content}</b> và <b>đúng số tiền</b> để app tự mở gói. Đơn giữ trong {Math.floor(left / 3600000)} giờ {Math.floor(left % 3600000 / 60000)} phút.</Banner>

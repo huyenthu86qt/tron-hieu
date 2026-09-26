@@ -19,6 +19,14 @@ export function normalizePhone(s: string): string | null {
   else if (d.startsWith('84') && d.length === 11) d = '0' + d.slice(2);
   return /^0[35789]\d{8}$/.test(d) ? d : null;
 }
+/** Mã ngân hàng chuẩn theo SePay/VietQR — Admin gõ “MBbank”, “mb”, “vietcombank”… vẫn ra đúng mã */
+const BANK_CODE: Record<string, string> = {
+  mb: 'MBBank', mbbank: 'MBBank', 'mb bank': 'MBBank', vcb: 'Vietcombank', vietcombank: 'Vietcombank', bidv: 'BIDV', vietinbank: 'VietinBank', ctg: 'VietinBank',
+  acb: 'ACB', vpbank: 'VPBank', vpb: 'VPBank', tpbank: 'TPBank', tpb: 'TPBank', techcombank: 'Techcombank', tcb: 'Techcombank', agribank: 'Agribank',
+  sacombank: 'Sacombank', stb: 'Sacombank', hdbank: 'HDBank', vib: 'VIB', msb: 'MSB', ocb: 'OCB', kienlongbank: 'KienLongBank', shb: 'SHB',
+};
+export const bankCode = (b: string) => BANK_CODE[b.trim().toLowerCase()] ?? b.trim();
+
 /** Người hỗ trợ khách hàng (Chủ dự án chốt 26/09/2026) */
 export const SUPPORT = { name: 'Diệu Tuệ', phone: '0784869988', email: 'huyenthu86.qt@gmail.com' };
 export const fmtPhone = (p: string) => p.replace(/^(\d{4})(\d{3})(\d{3})$/, '$1 $2 $3');

@@ -417,3 +417,12 @@ describe('Xưng hô theo quan hệ (kể cả quan hệ tự viết)', () => {
     expect(xung('')).toBe('anh/chị');
   });
 });
+
+describe('Mã ngân hàng cho mã QR', () => {
+  it('MBbank / mb / MB Bank đều ra MBBank; mã lạ giữ nguyên', async () => {
+    const { bankCode } = await import('./platform');
+    expect(['MBbank', 'mb', ' MB Bank ', 'MBBank'].map(bankCode)).toEqual(['MBBank', 'MBBank', 'MBBank', 'MBBank']);
+    expect(bankCode('vietcombank')).toBe('Vietcombank');
+    expect(bankCode('NganHangLa')).toBe('NganHangLa');
+  });
+});
