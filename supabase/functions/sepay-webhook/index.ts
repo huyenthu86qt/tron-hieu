@@ -7,6 +7,16 @@ import { createClient } from 'npm:@supabase/supabase-js@2';
 const KEY = Deno.env.get('SEPAY_WEBHOOK_KEY') ?? '';
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
 
+/** Khóa máy chủ: hệ khóa mới SUPABASE_SECRET_KEYS (JSON), dự phòng khóa cũ SUPABASE_SERVICE_ROLE_KEY */
+function serverKey(): string {
+  try {
+    const all = JSON.parse(Deno.env.get('SUPABASE_SECRET_KEYS') ?? '{}') as Record<string, string>;
+    const k = all.default ?? Object.values(all)[0];
+    if (k) return k;
+  } catch { /* dùng khóa cũ */ }
+  return Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+}
+
 /** So sánh không lộ thời gian (tránh dò khóa) */
 function same(a: string, b: string) {
   const x = new TextEncoder().encode(a), y = new TextEncoder().encode(b);
@@ -25,7 +35,7 @@ Deno.serve(async (req) => {
   let body: Record<string, unknown>;
   try { body = await req.json(); } catch { return json({ success: false, error: 'Dữ liệu không phải JSON' }, 400); }
 
-  const sb = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!, { auth: { persistSession: false } });
+  const sb = createClient(Deno.env.get('SUPABASE_URL')!, serverKey(), { auth: { persistSession: false } });
   const { data, error } = await sb.rpc('sepay_webhook', { p: body });
   // Lỗi máy chủ → trả 500 để SePay tự gửi lại (tối đa 7 lần trong 5 giờ)
   if (error) return json({ success: false, error: error.message }, 500);
