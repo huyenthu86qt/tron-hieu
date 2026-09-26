@@ -236,7 +236,13 @@ const MAPS_QUERY: Record<VendorCat, string> = {
 
 /** Link mở Google Maps tìm đúng loại dịch vụ quanh nơi tổ chức; chưa có vị trí lẫn địa chỉ thì tìm “gần đây” (theo vị trí điện thoại) */
 export function mapsSearchUrl(cat: VendorCat, site: VenueSite): string {
-  const q = MAPS_QUERY[cat];
+  return mapsQueryUrl(MAPS_QUERY[cat], site);
+}
+
+/** Dịch vụ tang lễ trọn gói: một đơn vị lo nhiều hạng mục (xe, rạp, hoa, nhạc, cỗ…) */
+export const PACKAGE_QUERY = 'dịch vụ tang lễ trọn gói';
+
+export function mapsQueryUrl(q: string, site: VenueSite): string {
   if (site.geo) return `https://www.google.com/maps/search/${encodeURIComponent(q)}/@${site.geo.lat},${site.geo.lng},14z`;
   if (site.address.trim()) return `https://www.google.com/maps/search/${encodeURIComponent(`${q} gần ${site.address.trim()}`)}`;
   return `https://www.google.com/maps/search/${encodeURIComponent(`${q} gần đây`)}`;

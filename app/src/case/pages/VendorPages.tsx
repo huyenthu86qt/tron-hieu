@@ -5,7 +5,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import type { GeoPoint, VendorCat } from '../../domain/types';
 import {
   acceptVendor, addFamilyVendor, distanceKm, catName, catState, catsVisible, choosePackage, commitVendor, confirmVendor, findVendor, fmtGeo, fmtKm,
-  mapsSearchUrl, markUpdated, packageOffers, parseGeo, recordIncident, recordQuote, siteOf, suggestionSnapshot, venueLabel, CATS, USE_DIRECTORY,
+  mapsQueryUrl, mapsSearchUrl, markUpdated, PACKAGE_QUERY, packageOffers, parseGeo, recordIncident, recordQuote, siteOf, suggestionSnapshot, venueLabel, CATS, USE_DIRECTORY,
 } from '../../domain/vendors';
 import { FORM_LABEL } from '../../domain/model';
 import { money, parseMoney, fmtMoneyInput } from '../../domain/finance';
@@ -78,11 +78,12 @@ function VenueCard({ compact }: { compact?: boolean }) {
 }
 
 /* ---------- S-VEN-04 ---------- */
-export function FamilyVendorSheet({ cat, useNow, onClose }: { cat?: VendorCat; useNow?: boolean; onClose: () => void }) {
+export function FamilyVendorSheet({ cat, useNow, pkg, onClose }: { cat?: VendorCat; useNow?: boolean; /** Ghi dịch vụ tang lễ trọn gói: nhận nhiều hạng mục một lần */ pkg?: boolean; onClose: () => void }) {
   const { c, update } = useCase();
   const { toast } = useApp();
   const vis = catsVisible(c.situation);
-  const [f, setF] = useState({ name: '', phone: '', cats: cat ? [cat] : [] as VendorCat[], address: '', note: '', now: !!useNow, share: USE_DIRECTORY });
+  const openCats = vis.filter(k => !['committed', 'confirmed'].includes(c.vendors?.[k.k]?.status ?? '')).map(k => k.k);
+  const [f, setF] = useState({ name: '', phone: '', cats: pkg ? openCats : cat ? [cat] : [] as VendorCat[], address: '', note: '', now: !!useNow || !!pkg, share: USE_DIRECTORY });
   const [err, setErr] = useState<string | null>(null);
   const committed = cat ? c.vendors?.[cat]?.status === 'committed' : false;
   const save = () => {
@@ -90,17 +91,20 @@ export function FamilyVendorSheet({ cat, useNow, onClose }: { cat?: VendorCat; u
     const e = update(d => {
       id = addFamilyVendor(d, { name: f.name, phone: f.phone, cats: f.cats, address: f.address, note: f.note, share: f.share });
       if (f.now && cat && f.cats.includes(cat) && !committed) confirmVendor(d, cat, id, true);
+      if (pkg && f.now) for (const k of f.cats) if (openCats.includes(k)) confirmVendor(d, k, id, true);
     });
     if (e) { setErr(e); return; }
-    onClose(); toast(`Đã thêm ${f.name.trim()} vào nhà cung cấp của gia đình${f.now && cat ? ' và chọn cho hạng mục này' : ''}`);
+    onClose(); toast(pkg ? `Đã ghi ${f.name.trim()} lo trọn gói ${f.cats.length} hạng mục` : `Đã thêm ${f.name.trim()} vào nhà cung cấp của gia đình${f.now && cat ? ' và chọn cho hạng mục này' : ''}`);
   };
   return (
-    <Sheet title="Thêm nhà cung cấp của gia đình" onClose={onClose} foot={<><button className="btn" onClick={onClose}>Hủy</button><button className="btn primary" onClick={save}>Lưu</button></>}>
+    <Sheet title={pkg ? 'Dịch vụ tang lễ trọn gói' : 'Thêm nhà cung cấp của gia đình'} onClose={onClose} foot={<><button className="btn" onClick={onClose}>Hủy</button><button className="btn primary" onClick={save}>Lưu</button></>}>
       <div className="field"><label htmlFor="fvName">Tên nhà cung cấp hoặc người làm</label><input className="input" id="fvName" value={f.name} onChange={e => setF({ ...f, name: e.target.value })} placeholder="Ví dụ: Đội kèn bác Tư (người trong họ giới thiệu)" /></div>
       <div className="field"><label htmlFor="fvPhone">Số điện thoại</label><input className="input num" id="fvPhone" inputMode="tel" value={f.phone} onChange={e => setF({ ...f, phone: e.target.value })} /></div>
       <div className="field"><label>Nhận hạng mục</label><Chips items={vis.map(k => k.name)} isOn={n => f.cats.includes(vis.find(k => k.name === n)!.k)} onToggle={n => setF(x => ({ ...x, cats: toggleIn(x.cats, vis.find(k => k.name === n)!.k) as VendorCat[] }))} /></div>
       <div className="field"><label htmlFor="fvAddr">Địa chỉ (tùy chọn)</label><input className="input" id="fvAddr" value={f.address} onChange={e => setF({ ...f, address: e.target.value })} /></div>
       <div className="field"><label htmlFor="fvNote">Ghi chú (tùy chọn)</label><input className="input" id="fvNote" value={f.note} onChange={e => setF({ ...f, note: e.target.value })} placeholder="Ví dụ: đã làm cho đám nhà bác cả năm ngoái" /></div>
+      {pkg && <><p className="muted">Tích các hạng mục đơn vị này nhận làm. Hạng mục đã chọn hoặc đã cam kết với bên khác được giữ nguyên.</p>
+        <label className="check"><input type="checkbox" checked={f.now} onChange={e => setF({ ...f, now: e.target.checked })} /><span>Chọn luôn đơn vị này cho các hạng mục đã tích</span></label></>}
       {cat && !committed && <label className="check"><input type="checkbox" checked={f.now} onChange={e => setF({ ...f, now: e.target.checked })} /><span>Chọn luôn bên này cho hạng mục <b>{catName(cat)}</b></span></label>}
       <ErrorBanner err={err} />
       {USE_DIRECTORY && <><label className="check"><input type="checkbox" checked={f.share} onChange={e => setF({ ...f, share: e.target.checked })} /><span>Giới thiệu bên này cho các gia đình khác. Trọn Hiếu gọi xác nhận với nhà cung cấp trước khi đưa vào danh bạ chung; chỉ chia sẻ tên, số điện thoại, hạng mục, địa chỉ của nhà cung cấp — không kèm thông tin gia đình hay ghi chú.</span></label>
@@ -133,6 +137,10 @@ function Vendors() {
   const nav = useNavigate();
   const [add, setAdd] = useState(false);
   const [pkg, setPkg] = useState<string | null>(null);
+  const [pkgAdd, setPkgAdd] = useState(false);
+  // Đơn vị gia đình tự thêm đang được chọn cho từ 2 hạng mục trở lên = dịch vụ trọn gói
+  const pkgV = (c.familyVendors ?? []).find(v => v.cats.length > 1 && Object.values(c.vendors ?? {}).filter(x => x?.vendorId === v.id).length > 1);
+  const pkgCats = pkgV ? (Object.entries(c.vendors ?? {}) as [VendorCat, { vendorId?: string | null } | undefined][]).filter(([, x]) => x?.vendorId === pkgV.id).map(([k]) => k) : [];
   const offers = packageOffers(c, dir);
   const upd = c.updatedCats ?? [];
   return (
@@ -140,6 +148,14 @@ function Vendors() {
       <div className="page-title"><div><h1>Nhà cung cấp</h1><p>{USE_DIRECTORY ? 'Gợi ý đúng loại dịch vụ, gần nơi tổ chức nhất · gia đình xác nhận trước khi chọn' : 'Tìm bên gần nơi tổ chức trên Google Maps, gọi hỏi giá, rồi ghi bên gia đình chọn để cả nhà cùng theo dõi'}</p></div>
         <div className="actions"><button className="btn" onClick={() => setAdd(true)}><Icon n="plus" c="sm" />Thêm nhà cung cấp của gia đình</button></div></div>
       <VenueCard />
+      <section className="card card-pad stack" style={{ gap: 8 }}>
+        <h3>Dịch vụ tang lễ trọn gói</h3>
+        {pkgV ? <p>Gia đình đã chọn <b>{pkgV.name}</b> lo {pkgCats.map(k => catName(k).toLowerCase()).join(', ')}. <Tel phone={pkgV.phone} /></p>
+          : <p className="muted">Một đơn vị lo gần như trọn vẹn: xe tang, rạp, hoa, nhạc lễ… Nếu gia đình thuê trọn gói, ghi một lần cho tất cả hạng mục đơn vị đó nhận.</p>}
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <a className="btn sm" href={mapsQueryUrl(PACKAGE_QUERY, siteOf(c))} target="_blank" rel="noreferrer"><Icon n="pin" c="sm" />Tìm trên Google Maps</a>
+          <button className="btn sm" onClick={() => setPkgAdd(true)}><Icon n="plus" c="sm" />Ghi đơn vị trọn gói gia đình chọn</button></div>
+      </section>
       {upd.length > 0 && <Banner kind="upd" icon="refresh">Gợi ý đã tự cập nhật theo địa điểm mới lúc {fmtAt(c.updatedAt)}. Hạng mục đã cam kết không bị thay.</Banner>}
       {offers[0] && <Banner kind="upd" icon="vendor"><b>Có dịch vụ trọn gói gần nơi tổ chức:</b> {offers[0].v.name} ({fmtKm(offers[0].d)}) nhận được {offers[0].open.length} hạng mục chưa chốt: {offers[0].open.map(k => k.name).join(', ')}.
         <div style={{ marginTop: 8 }}><button className="btn sm" onClick={() => setPkg(offers[0].v.id)}>Xem và chọn trọn gói</button></div></Banner>}
@@ -158,6 +174,7 @@ function Vendors() {
       })}</div></section>
       <p className="note">{USE_DIRECTORY ? 'Nguồn: danh bạ do Admin quản lý + nhà cung cấp gia đình tự thêm + nhà cung cấp trong hồ sơ chuẩn bị.' : 'Kết quả tìm kiếm do Google Maps cung cấp; gia đình tự gọi hỏi giá và chọn.'} Không đặt lịch, không thanh toán qua app.</p>
       {add && <FamilyVendorSheet onClose={() => setAdd(false)} />}
+      {pkgAdd && <FamilyVendorSheet pkg onClose={() => setPkgAdd(false)} />}
       {pkg && <PackageSheet vid={pkg} onClose={() => setPkg(null)} />}
     </div>
   );
