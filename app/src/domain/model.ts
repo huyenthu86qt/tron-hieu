@@ -1,6 +1,7 @@
 // Phần lõi nghiệp vụ: sinh việc theo hoàn cảnh, phụ thuộc & việc khóa, chặng hiện tại,
 // quyết định gốc, tác động khi đổi quyết định, điều kiện khép vòng.
 // Hàm thuần — không đụng giao diện hay nơi lưu trữ.
+import type { GuideKey } from './legal';
 import type {
   Answers, CaseData, Cond, Decision, DecisionKey, Form, Member, OrgModel, OrgType, Person, Rite,
   Situation, TaskInst, TaskKind, TaskStatus, TaskTemplate, Venue, VendorCat,
@@ -68,6 +69,7 @@ export interface TaskView {
   urgent: boolean;
   byOrg: boolean;
   unverified: boolean;
+  guide?: GuideKey;
   go?: string;
   cat?: VendorCat;
   custom: boolean;
@@ -99,7 +101,7 @@ export function taskView(c: CaseData, i: TaskInst): TaskView | null {
     id: i.id, title: i.titleOverride ?? r(t.title), phase: t.phase, due: i.dueOverride ?? r(t.due), kind: t.kind, why: t.why,
     area: i.area ?? t.area, status: i.status, owner: i.owner, lock: !!t.lock, lockText: t.lockText && r(t.lockText),
     deps: t.deps ?? [], decision: t.decision, steps: steps?.map(r), checks: checks?.map(r),
-    note: i.note ?? (tplNote && r(tplNote)), urgent: !!t.urgent, byOrg: !!t.byOrg, unverified: !!t.unverified, go: t.go, cat: t.cat,
+    note: i.note ?? (tplNote && r(tplNote)), urgent: !!t.urgent, byOrg: !!t.byOrg, unverified: !!t.unverified, guide: t.guide, go: t.go, cat: t.cat,
     custom: false, skipReason: i.skipReason, issue: i.issue, stepsDone: i.stepsDone ?? {}, evidence: i.evidence, evidencePath: i.evidencePath, assignNote: i.assignNote,
   };
 }
@@ -255,10 +257,11 @@ export function decisionView(c: CaseData, d: Decision): DecisionView {
       { k: 'hall', label: 'Tại nhà tang lễ', note: 'Thuê phòng lễ theo giờ; theo quy định của nhà tang lễ' }] };
     case 'time': {
       const cre = s.form === 'cremation';
+      // Gia đình tự điền ngày, giờ (theo giờ thầy xem / giờ còn chỗ). “a”, “b” chỉ còn để đọc đám hiếu cũ đã chốt theo cách trước.
+      const legacy = d.chosen === 'a' || d.chosen === 'b';
       return { ...d, kind: 'root', lock: true, title: cre ? 'Giờ hỏa táng' : 'Giờ hạ huyệt', due: r('Cần chốt trước 12:00 ngày {d+2}'), options: [
-        { k: 'a', label: r('Sáng {d+4}'), note: cre ? 'Theo giờ còn chỗ tại đài hóa thân' : 'Theo giờ thầy cúng xem' },
-        { k: 'b', label: r('Chiều {d+4}'), note: 'Họ hàng ở xa kịp về hơn' },
-        { k: 'c', label: 'Ngày giờ khác', note: 'Ghi cụ thể ở ô bên dưới' }] };
+        ...(legacy ? [{ k: 'a', label: r('Sáng {d+4}'), note: '' }, { k: 'b', label: r('Chiều {d+4}'), note: '' }] : []),
+        { k: 'c', label: 'Ngày giờ gia đình chọn', note: cre ? 'Theo giờ đã đăng ký tại đài hóa thân' : 'Theo giờ thầy xem' }] };
     }
     case 'org': {
       const lead = s.org === 'official';
@@ -282,6 +285,7 @@ export const findDecision = (c: CaseData, id: string) => {
 
 export function chosenLabel(d: DecisionView): string {
   if (!d.chosen) return '';
+  if (d.key === 'time' && d.chosen === 'c' && d.detail) return d.detail;
   const o = d.options.find(x => x.k === d.chosen);
   return (o ? o.label : d.chosen) + (d.detail ? ' · ' + d.detail : '');
 }

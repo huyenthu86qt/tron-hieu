@@ -1,5 +1,6 @@
 // S-MAP-04 · Chi tiết việc (máy tính: chia đôi danh sách | chi tiết)
 import { useState } from 'react';
+import { GUIDES, type LegalGuide } from '../../domain/legal';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import {
   attachEvidence, completeTask, reportIssue, resolveIssue, startTask, takeTask, toggleStep,
@@ -109,6 +110,7 @@ function Detail({ t }: { t: TaskView }) {
         <KindPill k={t.kind} />{t.why ? <span>Vì: <b>{t.why}</b></span> : <span className="muted">{t.kind === 'opt' ? 'Gia đình tự chọn thêm' : t.kind === 'own' ? 'Gia đình tự thêm' : 'Ai lo đám hiếu cũng cần'}</span>}</div>
       {t.unverified && <p className="muted"><Icon n="alert" c="sm" /> Đây là việc thủ tục. Hướng dẫn chi tiết chỉ hiện khi có nguồn hiện hành đã kiểm chứng.</p>}
     </section>
+    {t.guide && <LegalGuideCard g={GUIDES[t.guide]} deadline={t.guide === 'khai-tu' ? t.due : undefined} />}
     <section className="card card-pad"><dl className="kv">
       <dt>Hạn</dt><dd>{t.due}</dd>
       <dt>Người phụ trách</dt><dd>{o ? `${o.name} · ${o.rel}${o.access === 'link' ? ' · nhận qua link' : ''}` : <OwnerPill owner={null} />}</dd>
@@ -204,6 +206,21 @@ function History({ t }: { t: TaskView }) {
         {first && <span>{fmtAt(c.createdAt)} · {first}</span>}
         {own.map((h, i) => <span key={i}>{fmtAt(h.at)} · {h.text}</span>)}
       </div>
+    </section>
+  );
+}
+
+/** Hướng dẫn thủ tục: từng ý kèm điều khoản, nguồn văn bản chính thức, ngày rà soát */
+function LegalGuideCard({ g, deadline }: { g: LegalGuide; deadline?: string }) {
+  return (
+    <section className="card card-pad stack legal-guide" style={{ gap: 10 }}>
+      <div className="eyebrow">Hướng dẫn theo quy định hiện hành</div>
+      {deadline && <p><b>{deadline}</b> <span className="muted">— 15 ngày tính từ ngày tiếp theo ngày mất (Điều 147, 148 Bộ luật Dân sự 2015).</span></p>}
+      <ol className="legal-points">{g.points.map((p, i) => <li key={i}><span>{p.text}</span><span className="legal-cite">{p.cite}</span></li>)}</ol>
+      {g.upcoming && <Banner kind="info" icon="alert"><b>Sắp thay đổi:</b> {g.upcoming}</Banner>}
+      <details className="fold" style={{ borderTop: 0 }}><summary><Icon n="chev" c="chev" />Văn bản gốc</summary>
+        <ul className="legal-src">{g.sources.map(s => <li key={s.url}><a href={s.url} target="_blank" rel="noreferrer">{s.label}</a></li>)}</ul></details>
+      <p className="note">Rà soát ngày {g.reviewed}. Thông tin tham khảo — khi làm thủ tục, làm theo hướng dẫn của cán bộ tư pháp – hộ tịch nơi nộp hồ sơ.</p>
     </section>
   );
 }

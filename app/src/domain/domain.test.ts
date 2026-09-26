@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { canChi, lunarAnniversary, toLunar } from './lunar';
 import { displayName, lifeLine, longevityWord, lunarAge, pronoun, resolveText } from './person';
 import {
-  canClose, closeConditions, createCase, currentPhase, decide, changeDecision, dependencies, findDecision, findTask,
+  canClose, chosenLabel, closeConditions, createCase, currentPhase, decide, changeDecision, dependencies, findDecision, findTask,
   impactOfForm, impactOfVenue, lockBlocked, nowTasks, pendingDecisions, visibleTasks,
 } from './model';
 import {
@@ -214,12 +214,14 @@ describe('Quyết định và tác động', () => {
     expect(ids(c).has('h7a')).toBe(true);
     expect(findDecision(c, 'venue')!.chosen).toBe('hall');
   });
-  it('chốt giờ có ghi chi tiết; hạn tính theo ngày mất', () => {
+  it('giờ an táng do gia đình tự điền; hạn chốt tính theo ngày mất', () => {
     const c = withDeath(mk(), '2026-12-30');
     const d = findDecision(c, 'time')!;
-    expect(d.options[0].label).toBe('Sáng 03/01');
-    decide(c, 'time', 'c', '6:30 ngày 04/01');
-    expect(findDecision(c, 'time')!.detail).toBe('6:30 ngày 04/01');
+    expect(d.options.map(o => o.k)).toEqual(['c']);
+    expect(d.due).toBe('Cần chốt trước 12:00 ngày 01/01');
+    decide(c, 'time', 'c', '6 giờ 30, ngày 04/01/2027');
+    expect(findDecision(c, 'time')!.detail).toBe('6 giờ 30, ngày 04/01/2027');
+    expect(chosenLabel(findDecision(c, 'time')!)).toBe('6 giờ 30, ngày 04/01/2027');
   });
   it('Ban lễ tang: xác nhận thì việc chốt lịch xong, đề nghị điều chỉnh thì chưa', () => {
     const c = mk({ org: 'official_rel' });

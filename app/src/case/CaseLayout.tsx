@@ -1,4 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { USE_DIRECTORY } from '../domain/vendors';
+import type { DirVendor } from '../domain/types';
+const NO_DIR: DirVendor[] = [];
 import { Link, Outlet, useLocation, useNavigate, useParams } from 'react-router-dom';
 import type { CaseData } from '../domain/types';
 import { RuleError, initials } from '../domain/actions';
@@ -20,7 +23,8 @@ import { SideLogo } from '../ui/brand';
 export function CaseLayout() {
   const { id = '' } = useParams();
   const user = useUser()!;
-  const dir = usePlatform(s => s.directory);
+  const platformDir = usePlatform(s => s.directory);
+  const dir = USE_DIRECTORY ? platformDir : NO_DIR;
   const [c, setC] = useState<CaseData | null | undefined>(undefined);
   const [sheet, setSheet] = useState<SheetState | null>(null);
   const { toast } = useApp();

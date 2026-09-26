@@ -1,5 +1,6 @@
 // S-CHK-00 · Mở đầy đủ — lời lẽ nhẹ nhàng, không đếm ngược, nói rõ gồm gì; phần miễn phí vẫn dùng bình thường.
 import type { ReactNode } from 'react';
+import { fmtPhone, SUPPORT } from '../domain/platform';
 import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { money } from '../domain/finance';
 import { usePlatform } from '../repo/platformStore';
@@ -7,7 +8,6 @@ import { Icon } from '../ui/Icon';
 import { useCase, DN } from './CaseContext';
 
 const INCLUDES = [
-  ['team', 'Đội đám hiếu', 'Mời con cháu, họ hàng, hàng xóm; nhờ việc qua link không cần cài app'],
   ['vendor', 'Nhà cung cấp', 'Gợi ý đúng loại, gần nơi tổ chức nhất; báo giá, cam kết, nghiệm thu'],
   ['wallet', 'Tài chính', 'Dự kiến, đã chi, còn trả; đề nghị chi, sổ phúng viếng, đối soát'],
   ['guest', 'Khách viếng & cáo phó', 'Trang thông tin cho khách, ghi nhanh khách viếng'],
@@ -25,7 +25,7 @@ export function Paywall({ module }: { module: string }) {
   return (
     <div className="page" style={{ maxWidth: 760 }}>
       <div><div className="eyebrow">{module}</div><h1 style={{ fontSize: 24, marginTop: 4 }}>Mở đầy đủ cho đám hiếu {DN(c)}</h1>
-        <p className="muted" style={{ marginTop: 6 }}>Hồ sơ, Bây giờ, Bản đồ, Chi tiết việc và Cần quyết vẫn dùng bình thường. Khi gia đình cần thêm người cùng lo và các phần dưới đây, có thể mở đầy đủ cho riêng đám hiếu này.</p></div>
+        <p className="muted" style={{ marginTop: 6 }}>Hồ sơ, Bây giờ, Bản đồ, Cần quyết, Đội đám hiếu (mời người, nhờ việc qua link) và Sổ tưởng nhớ vẫn dùng miễn phí. Khi gia đình cần các phần dưới đây, có thể mở đầy đủ cho riêng đám hiếu này.</p></div>
       <section className="card"><div className="list">{INCLUDES.map(([i, t, d]) => (
         <div key={t} className="row"><span className="num-badge"><Icon n={i} c="sm" /></span><div className="grow"><div className="title">{t}</div><div className="meta">{d}</div></div></div>
       ))}</div></section>
@@ -33,7 +33,7 @@ export function Paywall({ module }: { module: string }) {
       {canPay
         ? <button className="btn primary block" disabled={!p?.active} onClick={() => nav(`/checkout?goi=full&dh=${c.id}&ve=${encodeURIComponent(loc.pathname)}`)}>{p?.active ? 'Mở đầy đủ' : 'Gói đang tạm ngừng bán'}</button>
         : <p className="muted">Người đại diện gia đình hoặc thành viên Đầy đủ có thể mở gói cho đám hiếu này.</p>}
-      <p className="note">Không tự gia hạn. Nếu cần hỗ trợ, liên hệ đội hỗ trợ ở mục Tài khoản.</p>
+      <p className="note">Không tự gia hạn. Cần hỗ trợ: gọi hoặc nhắn Zalo {SUPPORT.name} — {fmtPhone(SUPPORT.phone)}.</p>
     </div>
   );
 }

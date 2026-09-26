@@ -5,7 +5,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import type { GeoPoint, VendorCat } from '../../domain/types';
 import {
   acceptVendor, addFamilyVendor, distanceKm, catName, catState, catsVisible, choosePackage, commitVendor, confirmVendor, findVendor, fmtGeo, fmtKm,
-  mapsSearchUrl, markUpdated, packageOffers, parseGeo, recordIncident, recordQuote, siteOf, suggestionSnapshot, venueLabel, CATS,
+  mapsSearchUrl, markUpdated, packageOffers, parseGeo, recordIncident, recordQuote, siteOf, suggestionSnapshot, venueLabel, CATS, USE_DIRECTORY,
 } from '../../domain/vendors';
 import { FORM_LABEL } from '../../domain/model';
 import { money, parseMoney, fmtMoneyInput } from '../../domain/finance';
@@ -20,7 +20,7 @@ const fmtAt = (iso?: string) => (iso ? new Date(iso).toLocaleString('vi-VN', { h
 function StatusPillCat({ s }: { s: string }) {
   if (s === 'committed') return <span className="pill done">Đã cam kết</span>;
   if (s === 'confirmed') return <span className="pill doing">Đã chọn · chờ cam kết</span>;
-  if (s === 'empty') return <span className="pill issue">Chưa có bên phù hợp</span>;
+  if (s === 'empty') return <span className="pill soft">Chưa chọn</span>;
   return <span className="pill wait">Đang gợi ý · chờ xác nhận</span>;
 }
 
@@ -82,7 +82,7 @@ export function FamilyVendorSheet({ cat, useNow, onClose }: { cat?: VendorCat; u
   const { c, update } = useCase();
   const { toast } = useApp();
   const vis = catsVisible(c.situation);
-  const [f, setF] = useState({ name: '', phone: '', cats: cat ? [cat] : [] as VendorCat[], address: '', note: '', now: !!useNow, share: true });
+  const [f, setF] = useState({ name: '', phone: '', cats: cat ? [cat] : [] as VendorCat[], address: '', note: '', now: !!useNow, share: USE_DIRECTORY });
   const [err, setErr] = useState<string | null>(null);
   const committed = cat ? c.vendors?.[cat]?.status === 'committed' : false;
   const save = () => {
@@ -103,8 +103,8 @@ export function FamilyVendorSheet({ cat, useNow, onClose }: { cat?: VendorCat; u
       <div className="field"><label htmlFor="fvNote">Ghi chú (tùy chọn)</label><input className="input" id="fvNote" value={f.note} onChange={e => setF({ ...f, note: e.target.value })} placeholder="Ví dụ: đã làm cho đám nhà bác cả năm ngoái" /></div>
       {cat && !committed && <label className="check"><input type="checkbox" checked={f.now} onChange={e => setF({ ...f, now: e.target.checked })} /><span>Chọn luôn bên này cho hạng mục <b>{catName(cat)}</b></span></label>}
       <ErrorBanner err={err} />
-      <label className="check"><input type="checkbox" checked={f.share} onChange={e => setF({ ...f, share: e.target.checked })} /><span>Giới thiệu bên này cho các gia đình khác. Trọn Hiếu gọi xác nhận với nhà cung cấp trước khi đưa vào danh bạ chung; chỉ chia sẻ tên, số điện thoại, hạng mục, địa chỉ của nhà cung cấp — không kèm thông tin gia đình hay ghi chú.</span></label>
-      <p className="note">Bỏ chọn nếu đây là người quen làm giúp, không nhận làm cho người ngoài.</p>
+      {USE_DIRECTORY && <><label className="check"><input type="checkbox" checked={f.share} onChange={e => setF({ ...f, share: e.target.checked })} /><span>Giới thiệu bên này cho các gia đình khác. Trọn Hiếu gọi xác nhận với nhà cung cấp trước khi đưa vào danh bạ chung; chỉ chia sẻ tên, số điện thoại, hạng mục, địa chỉ của nhà cung cấp — không kèm thông tin gia đình hay ghi chú.</span></label>
+      <p className="note">Bỏ chọn nếu đây là người quen làm giúp, không nhận làm cho người ngoài.</p></>}
     </Sheet>
   );
 }
@@ -137,7 +137,7 @@ function Vendors() {
   const upd = c.updatedCats ?? [];
   return (
     <div className="page">
-      <div className="page-title"><div><h1>Nhà cung cấp</h1><p>Gợi ý đúng loại dịch vụ, gần nơi tổ chức nhất · gia đình xác nhận trước khi chọn</p></div>
+      <div className="page-title"><div><h1>Nhà cung cấp</h1><p>{USE_DIRECTORY ? 'Gợi ý đúng loại dịch vụ, gần nơi tổ chức nhất · gia đình xác nhận trước khi chọn' : 'Tìm bên gần nơi tổ chức trên Google Maps, gọi hỏi giá, rồi ghi bên gia đình chọn để cả nhà cùng theo dõi'}</p></div>
         <div className="actions"><button className="btn" onClick={() => setAdd(true)}><Icon n="plus" c="sm" />Thêm nhà cung cấp của gia đình</button></div></div>
       <VenueCard />
       {upd.length > 0 && <Banner kind="upd" icon="refresh">Gợi ý đã tự cập nhật theo địa điểm mới lúc {fmtAt(c.updatedAt)}. Hạng mục đã cam kết không bị thay.</Banner>}
@@ -146,16 +146,17 @@ function Vendors() {
       <section className="card"><div className="list">{catsVisible(c.situation).map(k => {
         const s = catState(c, dir, k.k);
         return (
-          <button key={k.k} className="row" onClick={() => nav(`${base}/nha-cung-cap/goi-y/${k.k}`)}><span className="num-badge"><Icon n="vendor" c="sm" /></span>
+          <div key={k.k} className="row" role="button" tabIndex={0} style={{ cursor: 'pointer' }} onClick={() => nav(`${base}/nha-cung-cap/goi-y/${k.k}`)}><span className="num-badge"><Icon n="vendor" c="sm" /></span>
             <div className="grow"><div className="title">{k.name}</div>
               <div className="meta"><StatusPillCat s={s.status} />{s.vendor && <><span>{s.vendor.name}</span><span className="dist num">{s.vendor.family ? 'gia đình tự thêm' : fmtKm(s.vendor.d)}</span></>}
                 {s.vendor && s.vendor.cats.length > 1 && <span className="pill prio">Trọn gói</span>}
                 {upd.includes(k.k) && <span className="pill prio"><Icon n="refresh" c="sm" />Đã cập nhật</span>}
-                {s.cv?.acceptedAt && <span className="pill done">Đã nghiệm thu</span>}</div></div>
-            <Icon n="chev" c="chev" /></button>
+                {s.cv?.acceptedAt && <span className="pill done">Đã nghiệm thu</span>}</div>
+              {!s.vendor && <div style={{ marginTop: 8 }}><a className="btn sm" href={mapsSearchUrl(k.k, siteOf(c))} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()}><Icon n="pin" c="sm" />Tìm trên Google Maps</a></div>}</div>
+            <Icon n="chev" c="chev" /></div>
         );
       })}</div></section>
-      <p className="note">Nguồn: danh bạ do Admin quản lý + nhà cung cấp gia đình tự thêm + nhà cung cấp trong hồ sơ chuẩn bị. Không đặt lịch, không thanh toán qua app.</p>
+      <p className="note">{USE_DIRECTORY ? 'Nguồn: danh bạ do Admin quản lý + nhà cung cấp gia đình tự thêm + nhà cung cấp trong hồ sơ chuẩn bị.' : 'Kết quả tìm kiếm do Google Maps cung cấp; gia đình tự gọi hỏi giá và chọn.'} Không đặt lịch, không thanh toán qua app.</p>
       {add && <FamilyVendorSheet onClose={() => setAdd(false)} />}
       {pkg && <PackageSheet vid={pkg} onClose={() => setPkg(null)} />}
     </div>
@@ -213,8 +214,8 @@ function Suggest() {
     rest = r.ok.filter(o => o.v.id !== s.vendor!.id);
   } else if (s.status === 'empty') {
     top = <section className="card"><div className="empty"><Icon n="pin" c="lg" />
-      <h3 style={{ color: 'var(--text)' }}>{r.hasGeo ? `Chưa có ${catName(cat).toLowerCase()} phù hợp gần nơi tổ chức` : 'Chưa có vị trí nơi tổ chức'}</h3>
-      <p>{r.hasGeo ? `Danh bạ chưa có bên nào phục vụ khu vực ${venueLabel(c)}. Tìm các bên gần nhất trên Google Maps, gọi hỏi giá, rồi thêm bên gia đình chọn vào đây.` : 'Thêm vị trí ở thẻ “Tính từ” phía trên để app gợi ý bên gần nhất — hoặc tìm ngay quanh chỗ anh/chị đang đứng trên Google Maps.'}</p>
+      <h3 style={{ color: 'var(--text)' }}>Tìm {catName(cat).toLowerCase()} gần {venueLabel(c).toLowerCase()}</h3>
+      <p>Tìm trên Google Maps, gọi hỏi giá vài nơi, rồi ghi bên gia đình chọn vào đây để cả nhà cùng theo dõi báo giá, cam kết.{siteOf(c).address || siteOf(c).geo ? '' : ' Chưa có địa chỉ nơi tổ chức nên app tìm quanh vị trí điện thoại — thêm địa chỉ ở thẻ “Tính từ” để tìm đúng khu vực hơn.'}</p>
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
         {maps && <a className="btn primary" href={maps} target="_blank" rel="noreferrer"><Icon n="pin" c="sm" />Tìm quanh đây trên Google Maps</a>}
         <button className={maps ? 'btn' : 'btn primary'} onClick={() => setAdd(true)}><Icon n="plus" c="sm" />Thêm nhà cung cấp của gia đình</button></div></div></section>;

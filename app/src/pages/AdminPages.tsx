@@ -1,6 +1,7 @@
 // Admin V1: Tổng quan · Người dùng (+ chi tiết) · Đơn hàng & thanh toán · Quyền truy cập · Gói & giá · SePay · Giao dịch chưa khớp
 // · Danh bạ nhà cung cấp (S-ADM-01/02/03) · Nhật ký. Admin không xem nội dung riêng tư của đám hiếu.
 import { useEffect, useState, type ReactNode } from 'react';
+import { USE_DIRECTORY } from '../domain/vendors';
 import { Link, Navigate, useLocation, useNavigate, useParams } from 'react-router-dom';
 import type { CaseData, DirVendor, VendorCat, VendorCond } from '../domain/types';
 import { CATS, catName, fmtGeo, parseGeo, type VendorCandidate } from '../domain/vendors';
@@ -33,7 +34,7 @@ function useAllCases() {
 const NAVS: [string, IconName, string][] = [
   ['Tổng quan', 'now', '/admin'], ['Người dùng', 'user', '/admin/nguoi-dung'], ['Đơn hàng', 'wallet', '/admin/don-hang'], ['Quyền truy cập', 'lock', '/admin/quyen'],
   ['Gói & giá', 'doc', '/admin/goi-gia'], ['SePay', 'link', '/admin/sepay'], ['Giao dịch chưa khớp', 'alert', '/admin/chua-khop'],
-  ['Danh bạ nhà cung cấp', 'vendor', '/admin/nha-cung-cap'], ['Góc Bình An', 'lotus', '/admin/goc-binh-an'], ['Nhật ký', 'refresh', '/admin/nhat-ky'],
+  ...(USE_DIRECTORY ? [['Danh bạ nhà cung cấp', 'vendor', '/admin/nha-cung-cap'] as [string, IconName, string]] : []), ['Góc Bình An', 'lotus', '/admin/goc-binh-an'], ['Nhật ký', 'refresh', '/admin/nhat-ky'],
 ];
 
 export function AdminShell({ title, back, children }: { title: string; back?: string; children: ReactNode }) {

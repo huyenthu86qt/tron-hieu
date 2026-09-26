@@ -90,3 +90,8 @@
 .bottom-nav .bn{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 /* Số điện thoại chạm là gọi */
 a.tel{color:var(--primary);font-weight:600;text-decoration:underline;text-underline-offset:3px;white-space:nowrap}
+/* Hướng dẫn thủ tục có trích dẫn */
+.legal-points{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:10px}
+.legal-points li{line-height:1.55}
+.legal-cite{display:block;font-size:12.5px;color:var(--primary);margin-top:2px}
+.legal-src{margin:6px 0 0;padding-left:18px;display:flex;flex-direction:column;gap:6px;font-size:14px}

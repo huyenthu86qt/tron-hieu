@@ -17,6 +17,7 @@ import { REMOTE } from '../../repo/backend';
 import { listMemories, publicMemories, submitGuestMemory, type Memory } from '../../repo/nghiaTinh';
 import { useCase } from '../CaseContext';
 import { PaidGate } from '../Paywall';
+import { AccountCard, AccountInline } from '../CondolenceAccount';
 import { BRAND } from '../../ui/brand';
 
 const fmtAt = (iso?: string) => (iso ? new Date(iso).toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' }) : '');
@@ -54,6 +55,7 @@ export function GuestSheet({ onClose }: { onClose: () => void }) {
       <div className="field"><label htmlFor="gAmt">Phúng viếng (đồng) — ghi vào sổ riêng</label><input className="input num" id="gAmt" inputMode="numeric" value={g.amount} onChange={e => setG({ ...g, amount: fmtMoneyInput(e.target.value) })} placeholder="0" style={{ fontSize: 20, fontWeight: 600 }} />
         <div className="chips">{[200000, 500000, 1000000, 2000000].map(a => <button key={a} className="chip num" onClick={() => setG({ ...g, amount: a.toLocaleString('vi-VN') })}>{a.toLocaleString('vi-VN')}</button>)}</div></div>
       <div className="field"><label>Hình thức phúng viếng</label><div className="segin">{(['cash', 'bank'] as Method[]).map(k => <button key={k} aria-pressed={g.method === k} onClick={() => setG({ ...g, method: k })}>{METHOD_LABEL[k]}</button>)}</div>
+        {g.method === 'bank' && <AccountInline />}
         <p className="muted">App chỉ ghi lại để đối chiếu với sao kê; không nhận tiền thay gia đình.</p></div>
       <div className="field"><label>Lễ vật</label><Chips items={GIFTS} isOn={x => g.gifts.includes(x)} onToggle={x => setG(y => ({ ...y, gifts: toggleIn(y.gifts, x) }))} /></div>
       <ErrorBanner err={err} />
@@ -94,6 +96,7 @@ function Guests() {
           {L.length ? <div className="list">{L.slice(0, 10).map(x => <div key={x.id} className="row"><div className="grow"><div className="title">{x.name}</div>
             <div className="meta"><span>{groupLabel(c, x)}</span>{x.gifts.length > 0 && <span>{x.gifts.join(', ')}</span>}<span><Icon n="lock" c="sm" /> Phúng viếng ghi vào sổ riêng</span><span>{x.by} · {fmtAt(x.at)}</span></div></div></div>)}</div>
             : <div className="empty"><span>Chưa ghi khách nào. Bấm “Ghi khách viếng” khi có người đến.</span></div>}</section>
+        <AccountCard />
       </div><div className="stack">
         <section className="card card-pad stack" style={{ gap: 10 }}><div style={{ display: 'flex', gap: 8, alignItems: 'center' }}><h3 style={{ flex: 1 }}>Trang thông tin cho khách</h3>{p?.published ? <span className="pill done">Đã công bố</span> : <span className="pill soft">Nháp</span>}</div>
           {p?.changedAt && <Banner kind="upd" icon="refresh">Đã tự cập nhật theo thay đổi của gia đình lúc {fmtAt(p.changedAt)} và gắn nhãn “Thông tin đã thay đổi” cho khách.</Banner>}

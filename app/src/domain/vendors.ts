@@ -34,6 +34,10 @@ export function parseGeo(s: string): GeoPoint | null {
 }
 export const fmtGeo = (g?: GeoPoint) => (g ? `${g.lat.toFixed(5)}, ${g.lng.toFixed(5)}` : '');
 
+/** Gợi ý từ danh bạ nhà cung cấp do Admin quản lý. Tắt theo quyết định Chủ dự án (26/09/2026): chỉ để nút tìm trên Google Maps.
+ *  Bật lại (true) khi danh bạ đủ nhà cung cấp đã xác minh. */
+export const USE_DIRECTORY = false;
+
 export const defaultVenues = (): { home: VenueSite; hall: VenueSite } => ({ home: { name: 'Nhà riêng', address: '' }, hall: { name: 'Nhà tang lễ', address: '' } });
 export const siteOf = (c: CaseData, v: Venue = c.situation.venue): VenueSite => (c.venues ?? defaultVenues())[v];
 export const venueLabel = (c: CaseData, v: Venue = c.situation.venue) => {

@@ -121,10 +121,13 @@ export function DecisionPage() {
   const nav = useNavigate();
   const d = findDecision(c, did);
   const [pickState, setPick] = useState<string | null>(null);
-  const [detail, setDetail] = useState(d?.detail ?? '');
+  const [tDate, setTDate] = useState(''), [tTime, setTTime] = useState('');
   if (!d) return <div className="page"><div className="empty"><span>Không tìm thấy quyết định này.</span><Link className="btn" to={`${base}/can-quyet`}>Về Cần quyết</Link></div></div>;
 
-  const pick = pickState ?? (d.status === 'decided' ? d.chosen : null);
+  const isTime = d.key === 'time';
+  // Giờ an táng: gia đình tự điền ngày + giờ; không có phương án gợi sẵn
+  const timeText = tDate && tTime ? `${tTime.replace(':', ' giờ ').replace(/ giờ 00$/, ' giờ')}, ngày ${tDate.split('-').reverse().join('/')}` : '';
+  const pick = isTime && d.status !== 'decided' ? (timeText ? 'c' : null) : pickState ?? (d.status === 'decided' ? d.chosen : null);
   const changing = d.status === 'decided' && !!pick && pick !== d.chosen;
   const L = impactFor(c, d, pick, changing);
   const lockedTime = d.key === 'time' && d.status === 'decided';
@@ -134,15 +137,15 @@ export function DecisionPage() {
     if (!pick) return;
     if (changing && (d.key === 'venue' || d.key === 'form')) { nav(`${base}/quyet-dinh/${d.id}/thay-doi?chon=${pick}`); return; }
     if (d.key === 'venue' && pick !== c.situation.venue) { nav(`${base}/quyet-dinh/${d.id}/thay-doi?chon=${pick}`); return; }
-    if (d.key === 'time' && pick === 'c' && !detail.trim()) { toast('Ghi ngày giờ cụ thể cho phương án “Ngày giờ khác”'); return; }
+    if (isTime && !timeText) { toast('Điền ngày và giờ trước khi chốt'); return; }
     // Quyết định không thể quay lại: hỏi lại một lần, tránh bấm nhầm lúc đang rối
-    if (d.key === 'time' && !window.confirm(`Chốt ${d.title.toLowerCase()}: ${d.options.find(o => o.k === pick)?.label}${detail.trim() ? ' (' + detail.trim() + ')' : ''}?\n\nSau khi chốt, quyết định này không sửa được nữa.`)) return;
+    if (isTime && !window.confirm(`Chốt ${d.title.toLowerCase()}: ${timeText}?\n\nSau khi chốt, quyết định này không sửa được nữa.`)) return;
     if (d.key === 'vendor') update(x => resolveVendorDecision(x, d.id, pick));
     else if (changing) update(x => changeDecision(x, d.id, pick, ''));
-    else update(x => decide(x, d.id, pick, d.key === 'time' ? detail : undefined));
+    else update(x => decide(x, d.id, pick, isTime ? timeText : undefined));
     toast(d.key === 'org' ? (pick === 'ok' ? 'Đã xác nhận lịch lễ với Ban lễ tang' : 'Đã gửi đề nghị điều chỉnh tới Ban lễ tang')
       : d.key === 'vendor' ? (pick === 'keep' ? 'Giữ bên đã cam kết. Người lo Xe cộ báo địa chỉ đón mới.' : 'Đã chọn bên mới. Đã tạo việc báo hủy với bên cũ.')
-      : `Đã chốt ${d.title.toLowerCase()}: ${d.options.find(o => o.k === pick)?.label}`);
+      : `Đã chốt ${d.title.toLowerCase()}: ${isTime ? timeText : d.options.find(o => o.k === pick)?.label}`);
     nav(`${base}/can-quyet`);
   };
 
@@ -159,14 +162,20 @@ export function DecisionPage() {
         {wishDiff && <p className="muted" style={{ marginTop: 6, color: 'var(--warning)' }}><Icon n="alert" c="sm" /> Phương án đang chọn khác với nguyện vọng đã chuẩn bị.</p>}</section>}
       {d.kind === 'vendor' && <Banner kind="upd" icon="pin">Nơi tổ chức đã đổi sang <b>{venueLabel(c)}</b>. {catName(d.cat!)} đã cam kết nên app <b>không tự thay</b> — {xung(me.rel)} quyết giữ hay đổi.</Banner>}
       {!isU1 && <Banner kind="info" icon="lock">Chỉ người đại diện gia đình chốt quyết định này.</Banner>}
-      <div className="opts" role="radiogroup">{d.options.map(o => (
+      {!(isTime && d.status !== 'decided') && <div className="opts" role="radiogroup">{d.options.map(o => (
         <button key={o.k} className="opt" role="radio" aria-checked={pick === o.k} disabled={readOnly} onClick={() => setPick(o.k)}>
           <span className="radio" /><span><span className="title">{o.label}</span>{d.chosen === o.k && d.status === 'decided' && <> <span className="pill done">Hiện tại</span></>}<br /><span className="muted">{o.note}</span></span>
         </button>
-      ))}</div>
-      {d.key === 'time' && !lockedTime && isU1 && (
-        <div className="field"><label htmlFor="decDetail">Giờ cụ thể{pick === 'c' ? ' (bắt buộc)' : ' (nếu đã có)'}</label>
-          <input className="input" id="decDetail" value={detail} onChange={e => setDetail(e.target.value)} placeholder="Ví dụ: 8:00 — theo giờ còn chỗ đã đăng ký" /></div>
+      ))}</div>}
+      {isTime && !lockedTime && isU1 && (
+        <section className="card card-pad stack" style={{ gap: 10 }}>
+          <p className="muted">Gia đình điền ngày, giờ {c.situation.form === 'cremation' ? 'đã đăng ký tại đài hóa thân' : 'thầy đã xem'}.</p>
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+            <div className="field" style={{ flex: '1 1 150px' }}><label htmlFor="decDate">Ngày</label><input className="input" id="decDate" type="date" value={tDate} min={c.person.death || undefined} onChange={e => setTDate(e.target.value)} /></div>
+            <div className="field" style={{ flex: '1 1 110px' }}><label htmlFor="decTime">Giờ</label><input className="input" id="decTime" type="time" value={tTime} onChange={e => setTTime(e.target.value)} /></div>
+          </div>
+          {timeText && <p>Sẽ chốt: <b>{timeText}</b></p>}
+        </section>
       )}
       {lockedTime && d.detail && <p className="muted">Giờ cụ thể: <b style={{ color: 'var(--text)' }}>{d.detail}</b></p>}
       {L && isU1 && <section className="card card-pad"><div className="sec-h" style={{ marginBottom: 4 }}><h3>Nếu chọn phương án này</h3></div><ImpactList L={L} /></section>}

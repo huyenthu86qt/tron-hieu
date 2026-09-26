@@ -228,9 +228,8 @@ const ACCESS_OPTS: { k: Access; title: string; note: string }[] = [
 const RELS = ['Con trai trưởng', 'Con trai', 'Con gái', 'Con dâu', 'Con rể', 'Cháu', 'Họ hàng', 'Hàng xóm', 'Bạn của gia đình'];
 
 function InviteSheet() {
-  const { c, update, openSheet, full, base } = useCase();
+  const { c, update, openSheet } = useCase();
   const { toast } = useApp();
-  const nav = useNavigate();
   const [phone, setPhone] = useState('');
   const [name, setName] = useState('');
   const [rel, setRel] = useState('');
@@ -245,11 +244,7 @@ function InviteSheet() {
     if (e) { setErr(e); return; }
     setMade(m);
   };
-  if (!full) return (
-    <Sheet title="Mời người hỗ trợ" onClose={close} foot={<><button className="btn" onClick={close}>Để sau</button><button className="btn primary" onClick={() => { close(); nav(`${base}/doi/mo-day-du`); }}>Xem gói Mở đầy đủ</button></>}>
-      <Banner kind="info" icon="team">Mời người cùng lo và nhờ việc qua link thuộc gói <b>Mở đầy đủ</b> của đám hiếu này. Các việc trên Bản đồ gia đình vẫn tự nhận và làm được bình thường.</Banner>
-    </Sheet>
-  );
+  // Mời người hỗ trợ miễn phí (Chủ dự án chốt 26/09/2026) — gia đình thấy giá trị trước khi mua gói
   if (made) {
     const url = made.linkToken ? linkUrl(made.linkToken) : '';
     return (

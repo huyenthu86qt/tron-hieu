@@ -44,7 +44,7 @@ export function entryItems(a: Answers): EntryItem[] {
     L.push({ key: 'hosp', title: 'Nhận giấy báo tử và làm thủ tục tại bệnh viện', hint: 'Cần có trước khi đưa người thân về', taskIds: ['t0'] },
       { key: 'car', title: 'Liên hệ xe đưa người thân về nơi làm lễ', hint: 'Bệnh viện thường có danh sách xe; app sẽ gợi ý bên gần nhất sau khi lưu', taskIds: ['m1b'] });
   } else if (a.place === 'home') {
-    L.push({ key: 'home', title: 'Báo cho trạm y tế hoặc chính quyền địa phương để được hướng dẫn giấy báo tử', hint: 'Cán bộ địa phương sẽ hướng dẫn giấy tờ cần mang theo', taskIds: ['p1a'] });
+    L.push({ key: 'home', title: 'Báo cho trạm y tế hoặc chính quyền địa phương để được hướng dẫn giấy báo tử', hint: 'Mất tại nhà thì Ủy ban nhân dân xã/phường nơi người mất cấp Giấy báo tử — cần có để làm khai tử (khoản 2 Điều 4 Nghị định 123/2015/NĐ-CP)', taskIds: ['p1a'] });
   } else {
     L.push({ key: 'other', title: 'Liên hệ nơi người thân mất để được hướng dẫn thủ tục', hint: 'Nơi đó sẽ hướng dẫn giấy tờ cần làm', taskIds: ['p1b'] });
   }

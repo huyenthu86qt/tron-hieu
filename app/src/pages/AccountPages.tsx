@@ -4,7 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import type { CaseData } from '../domain/types';
 import { findTask, nowTasks, pendingDecisions, visibleTasks, STATUS_LABEL } from '../domain/model';
 import { money, METHOD_LABEL, EXP_STATUS } from '../domain/finance';
-import { fmtPhone, isFull, ORDER_STATUS_LABEL, readiness } from '../domain/platform';
+import { fmtPhone, isFull, SUPPORT, ORDER_STATUS_LABEL, readiness } from '../domain/platform';
 import { DN_TEXT } from '../domain/text';
 import { repo } from '../repo/repo';
 import { REMOTE } from '../repo/backend';
@@ -224,8 +224,9 @@ export function AccountPage() {
         </section>
 
         <section className="card card-pad stack"><h3>Hỗ trợ</h3>
-          {support.phone || support.zalo ? <dl className="kv">{support.phone && <><dt>Điện thoại</dt><dd className="num">{support.phone}</dd></>}{support.zalo && <><dt>Zalo</dt><dd className="num">{support.zalo}</dd></>}</dl>
-            : <p className="muted">Số hỗ trợ sẽ được đội vận hành cập nhật.</p>}
+          {(() => { const ph = (support.phone || SUPPORT.phone).replace(/\D/g, ''), zl = (support.zalo || support.phone || SUPPORT.phone).replace(/\D/g, ''); return <>
+            <p>Liên hệ <b>{SUPPORT.name}</b> — <span className="num">{fmtPhone(ph)}</span></p>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}><a className="btn primary" href={`tel:${ph}`}>Gọi {SUPPORT.name}</a><a className="btn" href={`https://zalo.me/${zl}`} target="_blank" rel="noreferrer">Nhắn Zalo</a></div></>; })()}
           <p className="muted">Khi cần hỗ trợ về thanh toán, gửi kèm mã đơn (ví dụ DH7KQ2XA).</p>
           <p><Link to="/dieu-khoan">Điều khoản sử dụng</Link> · <Link to="/bao-mat">Chính sách bảo mật</Link></p>
         </section>

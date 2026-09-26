@@ -18,6 +18,8 @@ export function normalizePhone(s: string): string | null {
   else if (d.startsWith('84') && d.length === 11) d = '0' + d.slice(2);
   return /^0[35789]\d{8}$/.test(d) ? d : null;
 }
+/** Người hỗ trợ khách hàng (Chủ dự án chốt 26/09/2026) */
+export const SUPPORT = { name: 'Diệu Tuệ', phone: '0784869988' };
 export const fmtPhone = (p: string) => p.replace(/^(\d{4})(\d{3})(\d{3})$/, '$1 $2 $3');
 
 export const passwordError = (p: string) => (p.length < 8 ? 'Mật khẩu cần tối thiểu 8 ký tự.' : null);
@@ -68,7 +70,7 @@ export interface Product { id: ProductId; name: string; desc: string; price: num
 
 /** Giá thử nghiệm (U1 chưa chốt) — Admin sửa ở Gói & giá trước khi mở bán */
 export const DEFAULT_PRODUCTS: Product[] = [
-  { id: 'full', name: 'Mở đầy đủ đám hiếu', desc: 'Đội (mời người, link), Nhà cung cấp, Tài chính, Khách viếng & cáo phó, Hậu tang & mốc tưởng niệm cho một đám hiếu', price: 299000, duration: 'Đến hết giỗ đầu', active: true, updatedAt: '' },
+  { id: 'full', name: 'Mở đầy đủ đám hiếu', desc: 'Nhà cung cấp, Tài chính, Khách viếng & cáo phó, Hậu tang & mốc tưởng niệm cho một đám hiếu', price: 299000, duration: 'Đến hết giỗ đầu', active: true, updatedAt: '' },
   { id: 'pre', name: 'Chuẩn bị trước', desc: 'Lưu giấy tờ, chia sẻ có kiểm soát, kích hoạt thành đám hiếu (đám hiếu được mở đầy đủ, không thu lần hai)', price: 199000, duration: 'Đến khi kích hoạt', active: true, updatedAt: '' },
 ];
 
@@ -174,7 +176,7 @@ export interface Settings {
 }
 export const DEFAULT_SETTINGS: Settings = {
   sepay: { env: 'test', account: { bank: '', number: '', holder: '', active: false }, matchRule: 'Mã đơn trong nội dung + đúng số tiền + đúng tài khoản nhận' },
-  support: { phone: '', zalo: '' },
+  support: { phone: SUPPORT.phone, zalo: SUPPORT.phone },
 };
 
 /* ---------- Hồ sơ chuẩn bị trước ---------- */

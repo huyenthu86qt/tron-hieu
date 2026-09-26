@@ -1,5 +1,6 @@
 // Kiểu dữ liệu nghiệp vụ — bám Kiến trúc sản phẩm v2 (mục 6, 6.10) và Gói xây app (Data Model).
 
+import type { GuideKey } from './legal';
 export type Place = 'hospital' | 'home' | 'other';
 export type Venue = 'home' | 'hall';
 export type Form = 'cremation' | 'burial';
@@ -94,6 +95,8 @@ export interface TaskTemplate {
   byOrg?: boolean;
   /** Việc thủ tục chưa có nguồn kiểm chứng */
   unverified?: boolean;
+  /** Hướng dẫn thủ tục có trích dẫn văn bản pháp luật (domain/legal.ts) */
+  guide?: GuideKey;
   /** Mở màn liên quan (đường dẫn con trong đám hiếu) */
   go?: string;
   /** Hạng mục nhà cung cấp liên quan */
@@ -170,7 +173,11 @@ export interface HistoryEntry {
   taskId?: string;
 }
 
+/** Tài khoản nhận phúng viếng của gia đình (đưa cho khách khi họ hỏi; không hiện trên trang công khai) */
+export interface CondolenceAccount { holder: string; bank: string; acct: string }
+
 export interface CaseData {
+  condolenceAccount?: CondolenceAccount;
   id: string;
   createdAt: string;
   situation: Situation;

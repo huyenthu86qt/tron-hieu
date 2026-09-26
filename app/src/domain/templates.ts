@@ -3,6 +3,7 @@
 // Hạn viết tương đối theo ngày mất: {d+N}. Xưng hô người mất: {p} / {P}.
 // Nội dung phong tục, thủ tục sẽ được thay bằng nguồn đã kiểm chứng (U8) mà không đổi cấu trúc.
 import type { TaskTemplate } from './types';
+import { KHAI_TU } from './legal';
 
 export const PHASES = [
   'Tiếp nhận tin & việc khẩn cấp', 'Lập đội & phân công', 'Quyết định gốc', 'Khâm liệm & nhập quan',
@@ -158,7 +159,8 @@ export const TEMPLATES: TaskTemplate[] = [
   { id: 'm13e', phase: 13, title: 'Đăng lời cảm ơn trên trang thông tin cho khách', kind: 'opt', area: 'Liên lạc', due: 'Tuần đầu sau tang', go: 'khach-vieng/trang-tin' },
 
   /* Chặng 14 — Thủ tục & quyền lợi */
-  { id: 'm14a', phase: 14, title: 'Đăng ký khai tử', kind: 'core', area: 'Hậu tang', due: 'Sau tang', unverified: true },
+  { id: 'm14a', phase: 14, title: 'Đăng ký khai tử', kind: 'core', area: 'Hậu tang', due: 'Trước hết ngày {D+15}', guide: 'khai-tu',
+    steps: KHAI_TU.steps },
   { id: 'm14b', phase: 14, title: 'Chế độ, quyền lợi liên quan (nếu có)', kind: 'opt', area: 'Hậu tang', due: 'Sau tang', unverified: true },
   { id: 'o14a', phase: 14, title: 'Làm hồ sơ chế độ tử tuất, mai táng phí với cơ quan, đơn vị', kind: 'cond', why: W_ORG, area: 'Tài chính', due: 'Sau tang', when: { blt: true }, unverified: true },
   { id: 'm14c', phase: 14, title: 'Đối soát và khóa tài chính', kind: 'core', area: 'Tài chính', due: 'Trước {d+11}', go: 'tai-chinh/doi-soat' },
