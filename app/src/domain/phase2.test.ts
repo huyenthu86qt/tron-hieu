@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { addGuestHost, hostLabel, hostOf, hostsOf } from './guests';
 import type { Answers, CaseData, DirVendor, GeoPoint } from './types';
 import { createCase, decide, findDecision, U1_ID } from './model';
 import { savePerson, inviteMember, assignTask, returnTask, transferRepresentative } from './actions';
@@ -127,8 +128,8 @@ describe('Tài chính', () => {
     const c = mk();
     const e = requestExpense(c, EXP({ amount: '1000000' }), U1_ID);
     recordPayment(c, e.id, 400000);
-    addGuest(c, { name: 'Bác Tư', group: 'Tổ dân phố, lối xóm', of: null, amount: 500000, method: 'cash', gifts: [], note: '' }, 'Chị Lan');
-    addGuest(c, { name: 'Anh Huy', group: 'Khác', of: null, amount: 1000000, method: 'bank', gifts: [], note: '' }, 'Chị Lan');
+    addGuest(c, { name: 'Bác Tư', group: 'Tổ dân phố, lối xóm', of: 'family', amount: 500000, method: 'cash', gifts: [], note: '' }, 'Chị Lan');
+    addGuest(c, { name: 'Anh Huy', group: 'Khác', of: 'cu', amount: 1000000, method: 'bank', gifts: [], note: '' }, 'Chị Lan');
     let r = reconcile(c);
     expect(r.conds.filter(x => !x.ok).map(x => x.key)).toEqual(['evidence', 'cash', 'bank', 'owe']);
     expect(() => lockFinance(c, U1_ID)).toThrow();
@@ -146,7 +147,15 @@ describe('Tài chính', () => {
     inviteMember(c, { name: 'Nguyễn Thị Lan', rel: 'Con gái', access: 'limited', areas: ['Hậu cần'], phone: '0912345674' });
     inviteMember(c, { name: 'Trần Văn Hùng', rel: 'Con rể', access: 'limited', areas: ['Xe cộ'], phone: '0912345675' });
     expect(children(c.members).map(k => k.short)).toEqual(['anh Tuấn', 'chị Lan', 'anh Hùng']);
-    expect(() => addGuest(c, { name: 'X', group: 'Bạn bè', of: null, amount: 0, method: 'cash', gifts: [], note: '' }, 'a')).toThrow('bạn của ai');
+    expect(() => addGuest(c, { name: 'X', group: 'Bạn bè', of: null, amount: 0, method: 'cash', gifts: [], note: '' }, 'a')).toThrow('khách của ai');
+    // Mọi nhóm đều phân loại được; thêm người chưa dùng app (con thứ, cháu) để đáp lễ
+    const lan = c.members.find(m => m.name === 'Nguyễn Thị Lan')!;
+    const id = addGuestHost(c, 'Anh Bình (con trai thứ)');
+    expect(() => addGuestHost(c, 'anh bình (con trai thứ)')).toThrow('Đã có');
+    addGuest(c, { name: 'Phòng Kế toán công ty X', group: 'Cơ quan, đoàn thể', of: lan.id, amount: 0, method: 'cash', gifts: ['Vòng hoa'], note: '' }, 'a');
+    addGuest(c, { name: 'Bạn học của anh Bình', group: 'Bạn bè', of: id, amount: 0, method: 'cash', gifts: [], note: '' }, 'a');
+    expect(c.ledger!.map(x => hostLabel(c, hostOf(x)))).toEqual(['Chị Lan (con gái)', 'Anh Bình (con trai thứ)']);
+    expect(hostsOf(c).map(h => h.id).slice(0, 2)).toEqual(['family', 'cu']);
   });
 });
 

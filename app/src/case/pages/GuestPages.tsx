@@ -4,8 +4,8 @@ import { Tel } from '../../ui/tel';
 import { xung } from '../../domain/text';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import type { CaseData, Condolence, GuestGroup, Method } from '../../domain/types';
-import { addGuest, announcer, defaultNotice, draftNotice, emptyPage, GIFTS, GROUPS, organizerLine, publish, removeGuest, schedule, tangChu } from '../../domain/guests';
-import { children, fmtMoneyInput, METHOD_LABEL, parseMoney } from '../../domain/finance';
+import { addGuest, addGuestHost, announcer, hostOf, hostPhrase, hostsOf, defaultNotice, draftNotice, emptyPage, GIFTS, GROUPS, organizerLine, publish, removeGuest, schedule, tangChu } from '../../domain/guests';
+import { fmtMoneyInput, METHOD_LABEL, parseMoney } from '../../domain/finance';
 import { lifeLine } from '../../domain/person';
 import { portraitIcon } from '../../domain/model';
 import { defaultVenues, siteOf, venueLabel } from '../../domain/vendors';
@@ -24,10 +24,7 @@ const fmtAt = (iso?: string) => (iso ? new Date(iso).toLocaleString('vi-VN', { h
 export const pageUrl = (slug: string) => `${window.location.origin}/t/${slug}`;
 
 function groupLabel(c: CaseData, x: Condolence) {
-  if (x.group !== 'Bạn bè') return x.group ?? 'Khác';
-  if (x.of === 'cu') return 'Bạn của người đã khuất';
-  const k = children(c.members).find(y => y.id === x.of);
-  return k ? `Bạn ${k.short} (${k.rel})` : 'Bạn bè';
+  return `${x.group ?? 'Khác'} · ${hostPhrase(c, hostOf(x))}`;
 }
 
 /* ---------- S-GST-05 ---------- */
@@ -37,7 +34,14 @@ export function GuestSheet({ onClose }: { onClose: () => void }) {
   const empty = { name: '', group: null as GuestGroup | null, of: null as string | null, amount: '', method: 'cash' as Method, gifts: [] as string[], note: '' };
   const [g, setG] = useState(empty);
   const [err, setErr] = useState<string | null>(null);
-  const kids = children(c.members);
+  const hosts = hostsOf(c);
+  const [newHost, setNewHost] = useState<string | null>(null);
+  const addHost = () => {
+    let id = '';
+    const e = update(d => { id = addGuestHost(d, newHost ?? ''); });
+    if (e) { setErr(e); return; }
+    setG(x => ({ ...x, of: id })); setNewHost(null); setErr(null);
+  };
   const save = () => {
     const e = update(d => { addGuest(d, { ...g, amount: parseMoney(g.amount) }, me.name); });
     if (e) { setErr(e); return; }
@@ -47,11 +51,12 @@ export function GuestSheet({ onClose }: { onClose: () => void }) {
   return (
     <Sheet title="Ghi nhanh khách viếng" onClose={onClose} foot={<><button className="btn" onClick={onClose}>Xong</button><button className="btn primary" style={{ flex: 2 }} onClick={save}><Icon n="check" c="sm" />Ghi nhận</button></>}>
       <div className="field"><label htmlFor="gName">Người / đoàn đến viếng</label><input className="input" id="gName" autoComplete="off" value={g.name} onChange={e => setG({ ...g, name: e.target.value })} placeholder="Ví dụ: Gia đình bác Tư (xóm trên)" /></div>
+      <div className="field"><label>Khách của ai? <span className="muted" style={{ fontWeight: 400 }}>— để sau này người đó đáp lễ</span></label><div className="chips">
+        {hosts.map(h => <button key={h.id} className="chip" aria-pressed={g.of === h.id} onClick={() => setG({ ...g, of: h.id })}>{h.label}</button>)}
+        {newHost === null && <button className="chip" onClick={() => setNewHost('')}><Icon n="plus" c="sm" />Thêm người</button>}</div>
+        {newHost !== null && <div style={{ display: 'flex', gap: 8 }}><input className="input" autoFocus value={newHost} maxLength={50} onChange={e => setNewHost(e.target.value)} placeholder="Ví dụ: Anh Bình (con trai thứ), Cháu Minh" aria-label="Tên người nhận khách" />
+          <button className="btn sm" onClick={addHost}>Thêm</button><button className="btn sm ghost" onClick={() => setNewHost(null)}>Hủy</button></div>}</div>
       <div className="field"><label>Nhóm</label><Chips items={GROUPS} isOn={x => g.group === x} onToggle={x => setG({ ...g, group: g.group === x ? null : x as GuestGroup })} /></div>
-      {g.group === 'Bạn bè' && <div className="field"><label>Bạn của ai?</label><div className="chips">
-        {kids.map(k => <button key={k.id} className="chip" aria-pressed={g.of === k.id} onClick={() => setG({ ...g, of: k.id })}>{k.short[0].toUpperCase() + k.short.slice(1)} · {k.rel}</button>)}
-        <button className="chip" aria-pressed={g.of === 'cu'} onClick={() => setG({ ...g, of: 'cu' })}>Bạn của người đã khuất</button></div>
-        {!kids.length && <p className="muted">Thêm các con vào Đội để chia khách theo từng người con.</p>}</div>}
       <div className="field"><label htmlFor="gAmt">Phúng viếng (đồng) — ghi vào sổ riêng</label><input className="input num" id="gAmt" inputMode="numeric" value={g.amount} onChange={e => setG({ ...g, amount: fmtMoneyInput(e.target.value) })} placeholder="0" style={{ fontSize: 20, fontWeight: 600 }} />
         <div className="chips">{[200000, 500000, 1000000, 2000000].map(a => <button key={a} className="chip num" onClick={() => setG({ ...g, amount: a.toLocaleString('vi-VN') })}>{a.toLocaleString('vi-VN')}</button>)}</div></div>
       <div className="field"><label>Hình thức phúng viếng</label><div className="segin">{(['cash', 'bank'] as Method[]).map(k => <button key={k} aria-pressed={g.method === k} onClick={() => setG({ ...g, method: k })}>{METHOD_LABEL[k]}</button>)}</div>
@@ -92,7 +97,7 @@ function Guests() {
       <div className="actions"><button className="btn primary" onClick={() => setAdd(true)}><Icon n="plus" c="sm" />Ghi khách viếng</button></div></div>
       <div className="grid-2"><div className="stack">
         <section className="card"><div className="sec-h card-pad" style={{ margin: 0, paddingBottom: 4 }}><h3>Khách đã ghi</h3><span className="muted">{L.length} lượt</span>
-          <button className="btn sm ghost" style={{ marginLeft: 'auto' }} onClick={() => nav(`${base}/khach-vieng/danh-sach`)}>Xem tất cả</button></div>
+          <button className="btn sm ghost" style={{ marginLeft: 'auto' }} onClick={() => nav(`${base}/so-tang`)}>Mở Sổ tang</button></div>
           {L.length ? <div className="list">{L.slice(0, 10).map(x => <div key={x.id} className="row"><div className="grow"><div className="title">{x.name}</div>
             <div className="meta"><span>{groupLabel(c, x)}</span>{x.gifts.length > 0 && <span>{x.gifts.join(', ')}</span>}<span><Icon n="lock" c="sm" /> Phúng viếng ghi vào sổ riêng</span><span>{x.by} · {fmtAt(x.at)}</span></div></div></div>)}</div>
             : <div className="empty"><span>Chưa ghi khách nào. Bấm “Ghi khách viếng” khi có người đến.</span></div>}</section>
@@ -187,23 +192,43 @@ export function PublicPage() {
 }
 
 /* ---------- S-GST-06 ---------- */
-export function GuestListPage() { return <PaidGate module="Khách viếng"><GuestList /></PaidGate>; }
+export function GuestListPage() { return <PaidGate module="Sổ tang"><GuestList /></PaidGate>; }
+const escH = (t: string) => t.replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]!));
+/** Sổ tang in được: chia theo “khách của ai”, không có số tiền (tiền nằm ở Sổ phúng viếng) */
+function downloadSoTang(c: CaseData) {
+  const L = c.ledger ?? [];
+  const parts = hostsOf(c).filter(h => L.some(x => hostOf(x) === h.id)).map(h => {
+    const rows = L.filter(x => hostOf(x) === h.id).map((x, i) => `<tr><td>${i + 1}</td><td>${escH(x.name)}</td><td>${escH(x.group ?? 'Khác')}</td><td>${escH(x.gifts.join(', ') || '—')}</td><td>${escH(fmtAt(x.at))}</td></tr>`).join('');
+    return `<h2>${escH(hostPhrase(c, h.id))} <small>(${L.filter(x => hostOf(x) === h.id).length} lượt)</small></h2><table><thead><tr><th>STT</th><th>Người / đoàn đến viếng</th><th>Nhóm</th><th>Lễ vật</th><th>Thời gian</th></tr></thead><tbody>${rows}</tbody></table>`;
+  }).join('');
+  const html = `<!doctype html><html lang="vi"><head><meta charset="utf-8"><title>Sổ tang ${escH(DN_TEXT(c))}</title><style>body{font-family:Georgia,serif;max-width:860px;margin:32px auto;padding:0 16px;color:#2b241d}h1{text-align:center}h2{margin-top:28px;font-size:18px}small{color:#7a6c5d;font-weight:normal}table{width:100%;border-collapse:collapse;font-family:Arial,sans-serif;font-size:14px}th,td{border:1px solid #d9cfc2;padding:6px 8px;text-align:left}th{background:#f3ece3}p.n{text-align:center;color:#7a6c5d}@media print{h2{break-after:avoid}}</style></head><body><h1>Sổ tang</h1><p class="n">${escH(DN_TEXT(c))} · ${L.length} lượt khách</p>${parts || '<p>Chưa có khách nào.</p>'}<p class="n">In hoặc lưu PDF từ trình duyệt để giữ lâu dài.</p></body></html>`;
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([html], { type: 'text/html;charset=utf-8' }));
+  a.download = `So-tang-${slugifyName(DN_TEXT(c))}.html`; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+}
+const slugifyName = (t: string) => t.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/gi, 'd').replace(/[^a-zA-Z0-9]+/g, '-').replace(/^-|-$/g, '');
 function GuestList() {
   const { c, update, canFin } = useCase();
   const [q, setQ] = useState('');
-  const [grp, setGrp] = useState<string>('all');
+  const [host, setHost] = useState<string>('all');
   const [add, setAdd] = useState(false);
-  const L = (c.ledger ?? []).filter(x => (grp === 'all' || (x.group ?? 'Khác') === grp) && x.name.toLowerCase().includes(q.trim().toLowerCase())).slice().reverse();
+  const all = c.ledger ?? [];
+  const hosts = hostsOf(c).map(h => ({ ...h, n: all.filter(x => hostOf(x) === h.id).length })).filter(h => h.n > 0);
+  const L = all.filter(x => (host === 'all' || hostOf(x) === host) && x.name.toLowerCase().includes(q.trim().toLowerCase())).slice().reverse();
   return (
-    <div className="page"><div className="page-title"><div><div className="eyebrow">Khách viếng</div><h1 style={{ marginTop: 4 }}>Danh sách khách</h1><p>{c.ledger?.length ?? 0} lượt ghi</p></div>
-      <div className="actions"><button className="btn primary" onClick={() => setAdd(true)}><Icon n="plus" c="sm" />Ghi khách viếng</button></div></div>
-      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}><input className="input" style={{ flex: 1, minWidth: 200 }} value={q} onChange={e => setQ(e.target.value)} placeholder="Tìm theo tên" aria-label="Tìm theo tên" />
-        <select className="input" style={{ width: 'auto' }} value={grp} onChange={e => setGrp(e.target.value)} aria-label="Nhóm"><option value="all">Mọi nhóm</option>{GROUPS.map(g => <option key={g}>{g}</option>)}</select></div>
+    <div className="page"><div className="page-title"><div><div className="eyebrow">Khách viếng</div><h1 style={{ marginTop: 4 }}>Sổ tang</h1><p>{all.length} lượt khách · chia theo khách của từng người để sau này đáp lễ</p></div>
+      <div className="actions"><button className="btn primary" onClick={() => setAdd(true)}><Icon n="plus" c="sm" />Ghi khách viếng</button>
+        <button className="btn" disabled={!all.length} onClick={() => downloadSoTang(c)}><Icon n="doc" c="sm" />Tải / in Sổ tang</button></div></div>
+      {hosts.length > 0 && <div className="chips">
+        <button className="chip" aria-pressed={host === 'all'} onClick={() => setHost('all')}>Tất cả · {all.length}</button>
+        {hosts.map(h => <button key={h.id} className="chip" aria-pressed={host === h.id} onClick={() => setHost(h.id)}>{h.label} · {h.n}</button>)}</div>}
+      <input className="input" value={q} onChange={e => setQ(e.target.value)} placeholder="Tìm theo tên" aria-label="Tìm theo tên" />
       <section className="card">{L.length ? <div className="list">{L.map(x => (
-        <div key={x.id} className="row"><div className="grow"><div className="title">{x.name}</div><div className="meta"><span>{groupLabel(c, x)}</span>{x.gifts.length > 0 && <span>{x.gifts.join(', ')}</span>}<span>{x.by} · {fmtAt(x.at)}</span>{canFin && <span className="num">{x.amount.toLocaleString('vi-VN')} đ · {METHOD_LABEL[x.method]}</span>}</div></div>
+        <div key={x.id} className="row"><div className="grow"><div className="title">{x.name}</div><div className="meta"><span>{groupLabel(c, x)}</span>{x.gifts.length > 0 && <span>{x.gifts.join(', ')}</span>}<span>{x.by} · {fmtAt(x.at)}</span>{canFin && x.amount > 0 && <span className="num">{x.amount.toLocaleString('vi-VN')} đ · {METHOD_LABEL[x.method]}</span>}</div></div>
           {canFin && !c.finance?.locked && <button className="icon-btn" aria-label="Xóa lượt ghi" onClick={() => { if (window.confirm(`Xóa lượt ghi “${x.name}”?`)) update(d => removeGuest(d, x.id)); }}><Icon n="x" c="sm" /></button>}</div>
-      ))}</div> : <div className="empty"><span>Không có lượt ghi nào khớp.</span></div>}</section>
-      {!canFin && <p className="note">Số tiền phúng viếng chỉ người giữ Tài chính xem.</p>}
+      ))}</div> : <div className="empty"><span>{all.length ? 'Không có lượt ghi nào khớp.' : 'Sổ tang còn trống. Bấm “Ghi khách viếng” khi có người đến.'}</span></div>}</section>
+      {!canFin && <p className="note">Số tiền phúng viếng chỉ người giữ Tài chính xem. Bản tải về không có số tiền.</p>}
       {add && <GuestSheet onClose={() => setAdd(false)} />}
     </div>
   );

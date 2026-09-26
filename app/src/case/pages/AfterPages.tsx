@@ -5,7 +5,7 @@ import type { CaseData, Milestones } from '../../domain/types';
 import { closeCase, closeConds, defaultThanks, draftThanks, emptyMilestones, milestoneDates, milestoneList, saveMilestones, toggleMilestone, burialDate } from '../../domain/aftercare';
 import { completeTask, restoreTask } from '../../domain/actions';
 import { canClose, visibleTasks } from '../../domain/model';
-import { children } from '../../domain/finance';
+import { hostLabel, hostOf, hostsOf } from '../../domain/guests';
 import { fmtDM, fmtWeekday, parseISODate } from '../../domain/person';
 import { formatLunar } from '../../domain/lunar';
 import { PHASES } from '../../domain/templates';
@@ -171,19 +171,21 @@ function Thanks() {
   const { toast } = useApp();
   const nav = useNavigate();
   const [F, setF] = useState('all');
-  const kids = children(c.members), dn = DN_TEXT(c), after = c.after!;
-  const who = (x: { group: string | null; of: string | null }) => (x.group === 'Bạn bè' && x.of && x.of !== 'cu' ? x.of : 'family');
+  const dn = DN_TEXT(c), after = c.after!;
+  const hosts = hostsOf(c);
+  const who = hostOf;
   const L = (c.ledger ?? []).filter(x => F === 'all' || who(x) === F);
   const done = L.filter(x => after.thanked[x.id]).length;
-  const order = [...kids.map(k => k.id), 'family'].filter(w => L.some(x => who(x) === w));
-  const head = (w: string) => { if (w === 'family') return `Khách chung gia đình · ${c.members[0].name} thay mặt gia đình cảm ơn`; const k = kids.find(y => y.id === w)!; return `Khách của ${k.short} (${k.rel}) · ${k.short} cảm ơn`; };
+  const order = hosts.map(h => h.id).filter(w => L.some(x => who(x) === w));
+  const head = (w: string) => w === 'family' ? `Khách chung gia đình · ${c.members[0].name} thay mặt gia đình cảm ơn`
+    : w === 'cu' ? 'Người quen của người đã khuất · gia đình cảm ơn' : `Khách của ${hostLabel(c, w)} · ${hostLabel(c, w).replace(/\s*\(.*\)$/, '')} đáp lễ`;
   const txt = after.thankText || defaultThanks(dn);
   const copy = async () => { try { await navigator.clipboard.writeText(L.map(x => `- ${x.name} (${x.group ?? 'Khác'})`).join('\n')); toast('Đã sao chép danh sách'); } catch { toast('Không sao chép được'); } };
   return (
-    <div className="page"><div className="page-title"><div><div className="eyebrow">Hậu tang</div><h1 style={{ marginTop: 4 }}>Danh sách cảm ơn</h1><p>Lấy từ Sổ phúng viếng · mỗi người con cảm ơn khách của mình</p></div>
+    <div className="page"><div className="page-title"><div><div className="eyebrow">Hậu tang</div><h1 style={{ marginTop: 4 }}>Danh sách cảm ơn</h1><p>Lấy từ Sổ tang · mỗi người đáp lễ khách của mình</p></div>
       <div className="actions"><button className="btn" onClick={copy}><Icon n="copy" c="sm" />Sao chép danh sách</button></div></div>
       <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}><div className="segin" role="group" aria-label="Lọc theo người">
-        {[['all', 'Tất cả'], ...kids.map(k => [k.id, k.short[0].toUpperCase() + k.short.slice(1)]), ['family', 'Chung gia đình']].map(([k, l]) => <button key={k} aria-pressed={F === k} onClick={() => setF(k)}>{l}</button>)}</div>
+        {[['all', 'Tất cả'], ...hosts.filter(h => (c.ledger ?? []).some(x => who(x) === h.id)).map(h => [h.id, h.label])].map(([k, l]) => <button key={k} aria-pressed={F === k} onClick={() => setF(k)}>{l}</button>)}</div>
         <span className="muted num">Đã cảm ơn {done}/{L.length}</span></div>
       <div className="grid-2"><div className="stack">{order.length ? order.map(w => (
         <section key={w} className="card"><div className="sec-h card-pad" style={{ margin: 0, paddingBottom: 4 }}><h3>{head(w)}</h3></div>

@@ -3,7 +3,7 @@ import { useState, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { Expense, ExpenseStatus, Method, VendorCat } from '../../domain/types';
 import {
-  addFund, addOrgExpense, attachExpenseEvidence, BANKS, byFund, children, debts, EXP_STATUS, expenseMember, fmtMoneyInput, fundLabel,
+  addFund, addOrgExpense, attachExpenseEvidence, BANKS, byFund, debts, EXP_STATUS, expenseMember, fmtMoneyInput, fundLabel,
   ledgerTotals, lockFinance, METHOD_LABEL, money, moveDebt, parseMoney, reconcile, recordPayment, requestExpense, setBudget, totals,
   type ExpenseForm,
 } from '../../domain/finance';
@@ -15,6 +15,7 @@ import { PaidGate } from '../Paywall';
 import { ApprovalSheet } from './DecisionPages';
 import { FileName, useUploader } from '../../ui/files';
 import { uploadCaseFile } from '../../repo/files';
+import { hostLabel, hostOf, hostPhrase, hostsOf } from '../../domain/guests';
 
 const fmtAt = (iso?: string) => (iso ? new Date(iso).toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' }) : '');
 const ExpPill = ({ e }: { e: Expense }) => <span className={'pill ' + EXP_STATUS[e.status][0]}>{e.status === 'approved' && e.paid ? 'Đã duyệt · đã trả một phần' : EXP_STATUS[e.status][1]}</span>;
@@ -289,30 +290,31 @@ function Ledger() {
       <p style={{ maxWidth: '44ch' }}>Chỉ người được gia đình giao quyền mới xem được tổng và từng khoản. Anh/chị vẫn ghi nhận khách viếng bình thường ở mục Khách viếng.</p>
       <button className="btn" onClick={() => nav(`${base}/khach-vieng`)}>Về Khách viếng</button></div></section></div>
   );
-  const L = c.ledger ?? [], T = ledgerTotals(L), kids = children(c.members);
-  const label = (of: string | null) => of === 'cu' ? 'Bạn của người đã khuất' : kids.find(k => k.id === of) ? `Bạn ${kids.find(k => k.id === of)!.short} (${kids.find(k => k.id === of)!.rel})` : 'Bạn bè';
-  const grp = (x: typeof L[number]) => (x.group === 'Bạn bè' ? label(x.of) : x.group ?? 'Khác');
-  const friends = L.filter(x => x.group === 'Bạn bè');
-  const rows = F === 'all' ? L : L.filter(x => x.group === 'Bạn bè' && x.of === F);
-  const stats = [...kids.map(k => k.id), 'cu'].map(id => ({ id, label: label(id), n: friends.filter(x => x.of === id).length, s: friends.filter(x => x.of === id).reduce((a, x) => a + x.amount, 0) })).filter(k => k.n || k.id !== 'cu');
+  const L = c.ledger ?? [], T = ledgerTotals(L);
+  // Mọi lượt ghi đều có “khách của ai” — để từng người biết mà đáp lễ
+  const label = (id: string) => hostLabel(c, id);
+  const grp = (x: typeof L[number]) => `${x.group ?? 'Khác'} · ${hostPhrase(c, hostOf(x))}`;
+  const rows = F === 'all' ? L : L.filter(x => hostOf(x) === F);
+  const stats = hostsOf(c).map(h => ({ id: h.id, label: h.label, n: L.filter(x => hostOf(x) === h.id).length, s: L.filter(x => hostOf(x) === h.id).reduce((a, x) => a + x.amount, 0) })).filter(k => k.n > 0);
+  const famN = L.filter(x => hostOf(x) === 'family').length;
   return (
     <div className="page"><div className="page-title"><div><h1>Sổ phúng viếng</h1><p>Tách riêng với chi phí · không hiện trên trang công khai</p></div></div>
       <div className="tiles">
         <div className="tile"><span className="muted">Tổng phúng viếng</span><span className="v">{money(T.total)}</span><span className="muted" style={{ fontSize: 12 }}>Tiền mặt {money(T.cash)} · Chuyển khoản {money(T.bank)}</span></div>
         <div className="tile"><span className="muted">Lượt ghi</span><span className="v">{L.length}</span></div>
-        <div className="tile"><span className="muted">Khách là bạn các con</span><span className="v">{friends.filter(x => x.of !== 'cu').length}</span></div>
-        <div className="tile"><span className="muted">Khách chung gia đình</span><span className="v">{L.length - friends.length}</span></div></div>
-      <section className="card"><div className="sec-h card-pad" style={{ margin: 0, paddingBottom: 4 }}><h3>Bạn bè theo từng người con</h3><span className="muted">Để mỗi người biết mà cảm ơn, đi lại</span></div>
+        <div className="tile"><span className="muted">Khách riêng của từng người</span><span className="v">{L.length - famN}</span></div>
+        <div className="tile"><span className="muted">Khách chung gia đình</span><span className="v">{famN}</span></div></div>
+      <section className="card"><div className="sec-h card-pad" style={{ margin: 0, paddingBottom: 4 }}><h3>Khách theo từng người</h3><span className="muted">Để mỗi người biết mà đáp lễ, đi lại</span></div>
         {stats.length ? <div className="list">{stats.map(k => <button key={k.id} className="row" onClick={() => setF(k.id)}><span className="num-badge"><Icon n="user" c="sm" /></span><div className="grow"><div className="title">{k.label}</div><div className="meta"><span>{k.n} lượt</span></div></div><span className="num" style={{ fontWeight: 600 }}>{money(k.s)}</span></button>)}</div>
-          : <p className="muted" style={{ padding: '0 16px 14px' }}>Thêm các con vào Đội (quan hệ “Con trai / Con gái / Con dâu / Con rể”) để chia khách theo từng người.</p>}</section>
+          : <p className="muted" style={{ padding: '0 16px 14px' }}>Chưa có lượt ghi nào.</p>}</section>
       <section className="card"><div className="card-pad" style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', paddingBottom: 8 }}><h3 style={{ flex: 1, minWidth: 140 }}>{F === 'all' ? 'Tất cả lượt ghi' : label(F)}</h3>
-        <div className="segin" role="group" aria-label="Lọc theo khách của">{[['all', 'Tất cả'], ...kids.map(k => [k.id, 'Bạn ' + k.short])].map(([k, l]) => <button key={k} aria-pressed={F === k} onClick={() => setF(k)}>{l}</button>)}</div></div>
-        {rows.length ? (mobile ? <div className="list">{rows.map(x => <div key={x.id} className="row"><div className="grow"><div className="title">{x.name}</div><div className="meta"><span style={x.group === 'Bạn bè' ? { color: 'var(--primary)', fontWeight: 500 } : undefined}>{grp(x)}</span>{x.gifts.length > 0 && <span>{x.gifts.join(', ')}</span>}<span>{METHOD_LABEL[x.method]}</span><span>{x.by} · {fmtAt(x.at)}</span></div></div><div className="num" style={{ fontWeight: 600 }}>{money(x.amount)}</div></div>)}</div>
+        <select className="input" style={{ width: 'auto' }} value={F} onChange={e => setF(e.target.value)} aria-label="Lọc theo khách của"><option value="all">Tất cả</option>{stats.map(k => <option key={k.id} value={k.id}>{hostPhrase(c, k.id)}</option>)}</select></div>
+        {rows.length ? (mobile ? <div className="list">{rows.map(x => <div key={x.id} className="row"><div className="grow"><div className="title">{x.name}</div><div className="meta"><span style={hostOf(x) !== 'family' ? { color: 'var(--primary)', fontWeight: 500 } : undefined}>{grp(x)}</span>{x.gifts.length > 0 && <span>{x.gifts.join(', ')}</span>}<span>{METHOD_LABEL[x.method]}</span><span>{x.by} · {fmtAt(x.at)}</span></div></div><div className="num" style={{ fontWeight: 600 }}>{money(x.amount)}</div></div>)}</div>
           : <div style={{ overflowX: 'auto' }}><table className="tbl"><thead><tr><th>Người / đoàn</th><th>Nhóm</th><th>Khách của</th><th className="num" style={{ textAlign: 'right' }}>Phúng viếng</th><th>Hình thức</th><th>Lễ vật</th><th>Người ghi</th></tr></thead>
-            <tbody>{rows.map(x => <tr key={x.id}><td>{x.name}</td><td>{x.group ?? 'Khác'}</td><td>{x.group === 'Bạn bè' ? <span style={{ color: 'var(--primary)', fontWeight: 500 }}>{label(x.of).replace(/^Bạn /, '')}</span> : <span className="muted">Chung gia đình</span>}</td>
+            <tbody>{rows.map(x => <tr key={x.id}><td>{x.name}</td><td>{x.group ?? 'Khác'}</td><td>{hostOf(x) !== 'family' ? <span style={{ color: 'var(--primary)', fontWeight: 500 }}>{label(hostOf(x))}</span> : <span className="muted">Chung gia đình</span>}</td>
               <td className="num" style={{ textAlign: 'right' }}>{money(x.amount)}</td><td>{METHOD_LABEL[x.method]}</td><td>{x.gifts.join(', ') || '—'}</td><td>{x.by} · {fmtAt(x.at)}</td></tr>)}</tbody></table></div>)
-          : <div className="empty">{L.length ? 'Chưa có khách nào là bạn của người này.' : 'Chưa có lượt ghi nào. Ghi ở Khách viếng → Ghi khách viếng.'}</div>}</section>
-      <p className="note">Dữ liệu dùng để đối soát khi khóa tài chính và làm danh sách cảm ơn ở Hậu tang — mỗi người con nhận danh sách bạn của mình.</p>
+          : <div className="empty">{L.length ? 'Chưa có khách nào của người này.' : 'Chưa có lượt ghi nào. Ghi ở Khách viếng → Ghi khách viếng.'}</div>}</section>
+      <p className="note">Dữ liệu dùng để đối soát khi khóa tài chính và làm danh sách cảm ơn ở Hậu tang — mỗi người nhận danh sách khách của mình để đáp lễ.</p>
     </div>
   );
 }

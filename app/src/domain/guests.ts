@@ -3,6 +3,7 @@ import type { CaseData, Condolence, GuestGroup, Method, PublicPage } from './typ
 import { chosenLabel, findDecision, hasBLT, ORGT, U1_ID } from './model';
 import { addDays, fmtDM, fmtDMY, parseISODate } from './person';
 import { siteOf, venueLabel } from './vendors';
+import { children } from './finance';
 
 export const GROUPS: GuestGroup[] = ['Họ nội', 'Họ ngoại', 'Cơ quan, đoàn thể', 'Tổ dân phố, lối xóm', 'Bạn bè', 'Khác'];
 export const GIFTS = ['Hương', 'Hoa', 'Vòng hoa', 'Trái cây', 'Nến', 'Khác'];
@@ -11,13 +12,44 @@ export interface GuestForm { name: string; group: GuestGroup | null; of: string 
 
 export function addGuest(c: CaseData, f: GuestForm, by: string, now = new Date()): Condolence {
   if (!f.name.trim()) throw new Error('Cần ghi tên người hoặc đoàn đến viếng.');
-  if (f.group === 'Bạn bè' && !f.of) throw new Error('Chọn khách là bạn của ai để người con đó biết mà cảm ơn.');
+  if (!f.of) throw new Error('Chọn khách này là khách của ai — để sau này người đó biết mà đáp lễ.');
   const x: Condolence = {
-    id: 'g' + Math.random().toString(36).slice(2, 9), name: f.name.trim(), group: f.group, of: f.group === 'Bạn bè' ? f.of : null,
+    id: 'g' + Math.random().toString(36).slice(2, 9), name: f.name.trim(), group: f.group, of: f.of,
     amount: Math.max(0, f.amount), method: f.method, gifts: [...f.gifts], note: f.note.trim() || undefined, by, at: now.toISOString(),
   };
   (c.ledger ??= []).push(x);
   return x;
+}
+
+/* ---------- Khách của ai (để đáp lễ) ---------- */
+/** “family” = chung gia đình · “cu” = người quen của người đã khuất · id thành viên = người con trong đội · “n:Tên” = người gia đình tự thêm */
+export interface Host { id: string; label: string }
+const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+export function hostsOf(c: CaseData): Host[] {
+  return [
+    { id: 'family', label: 'Chung gia đình' },
+    { id: 'cu', label: 'Người quen của người đã khuất' },
+    ...children(c.members).map(k => ({ id: k.id, label: `${cap(k.short)} (${k.rel})` })),
+    ...(c.guestHosts ?? []).map(n => ({ id: `n:${n}`, label: n })),
+  ];
+}
+/** Lượt ghi cũ (trước 27/09/2026) chỉ phân loại khi là Bạn bè: không có thì coi là chung gia đình */
+export const hostOf = (x: Condolence) => x.of ?? 'family';
+export function hostLabel(c: CaseData, id: string) {
+  if (id.startsWith('n:')) return id.slice(2);
+  return hostsOf(c).find(h => h.id === id)?.label ?? 'Chung gia đình';
+}
+/** Cụm chữ để đọc liền: “Khách chung gia đình” · “Người quen của người đã khuất” · “Khách của Chị Hoa (con gái)” */
+export function hostPhrase(c: CaseData, id: string) {
+  return id === 'family' ? 'Khách chung gia đình' : id === 'cu' ? 'Người quen của người đã khuất' : `Khách của ${hostLabel(c, id)}`;
+}
+export function addGuestHost(c: CaseData, name: string) {
+  const n = name.trim().replace(/\s+/g, ' ');
+  if (!n) throw new Error('Ghi tên người nhận khách.');
+  if (n.length > 50) throw new Error('Tên ngắn gọn thôi (tối đa 50 ký tự).');
+  if (hostsOf(c).some(h => h.label.toLowerCase() === n.toLowerCase())) throw new Error('Đã có người này.');
+  c.guestHosts = [...(c.guestHosts ?? []), n];
+  return `n:${n}`;
 }
 
 export function removeGuest(c: CaseData, id: string) {

@@ -201,6 +201,8 @@ export interface CaseData {
   updatedCats?: VendorCat[];
   /** Hạng mục gia đình tự thêm (tên) */
   customCats?: string[];
+  /** Người nhận khách gia đình tự thêm (con, cháu chưa dùng app) — để phân loại “khách của ai” */
+  guestHosts?: string[];
   updatedAt?: string;
   finance?: Finance;
   ledger?: Condolence[];
