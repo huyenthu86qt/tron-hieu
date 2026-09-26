@@ -161,7 +161,7 @@ function Actions({ t }: { t: TaskView }) {
   if (t.status === 'done') acts = <Banner kind="info" icon="check">Việc đã xong{t.lock ? ' và đã khóa — không mở lại được' : ''}.</Banner>;
   else if (t.status === 'skip') acts = <p className="muted">Việc đang đánh dấu không áp dụng. Mở “Sửa việc” để khôi phục.</p>;
   else if (decPending && d) acts = <>
-    <p className="muted">Việc này làm được sau khi anh chốt <b>{d.title}</b>.</p>
+    <p className="muted">Việc này làm được sau khi người đại diện chốt <b>{d.title}</b>.</p>
     <button className="btn primary block" onClick={() => nav(`${base}/quyet-dinh/${d.id}`)}><Icon n="decide" c="sm" />Mở quyết định</button>
     <button className="btn block" onClick={() => openSheet({ type: 'assign', taskId: t.id })}><Icon n="team" c="sm" />{t.owner ? 'Giao lại' : 'Giao việc'}</button>
   </>;

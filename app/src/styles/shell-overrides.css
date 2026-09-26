@@ -88,3 +88,5 @@
 .ba-message{text-align:center;display:flex;flex-direction:column;gap:10px;align-items:center;padding:22px 18px;margin-top:6px;border-top:1px solid var(--border);color:var(--text)}
 .ba-message p{max-width:520px;line-height:1.65}
 .bottom-nav .bn{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* Số điện thoại chạm là gọi */
+a.tel{color:var(--primary);font-weight:600;text-decoration:underline;text-underline-offset:3px;white-space:nowrap}

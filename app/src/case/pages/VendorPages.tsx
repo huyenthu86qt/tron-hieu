@@ -1,5 +1,6 @@
 // S-VEN-01 Nhà cung cấp theo hạng mục · S-VEN-02 Gợi ý đúng + gần nhất · S-VEN-03 Chi tiết · S-VEN-04 NCC gia đình · S-VEN-05 Nghiệm thu · trọn gói
 import { useState, type ReactNode } from 'react';
+import { Tel } from '../../ui/tel';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import type { GeoPoint, VendorCat } from '../../domain/types';
 import {
@@ -20,7 +21,7 @@ function StatusPillCat({ s }: { s: string }) {
   if (s === 'committed') return <span className="pill done">Đã cam kết</span>;
   if (s === 'confirmed') return <span className="pill doing">Đã chọn · chờ cam kết</span>;
   if (s === 'empty') return <span className="pill issue">Chưa có bên phù hợp</span>;
-  return <span className="pill wait">Đang gợi ý · chờ anh xác nhận</span>;
+  return <span className="pill wait">Đang gợi ý · chờ xác nhận</span>;
 }
 
 /* ---------- Địa điểm tổ chức (tọa độ để tính khoảng cách) ---------- */
@@ -116,7 +117,7 @@ function PackageSheet({ vid, onClose }: { vid: string; onClose: () => void }) {
   const go = () => { update(d => choosePackage(d, x.v, x.open.map(k => k.k))); onClose(); toast(`Đã chọn trọn gói ${x.v.name} cho ${x.open.length} hạng mục`); };
   return (
     <Sheet title="Chọn dịch vụ trọn gói" onClose={onClose} foot={<><button className="btn" onClick={onClose}>Để sau</button><button className="btn primary" onClick={go}>Chọn trọn gói cho {x.open.length} hạng mục</button></>}>
-      <div className="card card-pad"><div className="eyebrow">Nhà cung cấp</div><div style={{ fontWeight: 600 }}>{x.v.name}</div><div className="muted num">{x.v.phone} · cách nơi tổ chức {fmtKm(x.d)}</div></div>
+      <div className="card card-pad"><div className="eyebrow">Nhà cung cấp</div><div style={{ fontWeight: 600 }}>{x.v.name}</div><div className="muted"><Tel phone={x.v.phone} /> · cách nơi tổ chức {fmtKm(x.d)}</div></div>
       <div><div className="eyebrow" style={{ marginBottom: 6 }}>Sẽ giao cho bên này</div>{x.open.map(k => (
         <div key={k.k} className="check"><Icon n="check" c="sm" /><span>{k.name}{c.familyPick?.[k.k] ? <> <span className="pill prio">Hồ sơ chuẩn bị có bên mong muốn khác</span></> : null}</span></div>))}</div>
       {x.locked.length > 0 && <Banner kind="info" icon="lock">Giữ nguyên: {x.locked.map(k => k.name).join('; ')} (đã chọn hoặc đã cam kết, app không tự thay).</Banner>}
@@ -136,7 +137,7 @@ function Vendors() {
   const upd = c.updatedCats ?? [];
   return (
     <div className="page">
-      <div className="page-title"><div><h1>Nhà cung cấp</h1><p>Gợi ý đúng loại dịch vụ, gần nơi tổ chức nhất · anh xác nhận trước khi chọn</p></div>
+      <div className="page-title"><div><h1>Nhà cung cấp</h1><p>Gợi ý đúng loại dịch vụ, gần nơi tổ chức nhất · gia đình xác nhận trước khi chọn</p></div>
         <div className="actions"><button className="btn" onClick={() => setAdd(true)}><Icon n="plus" c="sm" />Thêm nhà cung cấp của gia đình</button></div></div>
       <VenueCard />
       {upd.length > 0 && <Banner kind="upd" icon="refresh">Gợi ý đã tự cập nhật theo địa điểm mới lúc {fmtAt(c.updatedAt)}. Hạng mục đã cam kết không bị thay.</Banner>}
@@ -206,23 +207,23 @@ function Suggest() {
   if ((s.status === 'committed' || s.status === 'confirmed') && s.vendor) {
     top = <section className="vend-top"><div className="eyebrow">{s.status === 'committed' ? 'Đã cam kết' : 'Đã chọn · chờ cam kết'}</div>
       <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}><h3 style={{ fontSize: 19, flex: 1 }}>{s.vendor.name}</h3><span className="dist num">{s.vendor.family ? 'gia đình tự thêm' : fmtKm(s.vendor.d)}</span></div>
-      <div className="muted num">{s.vendor.phone || '—'}</div>
-      {s.status === 'committed' && <p className="muted"><Icon n="lock" c="sm" /> Bên đã cam kết thì app không tự thay. Nếu nơi tổ chức đổi, app sẽ hỏi anh trong mục Cần quyết.</p>}
+      <div className="muted"><Tel phone={s.vendor.phone} /></div>
+      {s.status === 'committed' && <p className="muted"><Icon n="lock" c="sm" /> Bên đã cam kết thì app không tự thay. Nếu nơi tổ chức đổi, app sẽ hỏi lại trong mục Cần quyết.</p>}
       <div><button className="btn" onClick={() => nav(`${base}/nha-cung-cap/${s.vendor!.id}`, { state: { from: `nha-cung-cap/goi-y/${cat}` } })}>Xem báo giá, cam kết, nghiệm thu</button></div></section>;
     rest = r.ok.filter(o => o.v.id !== s.vendor!.id);
   } else if (s.status === 'empty') {
     top = <section className="card"><div className="empty"><Icon n="pin" c="lg" />
       <h3 style={{ color: 'var(--text)' }}>{r.hasGeo ? `Chưa có ${catName(cat).toLowerCase()} phù hợp gần nơi tổ chức` : 'Chưa có vị trí nơi tổ chức'}</h3>
-      <p>{r.hasGeo ? `Danh bạ chưa có bên nào phục vụ khu vực ${venueLabel(c)}. Tìm các bên gần nhất trên Google Maps, gọi hỏi giá, rồi thêm bên gia đình chọn vào đây.` : 'Thêm vị trí ở thẻ “Tính từ” phía trên để app gợi ý bên gần nhất.'}</p>
+      <p>{r.hasGeo ? `Danh bạ chưa có bên nào phục vụ khu vực ${venueLabel(c)}. Tìm các bên gần nhất trên Google Maps, gọi hỏi giá, rồi thêm bên gia đình chọn vào đây.` : 'Thêm vị trí ở thẻ “Tính từ” phía trên để app gợi ý bên gần nhất — hoặc tìm ngay quanh chỗ anh/chị đang đứng trên Google Maps.'}</p>
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
         {maps && <a className="btn primary" href={maps} target="_blank" rel="noreferrer"><Icon n="pin" c="sm" />Tìm quanh đây trên Google Maps</a>}
         <button className={maps ? 'btn' : 'btn primary'} onClick={() => setAdd(true)}><Icon n="plus" c="sm" />Thêm nhà cung cấp của gia đình</button></div></div></section>;
   } else {
     const o = r.ok[0];
-    top = <section className="vend-top"><div className="eyebrow">App điền sẵn · chờ anh xác nhận</div>
+    top = <section className="vend-top"><div className="eyebrow">App điền sẵn · chờ xác nhận</div>
       <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}><span className="rank" style={{ background: 'var(--primary)', color: 'var(--primary-ink)' }}>1</span><h3 style={{ fontSize: 19, flex: 1 }}>{o.v.name}</h3><span className="dist num">{fmtKm(o.d)}</span></div>
       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>{o.v.cats.length > 1 && <span className="pill prio">Trọn gói · {o.v.cats.length} hạng mục</span>}{o.prio && <span className="pill prio">Từ hồ sơ chuẩn bị</span>}<span className="pill done">Đúng loại dịch vụ</span><span className="pill done">Phục vụ khu vực này</span></div>
-      <div className="muted num">{o.v.phone}{o.prio ? ' · Ưu tiên vì gia đình đã chọn trong hồ sơ chuẩn bị, dù không phải bên gần nhất.' : ''}</div>
+      <div className="muted"><Tel phone={o.v.phone} />{o.prio ? ' · Ưu tiên vì gia đình đã chọn trong hồ sơ chuẩn bị, dù không phải bên gần nhất.' : ''}</div>
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}><button className="btn primary" onClick={() => confirm(o.v.id)}><Icon n="check" c="sm" />Xác nhận bên này</button>
         <a className="btn" href={`tel:${o.v.phone.replace(/\s/g, '')}`}>Gọi hỏi giá</a></div></section>;
     rest = r.ok.slice(1);
@@ -231,20 +232,20 @@ function Suggest() {
     <section className="card"><div className="sec-h card-pad" style={{ margin: 0, paddingBottom: 4 }}><h3>Các bên khác phù hợp</h3></div>
       <div className="list">{rest.map((o, i) => (
         <div key={o.v.id} className="row"><span className="rank">{s.status === 'suggest' ? i + 2 : i + 1}</span>
-          <div className="grow"><div className="title">{o.v.name}</div><div className="meta"><span className="dist num">{fmtKm(o.d)}</span><span className="num">{o.v.phone}</span>{o.v.cats.length > 1 && <span className="pill prio">Trọn gói: {o.v.cats.map(catName).join(', ')}</span>}</div></div>
+          <div className="grow"><div className="title">{o.v.name}</div><div className="meta"><span className="dist num">{fmtKm(o.d)}</span><Tel phone={o.v.phone} />{o.v.cats.length > 1 && <span className="pill prio">Trọn gói: {o.v.cats.map(catName).join(', ')}</span>}</div></div>
           {s.status !== 'committed' && <button className="btn sm" onClick={() => confirm(o.v.id)}>Chọn bên này</button>}</div>))}</div></section>
   );
   const outHTML = r.out[0] && <Banner kind="info"><b>{r.out[0].v.name}</b> (gia đình chỉ định) cách nơi tổ chức {fmtKm(r.out[0].d)} — <b>ngoài khu vực phục vụ</b> nên không được điền sẵn. Anh vẫn có thể liên hệ riêng.</Banner>;
   const noGeoList = !r.hasGeo && r.unknown.length > 0 && (
     <section className="card"><div className="sec-h card-pad" style={{ margin: 0, paddingBottom: 4 }}><h3>Trong danh bạ (chưa tính được khoảng cách)</h3></div>
-      <div className="list">{r.unknown.map(o => <div key={o.v.id} className="row"><div className="grow"><div className="title">{o.v.name}</div><div className="meta"><span className="num">{o.v.phone}</span><span>Phục vụ bán kính {o.v.radiusKm} km</span></div></div>
+      <div className="list">{r.unknown.map(o => <div key={o.v.id} className="row"><div className="grow"><div className="title">{o.v.name}</div><div className="meta"><Tel phone={o.v.phone} /><span>Phục vụ bán kính {o.v.radiusKm} km</span></div></div>
         <button className="btn sm" onClick={() => confirm(o.v.id)}>Chọn bên này</button></div>)}</div></section>
   );
   const fam = (c.familyVendors ?? []).filter(v => v.cats.includes(cat));
   const famHTML = (
     <section className="card"><div className="sec-h card-pad" style={{ margin: 0, paddingBottom: 4 }}><h3>Nhà cung cấp của gia đình</h3><button className="btn sm" onClick={() => setAdd(true)} style={{ marginLeft: 'auto' }}><Icon n="plus" c="sm" />Thêm</button></div>
       {fam.length ? <div className="list">{fam.map(v => (
-        <div key={v.id} className="row"><span className="num-badge"><Icon n="user" c="sm" /></span><div className="grow"><div className="title">{v.name}</div><div className="meta"><span className="num">{v.phone || '—'}</span><span>{v.cats.map(catName).join(', ')}</span>{v.note && <span>{v.note}</span>}</div></div>
+        <div key={v.id} className="row"><span className="num-badge"><Icon n="user" c="sm" /></span><div className="grow"><div className="title">{v.name}</div><div className="meta"><Tel phone={v.phone} /><span>{v.cats.map(catName).join(', ')}</span>{v.note && <span>{v.note}</span>}</div></div>
           {s.cv?.vendorId === v.id ? <span className="pill done">Đang chọn</span> : s.status !== 'committed' && <button className="btn sm" onClick={() => confirm(v.id, true)}>Chọn bên này</button>}</div>))}</div>
         : <p className="muted" style={{ padding: '0 16px 14px' }}>Bên quen biết, người trong họ giới thiệu… gia đình tự thêm. Chỉ gia đình này thấy.</p>}
       {maps && s.status !== 'empty' && <p className="muted" style={{ padding: '0 16px 14px' }}>Muốn so sánh thêm? <a href={maps} target="_blank" rel="noreferrer">Tìm quanh nơi tổ chức trên Google Maps</a>, gọi hỏi giá rồi thêm bên gia đình chọn.</p>}</section>
@@ -306,7 +307,7 @@ function VendorDetail() {
   const head = (
     <div className="page-title"><div><div className="eyebrow">{v.cats.length > 1 ? 'Dịch vụ trọn gói · ' + v.cats.map(catName).join(', ') : catName(v.cats[0])}{v.family ? ' · nhà cung cấp của gia đình' : ''}</div><h1 style={{ marginTop: 4 }}>{v.name}</h1>
       <div style={{ display: 'flex', gap: 6, marginTop: 8, flexWrap: 'wrap' }}>{st === 'committed' ? <span className="pill done">Đã cam kết</span> : st === 'confirmed' ? <span className="pill doing">Đã chọn · chờ cam kết</span> : <span className="pill soft">Chưa chọn</span>}
-        {accepted && <span className="pill done">Đã nghiệm thu</span>}{dist !== null && <span className="pill soft num">{fmtKm(dist)} tới nơi tổ chức</span>}<span className="pill soft num">{v.phone || '—'}</span></div></div></div>
+        {accepted && <span className="pill done">Đã nghiệm thu</span>}{dist !== null && <span className="pill soft num">{fmtKm(dist)} tới nơi tổ chức</span>}<span className="pill soft"><Tel phone={v.phone} /></span></div></div></div>
   );
   return (
     <div className="page">{head}

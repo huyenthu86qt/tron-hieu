@@ -1,5 +1,7 @@
 // S-GST-01 Tổng quan · S-GST-02 Soạn trang thông tin · S-GST-03 Trang công khai · S-GST-04 Chia sẻ · S-GST-05 Ghi nhanh · S-GST-06 Danh sách · S-GST-07 Bàn giao ca
 import { Fragment, useEffect, useState } from 'react';
+import { Tel } from '../../ui/tel';
+import { xung } from '../../domain/text';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import type { CaseData, Condolence, GuestGroup, Method } from '../../domain/types';
 import { addGuest, announcer, defaultNotice, draftNotice, emptyPage, GIFTS, GROUPS, organizerLine, publish, removeGuest, schedule, tangChu } from '../../domain/guests';
@@ -8,7 +10,6 @@ import { lifeLine } from '../../domain/person';
 import { portraitIcon } from '../../domain/model';
 import { defaultVenues, siteOf, venueLabel } from '../../domain/vendors';
 import { DN_TEXT } from '../../domain/text';
-import { fmtPhone } from '../../domain/platform';
 import { repo } from '../../repo/repo';
 import { Icon } from '../../ui/Icon';
 import { Banner, Chips, ErrorBanner, Sheet, toggleIn, useApp } from '../../ui/common';
@@ -124,7 +125,7 @@ export function ObitBody({ c, preview }: { c: CaseData; preview?: boolean }) {
       <p style={{ maxWidth: '56ch' }}>{p.text || defaultNotice(c)}</p>
       <section className="card card-pad sched"><dl className="kv">{schedule(c).map(([a, b]) => <Fragment key={a}><dt>{a}</dt><dd>{b}</dd></Fragment>)}
         <dt>Địa điểm</dt><dd><b>{venueLabel(c)}</b>{site.address && <><br />{site.address}</>}{(site.geo || site.address) && <><br /><a className="btn sm" style={{ marginTop: 6 }} href={`https://www.google.com/maps/search/?api=1&query=${site.geo ? `${site.geo.lat},${site.geo.lng}` : encodeURIComponent(site.address)}`} target="_blank" rel="noreferrer"><Icon n="map" c="sm" />Chỉ đường</a></>}</dd></dl></section>
-      <p className="muted">Tang chủ: {u1.name} ({u1.rel.toLowerCase()}){p.showPhone && p.phone ? <> · <span className="num">{fmtPhone(p.phone)}</span></> : null}</p>
+      <p className="muted">Tang chủ: {u1.name} ({u1.rel.toLowerCase()}){p.showPhone && p.phone ? <> · <Tel phone={p.phone} /></> : null}</p>
       <p className="muted" style={{ fontSize: 12 }}>Trang do gia đình đăng qua {BRAND}</p>
     </div>
   );
@@ -144,7 +145,7 @@ function Compose() {
   const form = (
     <section className="card card-pad stack">
       <div className="field"><label htmlFor="infoText">Lời báo tin</label><textarea className="input" id="infoText" value={f.text} onChange={e => setF({ ...f, text: e.target.value })} style={{ minHeight: 140 }} />
-        {f.auto && <p className="muted" style={{ color: 'var(--warning)' }}><Icon n="alert" c="sm" /> Bản nháp soạn tự động — anh đọc lại, sửa tên tuổi, giờ trước khi công bố.</p>}
+        {f.auto && <p className="muted" style={{ color: 'var(--warning)' }}><Icon n="alert" c="sm" /> Bản nháp soạn tự động — {xung(me.rel)} đọc lại, sửa tên tuổi, giờ trước khi công bố.</p>}
         <div><button className="btn sm" onClick={() => setF({ ...f, text: draftNotice(draft), auto: true })}>Soạn nháp tự động</button></div></div>
       <div><div className="eyebrow" style={{ marginBottom: 6 }}>Lịch lễ · giờ an táng lấy từ quyết định đã chốt</div>
         <div className="stack" style={{ gap: 8 }}>

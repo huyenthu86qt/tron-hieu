@@ -54,7 +54,7 @@ function After() {
               <div key={t.id} className="row">
                 <input type="checkbox" checked={t.status === 'done'} disabled={closed || t.lock} onChange={e => toggle(t.id, e.target.checked)} style={{ width: 20, height: 20, accentColor: 'var(--primary)', marginTop: 2 }} aria-label={`Đánh dấu xong: ${t.title}`} />
                 <div className="grow"><Link className="title" to={`${base}/viec/${t.id}`} state={{ from: 'hau-tang' }} style={{ color: 'inherit', textDecoration: 'none' }}>{t.title}</Link>
-                  <div className="meta">{t.kind === 'opt' ? <span>Tùy chọn</span> : <span>Cần xong để khép vòng</span>}{t.status === 'skip' && <span className="pill skip">Không áp dụng</span>}{t.why && <span>Vì: {t.why}</span>}{t.unverified && <span className="pill soft">Hướng dẫn chi tiết đang bổ sung</span>}</div></div>
+                  <div className="meta">{t.status === 'done' ? <span className="pill done">Đã xong</span> : t.kind === 'opt' ? <span>Tùy chọn</span> : <span>Cần xong để khép vòng</span>}{t.status === 'skip' && <span className="pill skip">Không áp dụng</span>}{t.why && <span>Vì: {t.why}</span>}{t.unverified && <span className="pill soft">Hướng dẫn chi tiết đang bổ sung</span>}</div></div>
                 {t.go && <button className="btn sm ghost" onClick={() => nav(`${base}/${t.go}`)}>Mở</button>}</div>
             ))}</div></section>
         ))}

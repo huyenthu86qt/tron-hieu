@@ -230,12 +230,12 @@ const MAPS_QUERY: Record<VendorCat, string> = {
   mo: 'xây mộ đào huyệt',
 };
 
-/** Link mở Google Maps tìm đúng loại dịch vụ quanh nơi tổ chức; null nếu chưa có vị trí lẫn địa chỉ */
-export function mapsSearchUrl(cat: VendorCat, site: VenueSite): string | null {
+/** Link mở Google Maps tìm đúng loại dịch vụ quanh nơi tổ chức; chưa có vị trí lẫn địa chỉ thì tìm “gần đây” (theo vị trí điện thoại) */
+export function mapsSearchUrl(cat: VendorCat, site: VenueSite): string {
   const q = MAPS_QUERY[cat];
   if (site.geo) return `https://www.google.com/maps/search/${encodeURIComponent(q)}/@${site.geo.lat},${site.geo.lng},14z`;
   if (site.address.trim()) return `https://www.google.com/maps/search/${encodeURIComponent(`${q} gần ${site.address.trim()}`)}`;
-  return null;
+  return `https://www.google.com/maps/search/${encodeURIComponent(`${q} gần đây`)}`;
 }
 
 /* ---------- Danh bạ tự lớn lên từ các gia đình (lớp 3) ---------- */

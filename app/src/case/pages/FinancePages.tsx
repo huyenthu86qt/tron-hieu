@@ -28,19 +28,23 @@ export function ExpenseSheet({ onClose, preset }: { onClose: () => void; preset?
   const [f, setF] = useState<ExpenseForm>({ name: '', amount: '', cat: 'khac', payer: me.id, method: 'cash', fund: funds.find(x => x.type === 'cash')?.id ?? '', holder: '', bank: '', acct: '', reason: '', evidence: '', extra: false, ...preset });
   const [err, setErr] = useState<string | null>(null);
   const [fundOpen, setFundOpen] = useState(false);
+  // Người đại diện thường ghi sau khi đã trả: mặc định “Đã trả rồi” để Đã chi / Còn trả đúng ngay
+  const [paidNow, setPaidNow] = useState(true);
   const set = <K extends keyof ExpenseForm>(k: K, v: ExpenseForm[K]) => setF(x => ({ ...x, [k]: v }));
   const vis = catsVisible(c.situation);
   const chosen = (k: VendorCat | 'khac') => (k === 'khac' ? undefined : c.vendors?.[k]?.vendorId ?? undefined);
   const send = () => {
-    const e = update(d => { requestExpense(d, { ...f, vendorId: chosen(f.cat) }, me.id); });
+    const e = update(d => { const x = requestExpense(d, { ...f, vendorId: chosen(f.cat) }, me.id); if (isU1 && paidNow) recordPayment(d, x.id, x.amount); });
     if (e) { setErr(e); return; }
-    onClose(); toast(isU1 ? 'Đã ghi khoản chi.' : 'Đã gửi đề nghị. Người đại diện nhận ở mục Cần duyệt.');
+    onClose(); toast(isU1 ? (paidNow ? 'Đã ghi khoản đã chi.' : 'Đã ghi khoản chi — còn phải trả, hiện ở Công nợ.') : 'Đã gửi đề nghị. Người đại diện nhận ở mục Cần duyệt.');
   };
   const people = c.members.filter(m => m.access !== 'link');
   return (
     <Sheet title={isU1 ? 'Ghi khoản chi' : 'Đề nghị chi'} onClose={onClose} foot={<><button className="btn" onClick={onClose}>Hủy</button><button className="btn primary" onClick={send}>{isU1 ? 'Ghi khoản chi' : 'Gửi đề nghị'}</button></>}>
       <div className="field"><label htmlFor="frName">Khoản chi</label><input className="input" id="frName" value={f.name} onChange={e => set('name', e.target.value)} placeholder="Ví dụ: Thuê loa đài cho lễ viếng" /></div>
       <div className="field"><label htmlFor="frAmt">Số tiền (đồng)</label><input className="input num" id="frAmt" inputMode="numeric" value={f.amount} onChange={e => set('amount', fmtMoneyInput(e.target.value))} placeholder="0" style={{ fontSize: 20, fontWeight: 600 }} /></div>
+      {isU1 && <div className="field"><label>Đã trả chưa?</label><div className="segin">
+        <button aria-pressed={paidNow} onClick={() => setPaidNow(true)}>Đã trả rồi</button><button aria-pressed={!paidNow} onClick={() => setPaidNow(false)}>Chưa trả, ghi để nhớ</button></div></div>}
       <div className="field"><label htmlFor="frCat">Thuộc hạng mục</label><select className="input" id="frCat" value={f.cat} onChange={e => set('cat', e.target.value as VendorCat | 'khac')}>
         {vis.map(k => <option key={k.k} value={k.k}>{k.name}{chosen(k.k) ? ' · ' + (findVendor(c, dir, chosen(k.k))?.name ?? '') : ''}</option>)}<option value="khac">Khác</option></select></div>
       <div className="field"><label htmlFor="frPayer">Người chi</label><select className="input" id="frPayer" value={f.payer} onChange={e => set('payer', e.target.value)}>

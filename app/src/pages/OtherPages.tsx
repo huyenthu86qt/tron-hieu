@@ -50,6 +50,7 @@ export function LinkPage() {
     <div className="bare"><div className="bare-inner">
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, color: 'var(--primary)' }}><Icon n="lotus" /><span className="muted">Đám hiếu {DN(c)}</span></div>
       <p style={{ fontFamily: 'var(--serif)', fontSize: 19 }}><b>{u1.name}</b> nhờ {member.name}:</p>
+      {u1.phone?.trim() && <a className="btn" style={{ alignSelf: 'flex-start' }} href={`tel:${u1.phone.replace(/[^\d+]/g, '')}`}>Gọi {u1.name}</a>}
       {mine.length === 0 && <div className="empty"><Icon n="check" c="lg" /><span>Hiện chưa có việc nào được nhờ. Khi gia đình giao việc, việc sẽ hiện ở đây.</span></div>}
       {mine.map(t => (
         <section key={t.id} className="card card-pad stack" style={{ gap: 10 }}>

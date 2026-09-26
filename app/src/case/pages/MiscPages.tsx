@@ -1,5 +1,6 @@
 // S-ENT-07 Tiếp nhận hồ sơ chuẩn bị · S-TEAM-05 Việc của tôi · S-X-02 Tài liệu · S-X-03 Lịch sử · S-X-04 Cài đặt · S-MAP-03 Góc nhìn
 import { useState } from 'react';
+import { xung } from '../../domain/text';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { inviteMember } from '../../domain/actions';
 import { issueTasks, soonTasks, visibleTasks } from '../../domain/model';
@@ -30,7 +31,7 @@ export function IntakePage() {
   const G: [string, string, string, string][] = [
     ['p', 'Thông tin người đã khuất', `${DN_TEXT(c)}${c.person.birthYear ? ' · ' + c.person.birthYear : ''}`, 'ho-so'],
     ['w', 'Nguyện vọng hậu sự', fd?.wish || vd?.wish ? [fd?.wish?.text, vd?.wish?.text].filter(Boolean).join(' ') + ' → hiện là đề xuất trong Cần quyết' : 'Hồ sơ để gia đình quyết hình thức và nơi làm lễ', 'can-quyet'],
-    ['c', 'Người liên hệ', `${c.pendingContacts?.length ?? 0} người → mời vào Đội đám hiếu khi anh sẵn sàng`, 'doi'],
+    ['c', 'Người liên hệ', `${c.pendingContacts?.length ?? 0} người → mời vào Đội đám hiếu khi sẵn sàng`, 'doi'],
     ['b', 'Ngân sách', c.finance?.budget ? `${money(c.finance.budget)} → Tài chính` : 'Chưa ghi', 'tai-chinh/ngan-sach'],
     ['v', 'Nhà cung cấp mong muốn', picks.length ? `${picks.join(', ')} → ưu tiên khi gợi ý` : 'Không có', 'nha-cung-cap'],
     ['m', 'Mốc tưởng niệm', ms.length ? `${ms.join(', ')} → gợi ý ở Hậu tang` : 'Không có', 'hau-tang/moc'],
@@ -115,13 +116,13 @@ export function HistoryPage() {
 
 /* ---------- S-X-04 ---------- */
 export function SettingsPage() {
-  const { c, update, isU1, full } = useCase();
+  const { c, update, isU1, full, me } = useCase();
   const { toast } = useApp();
   const nav = useNavigate();
   return (
     <div className="page" style={{ maxWidth: 760 }}><div className="page-title"><div><h1>Cài đặt đám hiếu</h1><p>Đám hiếu {DN_TEXT(c)}</p></div></div>
       <section className="card card-pad stack"><h3>Chế độ tang gia</h3>
-        <p className="muted">Khi bật, màn Bây giờ chỉ hiện điều cần anh quyết, việc của anh và việc chưa có người nhận — để người đại diện được nghỉ.</p>
+        <p className="muted">Khi bật, màn Bây giờ chỉ hiện điều cần {xung(me.rel)} quyết, việc của {xung(me.rel)} và việc chưa có người nhận — để người đại diện được nghỉ.</p>
         <button className="switch" style={{ alignSelf: 'flex-start' }} aria-pressed={c.mourning} onClick={() => { update(d => { d.mourning = !d.mourning; }); toast(c.mourning ? 'Đã tắt Chế độ tang gia' : 'Đã bật Chế độ tang gia'); }}><span className="knob" />{c.mourning ? 'Đang bật' : 'Đang tắt'}</button></section>
       <section className="card card-pad stack"><h3>Gói</h3>
         <p>{full ? <>Đã mở đầy đủ{c.access?.activeUntil ? ` · dùng đến ${new Date(c.access.activeUntil).toLocaleDateString('vi-VN')}` : ''}</> : 'Miễn phí: Hồ sơ, Bây giờ, Bản đồ, Chi tiết việc, Cần quyết.'}</p>

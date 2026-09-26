@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import type { CaseData } from '../domain/types';
-import { findTask, visibleTasks, STATUS_LABEL } from '../domain/model';
+import { findTask, nowTasks, pendingDecisions, visibleTasks, STATUS_LABEL } from '../domain/model';
 import { money, METHOD_LABEL, EXP_STATUS } from '../domain/finance';
 import { fmtPhone, isFull, ORDER_STATUS_LABEL, readiness } from '../domain/platform';
 import { DN_TEXT } from '../domain/text';
@@ -34,23 +34,25 @@ export function HomePage() {
         {cases && <UpcomingRemembrance cases={cases} />}
         <section className="card"><div className="sec-h card-pad" style={{ margin: 0, paddingBottom: 4 }}><h3>Đám hiếu đang lo</h3><span className="muted">{cases?.length ?? 0}</span></div>
           {cases === null ? <p className="muted card-pad">Đang tải…</p> : cases.length ? <div className="list">{cases.map(c => {
-            const open = visibleTasks(c).filter(t => t.status !== 'done' && t.status !== 'skip').length;
+            // Chỉ nói việc của lúc này — tổng cả 15 chặng (“49 việc chưa xong”) làm người đang có tang thấy ngợp
+            const now = nowTasks(c).filter(t => t.status !== 'done' && t.status !== 'skip').length, dec = pendingDecisions(c).length;
             return (
               <button key={c.id} className="row" onClick={() => nav(`/dh/${c.id}`)}><span className="num-badge"><Icon n="lotus" c="sm" /></span>
                 <div className="grow"><div className="title">Đám hiếu {DN_TEXT(c)}</div>
                   <div className="meta">{isFull(c) ? <span className="pill done">Đã mở đầy đủ</span> : <span className="pill soft">Miễn phí</span>}
-                    {c.after?.closed ? <span className="pill done">Đã khép phần tức thời</span> : <span>{open} việc chưa xong</span>}
+                    {c.after?.closed ? <span className="pill done">Đã khép phần tức thời</span> : <span>{now ? `Bây giờ: ${now} việc` : 'Không có việc gấp'}{dec ? ` · ${dec} điều cần quyết` : ''}</span>}
                     {c.ownerId !== user.id && <span>Anh/chị là thành viên</span>}</div></div>
                 <Icon n="chev" c="chev" /></button>
             );
           })}</div> : <div className="empty"><span>Chưa có đám hiếu nào.</span></div>}</section>
-        <section className="card"><div className="sec-h card-pad" style={{ margin: 0, paddingBottom: 4 }}><h3>Hồ sơ chuẩn bị</h3><button className="btn sm" style={{ marginLeft: 'auto' }} onClick={() => nav('/chuan-bi/moi')}><Icon n="plus" c="sm" />Tạo hồ sơ</button></div>
+        {/* Đang có tang (đám hiếu chưa khép) thì không mời “chuẩn bị trước” — dễ chạnh lòng; ai đã có hồ sơ vẫn thấy */}
+        {(pres.length > 0 || !(cases ?? []).some(c => !c.after?.closed)) && <section className="card"><div className="sec-h card-pad" style={{ margin: 0, paddingBottom: 4 }}><h3>Hồ sơ chuẩn bị</h3><button className="btn sm" style={{ marginLeft: 'auto' }} onClick={() => nav('/chuan-bi/moi')}><Icon n="plus" c="sm" />Tạo hồ sơ</button></div>
           {pres.length ? <div className="list">{pres.map(p => (
             <button key={p.id} className="row" onClick={() => nav(`/chuan-bi/${p.id}`)}><span className="num-badge"><Icon n="doc" c="sm" /></span>
               <div className="grow"><div className="title">{p.subject.name ? `${p.subject.title} ${p.subject.name}` : 'Hồ sơ chưa đặt tên'}</div>
                 <div className="meta"><span>Sẵn sàng {readiness(p)}%</span>{p.caseId ? <span className="pill done">Đã kích hoạt</span> : p.paid ? <span className="pill doing">Đã mở gói</span> : <span className="pill soft">Miễn phí</span>}</div></div>
               <Icon n="chev" c="chev" /></button>
-          ))}</div> : <p className="muted" style={{ padding: '0 16px 14px' }}>Chuẩn bị dần khi còn thời gian — để lúc cần, gia đình không phải quyết lại từ đầu.</p>}</section>
+          ))}</div> : <p className="muted" style={{ padding: '0 16px 14px' }}>Chuẩn bị dần khi còn thời gian — để lúc cần, gia đình không phải quyết lại từ đầu.</p>}</section>}
         <BinhAnHomeCard />
       </div>
     </AccountShell>

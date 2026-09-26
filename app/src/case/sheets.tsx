@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { fmtPhone } from '../domain/platform';
 import { useNavigate } from 'react-router-dom';
 import type { Access, Member } from '../domain/types';
 import {
@@ -302,6 +303,7 @@ function MemberSheet({ id }: { id: string }) {
   const areaItems = [...(isU1 ? ['Toàn bộ'] : []), ...c.areas, ...f.areas.filter(a => a !== 'Toàn bộ' && !c.areas.includes(a))];
   return (
     <Sheet title="Sửa thành viên" onClose={close} foot={<><button className="btn" onClick={close}>Hủy</button><button className="btn primary" onClick={save}>Lưu</button></>}>
+      {m.phone?.trim() && <a className="btn block" href={`tel:${m.phone.replace(/[^\d+]/g, '')}`}><Icon n="user" c="sm" />Gọi {m.name} · {fmtPhone(m.phone)}</a>}
       <div className="field"><label htmlFor="mName">Họ tên</label><input className="input" id="mName" value={f.name} onChange={e => setF({ ...f, name: e.target.value })} /></div>
       <div className="field"><label htmlFor="mRel">Quan hệ với người đã khuất / gia đình</label>
         <input className="input" id="mRel" value={f.rel} disabled={isOrg} onChange={e => setF({ ...f, rel: e.target.value })} />

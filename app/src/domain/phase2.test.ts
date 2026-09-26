@@ -283,12 +283,12 @@ describe('Trả lại việc', () => {
 });
 
 describe('Tìm quanh nơi tổ chức trên Google Maps', () => {
-  it('có vị trí → tìm quanh tọa độ; chỉ có địa chỉ → tìm theo địa chỉ; không có gì → không hiện nút', async () => {
+  it('có vị trí → tìm quanh tọa độ; chỉ có địa chỉ → tìm theo địa chỉ; không có gì → tìm “gần đây” theo vị trí điện thoại', async () => {
     const { mapsSearchUrl } = await import('./vendors');
     expect(mapsSearchUrl('rap', { name: 'Nhà riêng', address: 'x', geo: { lat: 21.03, lng: 105.88 } }))
       .toBe('https://www.google.com/maps/search/' + encodeURIComponent('cho thuê rạp đám hiếu bàn ghế') + '/@21.03,105.88,14z');
     expect(mapsSearchUrl('xe', { name: 'Nhà riêng', address: 'Ngọc Lâm, Long Biên' })).toContain(encodeURIComponent('xe tang gần Ngọc Lâm, Long Biên'));
-    expect(mapsSearchUrl('hoa', { name: 'Nhà riêng', address: '  ' })).toBeNull();
+    expect(mapsSearchUrl('hoa', { name: 'Nhà riêng', address: '  ' })).toContain(encodeURIComponent('gần đây'));
   });
 });
 

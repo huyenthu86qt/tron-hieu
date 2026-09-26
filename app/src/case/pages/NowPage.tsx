@@ -1,5 +1,6 @@
 // S-MAP-01 · Bây giờ
 import { useState } from 'react';
+import { xung } from '../../domain/text';
 import { useNavigate } from 'react-router-dom';
 import { currentPhase, FORM_LABEL, issueTasks, nowTasks, pendingDecisions, portraitIcon, soonTasks } from '../../domain/model';
 import { venueLabel } from '../../domain/vendors';
@@ -45,11 +46,11 @@ export function NowPage() {
   const it = issueTasks(c).filter(t => inScope(me, t)), st = soonTasks(c).filter(t => inScope(me, t));
 
   const decBlock = (
-    <section className="card"><div className="sec-h card-pad" style={{ margin: 0, paddingBottom: 6 }}><h3>{isU1 ? 'Cần anh quyết' : 'Đang chờ người đại diện quyết'}</h3><span className="muted">{pd.length} mục</span></div>
-      {pd.length ? <div className="list">{pd.map(d => <DecRow key={d.id} d={d} />)}</div> : <div className="empty"><Icon n="check" c="lg" /><span>Không có gì đang chờ anh quyết.</span></div>}</section>
+    <section className="card"><div className="sec-h card-pad" style={{ margin: 0, paddingBottom: 6 }}><h3>{isU1 ? `Cần ${xung(me.rel)} quyết` : 'Đang chờ người đại diện quyết'}</h3><span className="muted">{pd.length} mục</span></div>
+      {pd.length ? <div className="list">{pd.map(d => <DecRow key={d.id} d={d} />)}</div> : <div className="empty"><Icon n="check" c="lg" /><span>Không có gì đang chờ {xung(me.rel)} quyết.</span></div>}</section>
   );
   const nowBlock = (
-    <section className="card"><div className="sec-h card-pad" style={{ margin: 0, paddingBottom: 6 }}><h3>Bây giờ</h3><span className="muted">{c.mourning ? 'Chỉ việc của anh và việc chưa có người nhận' : nt.length + ' việc'}</span></div>
+    <section className="card"><div className="sec-h card-pad" style={{ margin: 0, paddingBottom: 6 }}><h3>Bây giờ</h3><span className="muted">{c.mourning ? `Chỉ việc của ${xung(me.rel)} và việc chưa có người nhận` : nt.length + ' việc'}</span></div>
       <div className="chips card-pad" style={{ paddingTop: 0, paddingBottom: 8 }} role="group" aria-label="Lọc việc">
         <button type="button" className="chip" aria-pressed={onlyMine} onClick={() => setOnlyMine(true)}>Việc của tôi ({mineN})</button>
         <button type="button" className="chip" aria-pressed={!onlyMine} onClick={() => setOnlyMine(false)}>Tất cả ({all.length})</button>
@@ -61,7 +62,7 @@ export function NowPage() {
       <div className="list">{it.map(t => <TaskRow key={t.id} t={t} from="" />)}</div></section>
   );
   const soon = c.mourning
-    ? <Banner kind="info" icon="bell"><b>Chế độ tang gia đang bật.</b> App chỉ báo anh điều cần quyết; việc sắp tới do mọi người tự theo dõi.</Banner>
+    ? <Banner kind="info" icon="bell"><b>Chế độ tang gia đang bật.</b> App chỉ báo điều cần quyết; việc sắp tới do mọi người tự theo dõi.</Banner>
     : <section className="card"><details className="fold" style={{ borderTop: 0 }}><summary><Icon n="chev" c="chev" />Sắp tới <span className="muted" style={{ marginLeft: 'auto' }}>{st.length} việc</span></summary>
         <div className="list">{st.map(t => <TaskRow key={t.id} t={t} acts={false} from="" />)}</div>
         <div className="card-pad" style={{ paddingTop: 6 }}><button className="btn sm ghost" onClick={() => nav(`${base}/ban-do?xem=sap-toi`)}>Xem theo góc nhìn: Sắp tới · Có vấn đề · Đã xong</button></div></details></section>;

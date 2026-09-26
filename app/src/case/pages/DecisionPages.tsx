@@ -1,6 +1,7 @@
 // S-DEC-01 Cần quyết / Cần duyệt · S-DEC-02 Chi tiết quyết định · S-DEC-03 Xác nhận thay đổi + tác động
 // S-DEC-04 Duyệt / từ chối đề nghị chi · S-DEC-06 Lịch sử quyết định
 import { useState } from 'react';
+import { xung } from '../../domain/text';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import type { Expense, Form, Venue } from '../../domain/types';
 import {
@@ -57,7 +58,7 @@ export function ApprovalSheet({ e, onClose }: { e: Expense; onClose: () => void 
 }
 
 export function DecisionsPage() {
-  const { c, base, isU1 } = useCase();
+  const { c, base, isU1, me } = useCase();
   const { mobile } = useApp();
   const nav = useNavigate();
   const [ap, setAp] = useState<Expense | null>(null);
@@ -65,9 +66,9 @@ export function DecisionsPage() {
   const reqs = (c.finance?.expenses ?? []).filter(e => e.status === 'request');
   const main = <>
     {!isU1 && <Banner kind="info" icon="lock">Chỉ người đại diện gia đình chốt quyết định và duyệt chi. Anh/chị xem để nắm tình hình.</Banner>}
-    <section className="card"><div className="sec-h card-pad" style={{ margin: 0, paddingBottom: 6 }}><h3>Cần anh quyết</h3><span className="muted">{pd.length}</span></div>
+    <section className="card"><div className="sec-h card-pad" style={{ margin: 0, paddingBottom: 6 }}><h3>Cần {xung(me.rel)} quyết</h3><span className="muted">{pd.length}</span></div>
       {pd.length ? <div className="list">{pd.map(d => <DecRow key={d.id} d={d} />)}</div> : <div className="empty"><Icon n="check" c="lg" /><span>Không có quyết định nào đang chờ.</span></div>}</section>
-    <section className="card"><div className="sec-h card-pad" style={{ margin: 0, paddingBottom: 6 }}><h3>Cần anh duyệt</h3><span className="muted">{reqs.length}</span></div>
+    <section className="card"><div className="sec-h card-pad" style={{ margin: 0, paddingBottom: 6 }}><h3>Cần {xung(me.rel)} duyệt</h3><span className="muted">{reqs.length}</span></div>
       {reqs.length ? <div className="list">{reqs.map(e => (
         <div key={e.id} className="row"><span className="num-badge"><Icon n="wallet" c="sm" /></span>
           <div className="grow"><div className="title">Đề nghị chi {money(e.amount)} — {e.name}</div>
@@ -115,7 +116,7 @@ function impactFor(c: Parameters<typeof impactOfForm>[0], d: DecisionView, pick:
 
 export function DecisionPage() {
   const { did = '' } = useParams();
-  const { c, base, update, isU1 } = useCase();
+  const { c, base, update, isU1, me } = useCase();
   const { mobile, toast } = useApp();
   const nav = useNavigate();
   const d = findDecision(c, did);
@@ -134,6 +135,8 @@ export function DecisionPage() {
     if (changing && (d.key === 'venue' || d.key === 'form')) { nav(`${base}/quyet-dinh/${d.id}/thay-doi?chon=${pick}`); return; }
     if (d.key === 'venue' && pick !== c.situation.venue) { nav(`${base}/quyet-dinh/${d.id}/thay-doi?chon=${pick}`); return; }
     if (d.key === 'time' && pick === 'c' && !detail.trim()) { toast('Ghi ngày giờ cụ thể cho phương án “Ngày giờ khác”'); return; }
+    // Quyết định không thể quay lại: hỏi lại một lần, tránh bấm nhầm lúc đang rối
+    if (d.key === 'time' && !window.confirm(`Chốt ${d.title.toLowerCase()}: ${d.options.find(o => o.k === pick)?.label}${detail.trim() ? ' (' + detail.trim() + ')' : ''}?\n\nSau khi chốt, quyết định này không sửa được nữa.`)) return;
     if (d.key === 'vendor') update(x => resolveVendorDecision(x, d.id, pick));
     else if (changing) update(x => changeDecision(x, d.id, pick, ''));
     else update(x => decide(x, d.id, pick, d.key === 'time' ? detail : undefined));
@@ -145,7 +148,7 @@ export function DecisionPage() {
 
   const eyebrow = d.kind === 'org' ? (d.lead ? 'Ban lễ tang chủ trì — gia đình được thông báo, góp ý' : 'Do Ban lễ tang quyết — gia đình xác nhận')
     : d.kind === 'vendor' ? 'Nhà cung cấp · tự tạo khi đổi nơi tổ chức'
-    : d.status === 'decided' ? (lockedTime ? 'Đã chốt · không thể quay lại' : 'Đã quyết · có thể thay đổi') : 'Cần anh quyết';
+    : d.status === 'decided' ? (lockedTime ? 'Đã chốt · không thể quay lại' : 'Đã quyết · có thể thay đổi') : `Cần ${xung(me.rel)} quyết`;
   const wishDiff = d.wish && pick && pick !== d.wish.value;
   const detailView = (
     <div className="stack">
@@ -154,7 +157,7 @@ export function DecisionPage() {
       {d.wish && <section className="card card-pad" style={{ background: 'var(--memorial)', borderColor: 'var(--memorial-edge)' }}><div className="eyebrow">Nguyện vọng đã chuẩn bị</div>
         <p style={{ marginTop: 4, fontFamily: 'var(--serif)' }}>“{d.wish.text}”</p>
         {wishDiff && <p className="muted" style={{ marginTop: 6, color: 'var(--warning)' }}><Icon n="alert" c="sm" /> Phương án đang chọn khác với nguyện vọng đã chuẩn bị.</p>}</section>}
-      {d.kind === 'vendor' && <Banner kind="upd" icon="pin">Nơi tổ chức đã đổi sang <b>{venueLabel(c)}</b>. {catName(d.cat!)} đã cam kết nên app <b>không tự thay</b> — anh quyết giữ hay đổi.</Banner>}
+      {d.kind === 'vendor' && <Banner kind="upd" icon="pin">Nơi tổ chức đã đổi sang <b>{venueLabel(c)}</b>. {catName(d.cat!)} đã cam kết nên app <b>không tự thay</b> — {xung(me.rel)} quyết giữ hay đổi.</Banner>}
       {!isU1 && <Banner kind="info" icon="lock">Chỉ người đại diện gia đình chốt quyết định này.</Banner>}
       <div className="opts" role="radiogroup">{d.options.map(o => (
         <button key={o.k} className="opt" role="radio" aria-checked={pick === o.k} disabled={readOnly} onClick={() => setPick(o.k)}>
