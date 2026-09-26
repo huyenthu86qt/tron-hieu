@@ -96,6 +96,13 @@ export function DocsPage() {
   return (
     <div className="page" style={{ maxWidth: 860 }}><div className="page-title"><div><h1>Tài liệu</h1><p>Giấy tờ, bằng chứng, chứng từ của đám hiếu ở một chỗ</p></div>
       <div className="actions"><label className="btn primary file-btn" aria-disabled={up.busy}><Icon n="plus" c="sm" />{up.busy ? 'Đang tải lên…' : 'Thêm tài liệu'}<input type="file" disabled={up.busy} onChange={async e => { const f = e.target.files?.[0]; e.target.value = ''; if (!f) return; const s = await up.run(() => uploadCaseFile(c.id, 'doc', f)); if (s) { update(d => { (d.docs ??= []).push({ id: 'doc' + Date.now(), name: s.name, path: s.path, at: new Date().toISOString(), source: 'other' }); d.history.push({ at: new Date().toISOString(), text: `${me.name} thêm tài liệu: ${s.name}` }); }); toast('Đã thêm tài liệu'); } }} /></label></div></div>
+      <details className="card card-pad" open={!all.length}><summary style={{ cursor: 'pointer', fontWeight: 500 }}>Nên lưu những gì ở đây?</summary>
+        <ul style={{ margin: '8px 0 0', paddingLeft: 20, lineHeight: 1.7 }}>
+          <li><b>Mấy ngày đầu:</b> giấy báo tử, bản chụp căn cước của người mất, giấy tờ thuê phòng nhà tang lễ, phiếu đăng ký giờ hỏa táng hoặc giấy tờ đất nghĩa trang.</li>
+          <li><b>Hậu tang:</b> trích lục khai tử, hồ sơ và quyết định trợ cấp mai táng, chế độ tử tuất — thường phải dùng lại khi làm thừa kế, ngân hàng, bảo hiểm.</li>
+          <li><b>Giữ lâu dài:</b> ảnh thờ bản gốc, cáo phó đã in, giấy tờ con cháu cần giữ về sau.</li>
+        </ul>
+        <p className="muted" style={{ marginTop: 6 }}>Bằng chứng đính vào từng việc và chứng từ chi tiêu cũng tự hiện ở đây.</p></details>
       <section className="card">{all.length ? <div className="list">{all.map(d => (
         <div key={d.id + d.name} className="row"><Icon n="doc" /><div className="grow"><div className="title"><FileName name={d.name} path={d.path} bucket={'source' in d && d.source === 'pre' ? 'pre-files' : 'case-files'} /></div><div className="meta"><span>{d.from}</span></div></div>{d.to && <Link className="btn sm ghost" to={`${base}/${d.to}`}>Mở</Link>}</div>
       ))}</div> : <div className="empty"><Icon n="doc" c="lg" /><span>Chưa có tài liệu nào.</span></div>}</section>
