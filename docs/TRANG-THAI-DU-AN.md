@@ -64,6 +64,8 @@
 | 3c Chuyển quyền, xuất / xóa dữ liệu | Chờ duyệt | 3f55fe8 |
 | 4 Thanh toán, vận hành & Working App | Chưa bắt đầu | — |
 
+> Ghi nhớ cho Phase 4 (Chủ dự án chốt 26/09/2026): khi chuyển thanh toán SePay từ **thử** sang **thật**, app tự xóa toàn bộ đơn hàng và giao dịch giả lập của giai đoạn thử (chỉ làm một lần, có ghi nhật ký). Trước lúc đó cứ để nguyên dữ liệu thử.
+
 ## Phase 1 — ghi chú bàn giao
 - Chạy thử: trong thư mục `app/`: `npm install` (lần đầu) → `npm run dev` → mở http://localhost:5173
 - Kiểm thử phần lõi: `npm test` (41 bài, xanh) · `npm run build` sạch · không lỗi console
