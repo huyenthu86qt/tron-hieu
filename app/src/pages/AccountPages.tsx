@@ -225,7 +225,7 @@ export function AccountPage() {
 
         <section className="card card-pad stack"><h3>Hỗ trợ</h3>
           {(() => { const ph = (support.phone || SUPPORT.phone).replace(/\D/g, ''), zl = (support.zalo || support.phone || SUPPORT.phone).replace(/\D/g, ''); return <>
-            <p>Liên hệ <b>{SUPPORT.name}</b> — <span className="num">{fmtPhone(ph)}</span></p>
+            <p>Liên hệ <b>{SUPPORT.name}</b> — <span className="num">{fmtPhone(ph)}</span> · Email: <a href={`mailto:${SUPPORT.email}`}>{SUPPORT.email}</a></p>
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}><a className="btn primary" href={`tel:${ph}`}>Gọi {SUPPORT.name}</a><a className="btn" href={`https://zalo.me/${zl}`} target="_blank" rel="noreferrer">Nhắn Zalo</a></div></>; })()}
           <p className="muted">Khi cần hỗ trợ về thanh toán, gửi kèm mã đơn (ví dụ DH7KQ2XA).</p>
           <p><Link to="/dieu-khoan">Điều khoản sử dụng</Link> · <Link to="/bao-mat">Chính sách bảo mật</Link></p>

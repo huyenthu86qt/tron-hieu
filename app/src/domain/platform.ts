@@ -20,7 +20,7 @@ export function normalizePhone(s: string): string | null {
   return /^0[35789]\d{8}$/.test(d) ? d : null;
 }
 /** Người hỗ trợ khách hàng (Chủ dự án chốt 26/09/2026) */
-export const SUPPORT = { name: 'Diệu Tuệ', phone: '0784869988' };
+export const SUPPORT = { name: 'Diệu Tuệ', phone: '0784869988', email: 'huyenthu86.qt@gmail.com' };
 export const fmtPhone = (p: string) => p.replace(/^(\d{4})(\d{3})(\d{3})$/, '$1 $2 $3');
 
 export const passwordError = (p: string) => (p.length < 8 ? 'Mật khẩu cần tối thiểu 8 ký tự.' : null);

@@ -1,4 +1,4 @@
-// Điều khoản sử dụng & Chính sách bảo mật — DỰ THẢO chờ Chủ dự án duyệt (27/09/2026).
+// Điều khoản sử dụng & Chính sách bảo mật — Chủ dự án duyệt 27/09/2026 (email liên hệ, chính sách hoàn tiền).
 // Căn cứ: Luật Bảo vệ dữ liệu cá nhân số 91/2025/QH15 (hiệu lực 01/01/2026), Nghị định 356/2025/NĐ-CP.
 // Chỗ ghi OPERATOR / REFUND là quyết định của Chủ dự án — sửa ở hằng số bên dưới.
 import type { ReactNode } from 'react';
@@ -8,7 +8,7 @@ import { BrandLine } from '../ui/brand';
 import { fmtPhone, SUPPORT } from '../domain/platform';
 
 /** Bản đang hiệu lực: đổi DRAFT = false sau khi Chủ dự án duyệt */
-const DRAFT = true;
+const DRAFT = false;
 const UPDATED = '27/09/2026';
 /** Người / đơn vị vận hành hiển thị trên trang (Chủ dự án xác nhận) */
 const OPERATOR = 'Chủ dự án Trọn Hiếu';
@@ -26,7 +26,7 @@ function Legal({ title, children }: { title: string; children: ReactNode }) {
   );
 }
 const S = ({ h, children }: { h: string; children: ReactNode }) => <section className="card card-pad stack" style={{ gap: 8 }}><h3>{h}</h3>{children}</section>;
-const Contact = () => <p>Liên hệ hỗ trợ: <b>{SUPPORT.name}</b> — <a href={`tel:${SUPPORT.phone}`}>{fmtPhone(SUPPORT.phone)}</a> (gọi hoặc Zalo).</p>;
+const Contact = () => <p>Liên hệ hỗ trợ: <b>{SUPPORT.name}</b> — <a href={`tel:${SUPPORT.phone}`}>{fmtPhone(SUPPORT.phone)}</a> (gọi hoặc Zalo) · Email: <a href={`mailto:${SUPPORT.email}`}>{SUPPORT.email}</a>.</p>;
 
 export function TermsPage() {
   return (
@@ -170,7 +170,7 @@ export function PrivacyPage() {
           <li>Khiếu nại, tố cáo, khởi kiện và yêu cầu bồi thường theo quy định;</li>
           <li>Yêu cầu cơ quan có thẩm quyền bảo vệ dữ liệu của mình.</li>
         </ul>
-        <p>Cách thực hiện ngay trong app: sửa thông tin trong Hồ sơ và Tài khoản; <b>tải bản lưu</b> đám hiếu (in được, bảng tính) trong Tài khoản → Dữ liệu; <b>yêu cầu xóa</b> đám hiếu hoặc tài khoản trong Tài khoản. Các yêu cầu khác, liên hệ hỗ trợ.</p>
+        <p>Cách thực hiện ngay trong app: sửa thông tin trong Hồ sơ và Tài khoản; <b>tải bản lưu</b> đám hiếu (in được, bảng tính) trong Tài khoản → Dữ liệu; <b>yêu cầu xóa</b> đám hiếu hoặc tài khoản trong Tài khoản. Các yêu cầu khác về dữ liệu cá nhân, gửi email tới <a href={`mailto:${SUPPORT.email}`}>{SUPPORT.email}</a> hoặc liên hệ hỗ trợ.</p>
       </S>
       <S h="10. Thông tin của người đã khuất">
         <p>Thông tin của người đã khuất do gia đình nhập và quản lý, người đại diện gia đình quyết định việc công bố hoặc xóa. Trọn Hiếu tôn trọng danh dự, nhân phẩm của người đã khuất và chỉ công khai những gì gia đình chọn công bố.</p>
