@@ -219,3 +219,21 @@ export function resolveVendorDecision(c: CaseData, id: string, pick: string, now
     c.tasks.push({ id: 'u' + Math.random().toString(36).slice(2, 9), templateId: null, custom: { title: 'Báo hủy và thỏa thuận phí với nhà cung cấp cũ', phase: 7, due: 'Trong hôm nay' }, status: 'todo', owner: null, area: 'Nhà cung cấp' });
   }
 }
+
+/* ---------- Tìm quanh nơi tổ chức trên Google Maps (khi danh bạ chưa có bên phù hợp) ---------- */
+const MAPS_QUERY: Record<VendorCat, string> = {
+  xe: 'xe tang',
+  rap: 'cho thuê rạp đám hiếu bàn ghế',
+  hoa: 'vòng hoa viếng',
+  an: 'nấu cỗ đám hiếu',
+  nhac: 'đội nhạc tang lễ',
+  mo: 'xây mộ đào huyệt',
+};
+
+/** Link mở Google Maps tìm đúng loại dịch vụ quanh nơi tổ chức; null nếu chưa có vị trí lẫn địa chỉ */
+export function mapsSearchUrl(cat: VendorCat, site: VenueSite): string | null {
+  const q = MAPS_QUERY[cat];
+  if (site.geo) return `https://www.google.com/maps/search/${encodeURIComponent(q)}/@${site.geo.lat},${site.geo.lng},14z`;
+  if (site.address.trim()) return `https://www.google.com/maps/search/${encodeURIComponent(`${q} gần ${site.address.trim()}`)}`;
+  return null;
+}

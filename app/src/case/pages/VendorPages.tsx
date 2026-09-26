@@ -4,7 +4,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import type { GeoPoint, VendorCat } from '../../domain/types';
 import {
   acceptVendor, addFamilyVendor, distanceKm, catName, catState, catsVisible, choosePackage, commitVendor, confirmVendor, findVendor, fmtGeo, fmtKm,
-  markUpdated, packageOffers, parseGeo, recordIncident, recordQuote, siteOf, suggestionSnapshot, venueLabel, CATS,
+  mapsSearchUrl, markUpdated, packageOffers, parseGeo, recordIncident, recordQuote, siteOf, suggestionSnapshot, venueLabel, CATS,
 } from '../../domain/vendors';
 import { FORM_LABEL } from '../../domain/model';
 import { money, parseMoney, fmtMoneyInput } from '../../domain/finance';
@@ -195,6 +195,7 @@ function Suggest() {
   const [add, setAdd] = useState(false);
   const [showMap, setShowMap] = useState(false);
   const s = catState(c, dir, cat), r = s.r, upd = (c.updatedCats ?? []).includes(cat);
+  const maps = mapsSearchUrl(cat, siteOf(c));
   const confirm = (id: string, family = false) => {
     const e = update(d => confirmVendor(d, cat, id, family));
     toast(e ?? 'Đã chọn. Người lo Nhà cung cấp liên hệ để chốt cam kết.');
@@ -211,8 +212,10 @@ function Suggest() {
   } else if (s.status === 'empty') {
     top = <section className="card"><div className="empty"><Icon n="pin" c="lg" />
       <h3 style={{ color: 'var(--text)' }}>{r.hasGeo ? `Chưa có ${catName(cat).toLowerCase()} phù hợp gần nơi tổ chức` : 'Chưa có vị trí nơi tổ chức'}</h3>
-      <p>{r.hasGeo ? `Danh bạ chưa có bên nào phục vụ khu vực ${venueLabel(c)}. Gia đình có thể thêm bên quen biết.` : 'Thêm vị trí ở thẻ “Tính từ” phía trên để app gợi ý bên gần nhất.'}</p>
-      <button className="btn primary" onClick={() => setAdd(true)}><Icon n="plus" c="sm" />Thêm nhà cung cấp của gia đình</button></div></section>;
+      <p>{r.hasGeo ? `Danh bạ chưa có bên nào phục vụ khu vực ${venueLabel(c)}. Tìm các bên gần nhất trên Google Maps, gọi hỏi giá, rồi thêm bên gia đình chọn vào đây.` : 'Thêm vị trí ở thẻ “Tính từ” phía trên để app gợi ý bên gần nhất.'}</p>
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
+        {maps && <a className="btn primary" href={maps} target="_blank" rel="noreferrer"><Icon n="pin" c="sm" />Tìm quanh đây trên Google Maps</a>}
+        <button className={maps ? 'btn' : 'btn primary'} onClick={() => setAdd(true)}><Icon n="plus" c="sm" />Thêm nhà cung cấp của gia đình</button></div></div></section>;
   } else {
     const o = r.ok[0];
     top = <section className="vend-top"><div className="eyebrow">App điền sẵn · chờ anh xác nhận</div>
@@ -242,7 +245,8 @@ function Suggest() {
       {fam.length ? <div className="list">{fam.map(v => (
         <div key={v.id} className="row"><span className="num-badge"><Icon n="user" c="sm" /></span><div className="grow"><div className="title">{v.name}</div><div className="meta"><span className="num">{v.phone || '—'}</span><span>{v.cats.map(catName).join(', ')}</span>{v.note && <span>{v.note}</span>}</div></div>
           {s.cv?.vendorId === v.id ? <span className="pill done">Đang chọn</span> : s.status !== 'committed' && <button className="btn sm" onClick={() => confirm(v.id, true)}>Chọn bên này</button>}</div>))}</div>
-        : <p className="muted" style={{ padding: '0 16px 14px' }}>Bên quen biết, người trong họ giới thiệu… gia đình tự thêm. Chỉ gia đình này thấy.</p>}</section>
+        : <p className="muted" style={{ padding: '0 16px 14px' }}>Bên quen biết, người trong họ giới thiệu… gia đình tự thêm. Chỉ gia đình này thấy.</p>}
+      {maps && s.status !== 'empty' && <p className="muted" style={{ padding: '0 16px 14px' }}>Muốn so sánh thêm? <a href={maps} target="_blank" rel="noreferrer">Tìm quanh nơi tổ chức trên Google Maps</a>, gọi hỏi giá rồi thêm bên gia đình chọn.</p>}</section>
   );
   const head = <>
     <div className="page-title"><div><div className="eyebrow">Gợi ý nhà cung cấp</div><h1 style={{ marginTop: 4 }}>{catName(cat)}</h1></div></div>
