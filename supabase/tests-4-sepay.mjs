@@ -59,6 +59,11 @@ ok('đám hiếu được mở đầy đủ', (await q(`select access->>'plan' p
 ok('SePay gửi lại cùng giao dịch → không xử lý hai lần', (await hook(tx(4, o1))).duplicate === true);
 ok('nhật ký ghi SePay khớp giao dịch', (await q(`select count(*)::int n from public.audit_log where actor = 'SePay' and action = 'Khớp giao dịch'`)).rows[0].n === 1);
 
+console.log('Tài khoản dùng chung với dự án khác:');
+ok('tiền của dự án khác (không mã DH, không đúng giá gói) → bỏ qua, không ghi', (await hook(tx(20, o1, { content: 'WP123 thanh toan tiec cuoi', transferAmount: 3500000 }))).ignored === 'not Tron Hieu');
+ok('khách quên ghi mã nhưng đúng giá gói → vẫn ghi để Admin gán tay', (await hook(tx(21, o1, { content: 'chuyen tien', transferAmount: 499000 }))).status === 'unmatched');
+ok('không có dòng rác trong giao dịch chưa khớp', (await q(`select count(*)::int n from public.bank_txs where provider_tx_id = 'sepay:20'`)).rows[0].n === 0);
+
 console.log('Chuyển sang chạy thật:');
 const o2 = await order('dh2');
 await as(U.tuan, () => q(`select public.simulate_bank_tx('S1', 499000, $1)`, [o2.code]));
@@ -67,7 +72,7 @@ await expectErr('người không phải Admin không chuyển được', () => a
 const gl = (await as(U.adm, () => q(`select public.admin_sepay_go_live() r`))).rows[0].r;
 const left = (await q(`select code from public.orders order by code`)).rows.map(r => r.code);
 ok('dọn đơn thử, giữ đơn trả bằng giao dịch thật', left.length === 1 && left[0] === o1.code && gl.orders === 1);
-ok('dọn giao dịch giả lập, giữ giao dịch thật', (await q(`select count(*)::int n from public.bank_txs where provider_tx_id not like 'sepay:%'`)).rows[0].n === 0 && (await q(`select count(*)::int n from public.bank_txs`)).rows[0].n === 3);
+ok('dọn giao dịch giả lập, giữ giao dịch thật', (await q(`select count(*)::int n from public.bank_txs where provider_tx_id not like 'sepay:%'`)).rows[0].n === 0 && (await q(`select count(*)::int n from public.bank_txs`)).rows[0].n === 4);
 ok('môi trường chuyển sang “live”', (await q(`select data->'sepay'->>'env' e from public.app_settings`)).rows[0].e === 'live');
 await expectErr('chạy thật thì không giả lập được nữa', () => as(U.tuan, () => q(`select public.simulate_bank_tx('S2', 499000, 'x')`)), /Chỉ giả lập/);
 ok('đám hiếu đã mở bằng thanh toán thử vẫn giữ quyền', (await q(`select access->>'plan' p from public.cases where id = 'dh2'`)).rows[0].p === 'full');
